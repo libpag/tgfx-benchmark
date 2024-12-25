@@ -33,5 +33,4 @@ namespace benchmark {
 
 DEFINE_DRAWER(ConicGradient);
 
-
-}  // namespace drawers
+}  // namespace benchmark

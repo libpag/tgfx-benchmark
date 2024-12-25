@@ -92,4 +92,4 @@ class AppHost {
   std::unordered_map<std::string, std::shared_ptr<tgfx::Image>> images = {};
   std::unordered_map<std::string, std::shared_ptr<tgfx::Typeface>> typefaces = {};
 };
-}  // namespace drawers
+}  // namespace benchmark

@@ -19,8 +19,8 @@
 #include "base/Drawer.h"
 #include <unordered_map>
 #include "base/Drawers.h"
-#include "tgfx/platform/Print.h"
 #include "benchmark/SolidRectBench.h"
+#include "tgfx/platform/Print.h"
 
 namespace benchmark {
 static std::vector<Drawer*> drawers = {new ConicGradient(), new SolidRectBench()};
@@ -82,4 +82,4 @@ void Drawer::draw(tgfx::Canvas* canvas, const AppHost* host) {
   onDraw(canvas, host);
   canvas->restore();
 }
-}  // namespace drawers
+}  // namespace benchmark

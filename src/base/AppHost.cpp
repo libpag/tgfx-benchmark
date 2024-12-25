@@ -89,4 +89,4 @@ void AppHost::addTypeface(const std::string& name, std::shared_ptr<tgfx::Typefac
   }
   typefaces[name] = std::move(typeface);
 }
-}  // namespace drawers
+}  // namespace benchmark

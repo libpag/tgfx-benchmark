@@ -17,9 +17,9 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "SolidRectBench.h"
+#include <iomanip>
 #include <random>
 #include <sstream>
-#include <iomanip>
 #include "tgfx/layers/ShapeLayer.h"
 
 namespace benchmark {
@@ -29,7 +29,7 @@ constexpr float kFontSize = 40.f;
 constexpr float kFpsTextMarginLeft = 262.f;
 constexpr float kFpsTextMarginTop = 38.f;
 constexpr uint64_t kFpsFlushInterval = 333;
-constexpr  int kRectIncreaseStep = 400;
+constexpr int kRectIncreaseStep = 400;
 
 uint64_t GetCurrentTimeStampInMs() {
   auto now = std::chrono::steady_clock::now();
@@ -41,8 +41,8 @@ void SolidRectBench::InitRects() {
   _rects.resize(kMaxRectCount);
   std::mt19937 rectRng(18);
   std::mt19937 speedRng(36);
-  std::uniform_real_distribution<float>  rectDistribution(0, 1);
-  std::uniform_real_distribution<float>  speedDistribution(1, 2);
+  std::uniform_real_distribution<float> rectDistribution(0, 1);
+  std::uniform_real_distribution<float> speedDistribution(1, 2);
   for (size_t i = 0; i < kMaxRectCount; i++) {
     _rects[i].x = rectDistribution(rectRng) * _width;
     _rects[i].y = rectDistribution(rectRng) * _height;
@@ -58,10 +58,10 @@ void SolidRectBench::InitPaints() {
     _paints[i].setColor(color);
     _paints[i].setAntiAlias(false);
   }
-  _fpsBackgroundpaint.setColor(tgfx::Color{0.32f,0.42f,0.62f,0.9f});
+  _fpsBackgroundpaint.setColor(tgfx::Color{0.32f, 0.42f, 0.62f, 0.9f});
 }
 
-void SolidRectBench::Init(const AppHost *host) {
+void SolidRectBench::Init(const AppHost* host) {
   if (_initialized) {
     return;
   }
@@ -81,16 +81,15 @@ void SolidRectBench::AnimateRects() {
   }
 }
 
-
-void SolidRectBench::DrawRects(tgfx::Canvas *canvas) const {
+void SolidRectBench::DrawRects(tgfx::Canvas* canvas) const {
   for (size_t i = 0; i < _curRectCount; i++) {
-    const auto [x,y,width,_] = _rects[i];
+    const auto [x, y, width, _] = _rects[i];
     auto rect = tgfx::Rect::MakeXYWH(x, y, width, width);
     canvas->drawRect(rect, _paints[i % 3]);
   }
 }
 
-void SolidRectBench::DrawFPS(tgfx::Canvas *canvas,const AppHost *host) {
+void SolidRectBench::DrawFPS(tgfx::Canvas* canvas, const AppHost* host) {
   _frameCount++;
   if (_lastMs == 0) {
     _lastMs = GetCurrentTimeStampInMs();
@@ -108,11 +107,13 @@ void SolidRectBench::DrawFPS(tgfx::Canvas *canvas,const AppHost *host) {
 
     auto timeInterval = currentMs - _lastMs;
     if (!_timeStamps.empty() && timeInterval > kFpsFlushInterval) {
-      auto fps = 1000.f  * _timeStamps.size() / (currentMs - _timeStamps.front());
+      auto fps = 1000.f * _timeStamps.size() / (currentMs - _timeStamps.front());
       std::stringstream ss;
-      ss<<"Rectangles: "<< _curRectCount << ", FPS:" << std::fixed << std::setprecision(1) << fps;
+      ss << "Rectangles: " << _curRectCount << ", FPS:" << std::fixed << std::setprecision(1)
+         << fps;
       _fpsInfo = ss.str();
-      auto accCount = static_cast<size_t>(1.f * timeInterval / kFpsFlushInterval * kRectIncreaseStep);
+      auto accCount =
+          static_cast<size_t>(1.f * timeInterval / kFpsFlushInterval * kRectIncreaseStep);
       _curRectCount = std::min(_curRectCount + accCount, kMaxRectCount);
       _lastMs = currentMs;
       _frameCount = 0;
@@ -120,9 +121,9 @@ void SolidRectBench::DrawFPS(tgfx::Canvas *canvas,const AppHost *host) {
       if (fps > 58.f) {
         fpsColor = tgfx::Color::Green();
       } else if (fps > 30.f) {
-        fpsColor = tgfx::Color{1.f,1.f,0.f,1.f};//Yellow
+        fpsColor = tgfx::Color{1.f, 1.f, 0.f, 1.f};  //Yellow
       } else {
-        fpsColor = tgfx::Color{0.91f,0.31f,0.28f,1.f};
+        fpsColor = tgfx::Color{0.91f, 0.31f, 0.28f, 1.f};
       }
       _fpsTextPaint.setColor(fpsColor);
     }
@@ -134,16 +135,15 @@ void SolidRectBench::DrawFPS(tgfx::Canvas *canvas,const AppHost *host) {
 
   auto typeface = host->getTypeface("default");
   tgfx::Font font(typeface, kFontSize * host->density());
-  canvas->drawSimpleText(_fpsInfo,kFpsTextMarginLeft * host->density(),
-    kFpsTextMarginTop * host->density(), font, _fpsTextPaint);
+  canvas->drawSimpleText(_fpsInfo, kFpsTextMarginLeft * host->density(),
+                         kFpsTextMarginTop * host->density(), font, _fpsTextPaint);
 }
 
-void SolidRectBench::onDraw(tgfx::Canvas *canvas, const AppHost *host) {
+void SolidRectBench::onDraw(tgfx::Canvas* canvas, const AppHost* host) {
   Init(host);
   DrawRects(canvas);
-  DrawFPS(canvas,host);
+  DrawFPS(canvas, host);
   AnimateRects();
-
 }
 
-} // namespace benchmark
+}  // namespace benchmark

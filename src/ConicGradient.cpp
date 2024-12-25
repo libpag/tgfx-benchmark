@@ -37,7 +37,6 @@ void ConicGradient::onDraw(tgfx::Canvas* canvas, const benchmark::AppHost* host)
   tgfx::Path path = {};
   path.addRoundRect(rect, 20 * scale, 20 * scale);
   canvas->drawPath(path, paint);
-
 }
 
-}  // namespace drawers
+}  // namespace benchmark

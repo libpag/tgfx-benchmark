@@ -17,58 +17,52 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 #pragma once
-#include "base/Drawer.h"
 #include <deque>
+#include "base/Drawer.h"
 
 namespace benchmark {
 
 struct RectData {
- float x;
- float y;
- float width;
- float speed;
+  float x;
+  float y;
+  float width;
+  float speed;
 };
 
 class SolidRectBench : public Drawer {
  public:
   SolidRectBench() : Drawer("SolidRectBench") {
   }
+
  protected:
-  void onDraw(tgfx::Canvas *canvas, const AppHost *host) override;
+  void onDraw(tgfx::Canvas* canvas, const AppHost* host) override;
 
  private:
-  void Init(const AppHost *host);
+  void Init(const AppHost* host);
 
   void InitRects();
 
   void InitPaints();
 
-  void DrawRects(tgfx::Canvas *canvas) const;
+  void DrawRects(tgfx::Canvas* canvas) const;
 
-  void DrawFPS(tgfx::Canvas *canvas, const AppHost *host);
+  void DrawFPS(tgfx::Canvas* canvas, const AppHost* host);
 
   void AnimateRects();
 
  private:
-  float _width = 1024.f; //appHost width
-  float _height = 720.f; //appHost height
+  float _width = 1024.f;  //appHost width
+  float _height = 720.f;  //appHost height
   size_t _frameCount = 0;
   size_t _curRectCount = 0;
   std::string _fpsInfo;
   std::vector<RectData> _rects;
   bool _initialized = false;
-  tgfx::Paint _paints[3]; // red, green, blue solid paints
-  tgfx::Paint _fpsBackgroundpaint; // red solid paint
-  tgfx::Paint _fpsTextPaint; // white solid paint
+  tgfx::Paint _paints[3];           // red, green, blue solid paints
+  tgfx::Paint _fpsBackgroundpaint;  // red solid paint
+  tgfx::Paint _fpsTextPaint;        // white solid paint
   uint64_t _lastMs = 0;
   std::deque<uint64_t> _timeStamps;
-
 };
 
 }  // namespace benchmark
-
-
-
-
-
-
