@@ -27,7 +27,6 @@ get_filename_component(TGFX_DIR "${TGFX_DIR}" REALPATH BASE_DIR "${CMAKE_CURRENT
 list(APPEND BENCH_INCLUDES ${TGFX_DIR}/include)
 add_subdirectory(${TGFX_DIR})
 
-message("INCLUDE_FILES: ${INCLUDE_FILES}")
 add_library(${PROJECT_NAME} STATIC ${SRC_FILES}
         src/benchmark/SolidRectBench.cpp
         src/benchmark/SolidRectBench.h)
@@ -37,7 +36,3 @@ target_include_directories(${PROJECT_NAME} PUBLIC include PRIVATE ${BENCH_INCLUD
 target_compile_options(${PROJECT_NAME} PUBLIC ${BENCH_COMPILE_OPTIONS})
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "")
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME libbenchmark)
-
-
-
-

@@ -23,9 +23,7 @@
 namespace benchmark {
 
 struct RectData {
-  float x;
-  float y;
-  float width;
+  tgfx::Rect rect{0, 0, 1, 1};
   float speed;
 };
 
@@ -63,6 +61,8 @@ class SolidRectBench : public Drawer {
   tgfx::Paint _fpsTextPaint;        // white solid paint
   uint64_t _lastMs = 0;
   std::deque<uint64_t> _timeStamps;
+  tgfx::Rect _fpsBackgroundRect;
+  tgfx::Font _fpsFont;
 };
 
 }  // namespace benchmark

@@ -44,9 +44,10 @@ void SolidRectBench::InitRects() {
   std::uniform_real_distribution<float> rectDistribution(0, 1);
   std::uniform_real_distribution<float> speedDistribution(1, 2);
   for (size_t i = 0; i < kMaxRectCount; i++) {
-    _rects[i].x = rectDistribution(rectRng) * _width;
-    _rects[i].y = rectDistribution(rectRng) * _height;
-    _rects[i].width = 10.f + rectDistribution(rectRng) * 40.f;
+    const auto x = rectDistribution(rectRng) * _width;
+    const auto y = rectDistribution(rectRng) * _height;
+    const auto width = 10.f + rectDistribution(rectRng) * 40.f;
+    _rects[i].rect.setXYWH(x, y, width, width);
     _rects[i].speed = speedDistribution(speedRng);
   }
 }
@@ -67,25 +68,26 @@ void SolidRectBench::Init(const AppHost* host) {
   }
   _width = static_cast<float>(host->width());
   _height = static_cast<float>(host->height());
-  _initialized = true;
+  _fpsBackgroundRect = tgfx::Rect::MakeWH(_width * 1.f, kFpsBackgroundHeight * host->density());
+  _fpsFont = tgfx::Font(host->getTypeface("default"), kFontSize * host->density());
   InitRects();
   InitPaints();
+  _initialized = true;
 }
 
 void SolidRectBench::AnimateRects() {
   for (size_t i = 0; i < _curRectCount; i++) {
-    _rects[i].x -= _rects[i].speed;
-    if (_rects[i].x + _rects[i].width < 0) {
-      _rects[i].x = _width;
+    auto& rect = _rects[i].rect;
+    rect.offset(-_rects[i].speed, 0);
+    if (rect.right < 0) {
+      rect.offset(_width - rect.left, 0);
     }
   }
 }
 
 void SolidRectBench::DrawRects(tgfx::Canvas* canvas) const {
   for (size_t i = 0; i < _curRectCount; i++) {
-    const auto [x, y, width, _] = _rects[i];
-    auto rect = tgfx::Rect::MakeXYWH(x, y, width, width);
-    canvas->drawRect(rect, _paints[i % 3]);
+    canvas->drawRect(_rects[i].rect, _paints[i % 3]);
   }
 }
 
@@ -130,13 +132,9 @@ void SolidRectBench::DrawFPS(tgfx::Canvas* canvas, const AppHost* host) {
   }
   _timeStamps.push_back(currentMs);
 
-  auto rect = tgfx::Rect::MakeWH(_width * 1.f, kFpsBackgroundHeight * host->density());
-  canvas->drawRect(rect, _fpsBackgroundpaint);
-
-  auto typeface = host->getTypeface("default");
-  tgfx::Font font(typeface, kFontSize * host->density());
+  canvas->drawRect(_fpsBackgroundRect, _fpsBackgroundpaint);
   canvas->drawSimpleText(_fpsInfo, kFpsTextMarginLeft * host->density(),
-                         kFpsTextMarginTop * host->density(), font, _fpsTextPaint);
+                         kFpsTextMarginTop * host->density(), _fpsFont, _fpsTextPaint);
 }
 
 void SolidRectBench::onDraw(tgfx::Canvas* canvas, const AppHost* host) {

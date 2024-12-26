@@ -17,8 +17,8 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 #import "ViewController.h"
-#import "TGFXView.h"
 #import <QuartzCore/CVDisplayLink.h>
+#import "TGFXView.h"
 
 @interface ViewController ()
 @property(strong, nonatomic) TGFXView* tgfxView;
@@ -27,7 +27,7 @@
 
 CVDisplayLinkRef displayLink;
 
-static CVReturn OnAnimationCallback( CVDisplayLinkRef, const CVTimeStamp*, const CVTimeStamp*,
+static CVReturn OnAnimationCallback(CVDisplayLinkRef, const CVTimeStamp*, const CVTimeStamp*,
                                     CVOptionFlags, CVOptionFlags*, void* userInfo) {
   auto viewController = (__bridge ViewController*)userInfo;
   dispatch_queue_t mainQueue = dispatch_get_main_queue();
@@ -47,7 +47,7 @@ static CVReturn OnAnimationCallback( CVDisplayLinkRef, const CVTimeStamp*, const
   [self.view addSubview:self.tgfxView];
   [self.tgfxView draw:self.drawCount];
   CVDisplayLinkCreateWithActiveCGDisplays(&displayLink);
-  CVDisplayLinkSetOutputCallback(displayLink, &OnAnimationCallback,  (__bridge void*)self);
+  CVDisplayLinkSetOutputCallback(displayLink, &OnAnimationCallback, (__bridge void*)self);
 }
 
 - (void)viewDidLayout {
@@ -60,10 +60,9 @@ static CVReturn OnAnimationCallback( CVDisplayLinkRef, const CVTimeStamp*, const
   self.drawCount++;
   [self.tgfxView draw:self.drawCount];
 }
-  
+
 - (void)redraw {
   [self.tgfxView draw:self.drawCount];
-   
 }
 
 @end
