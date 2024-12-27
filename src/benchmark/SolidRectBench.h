@@ -49,20 +49,20 @@ class SolidRectBench : public Drawer {
   void AnimateRects();
 
  private:
-  float _width = 1024.f;  //appHost width
-  float _height = 720.f;  //appHost height
-  size_t _frameCount = 0;
-  size_t _curRectCount = 0;
-  std::string _fpsInfo;
-  std::vector<RectData> _rects;
-  bool _initialized = false;
-  tgfx::Paint _paints[3];           // red, green, blue solid paints
-  tgfx::Paint _fpsBackgroundpaint;  // red solid paint
-  tgfx::Paint _fpsTextPaint;        // white solid paint
-  uint64_t _lastMs = 0;
-  std::deque<uint64_t> _timeStamps;
-  tgfx::Rect _fpsBackgroundRect;
-  tgfx::Font _fpsFont;
+  float width = 1024.f;  //appHost width
+  float height = 720.f;  //appHost height
+  size_t frameCount = 0;
+  size_t curRectCount = 0;
+  std::string fpsInfo;
+  std::vector<RectData> rects;
+  bool initialized = false;
+  tgfx::Paint paints[3];           // red, green, blue solid paints
+  tgfx::Paint fpsBackgroundpaint;  // red solid paint
+  tgfx::Paint fpsTextPaint;        // white solid paint
+  uint64_t lastMs = 0;
+  std::deque<uint64_t> timeStamps;
+  tgfx::Rect fpsBackgroundRect;
+  tgfx::Font fpsFont;
 };
 
 }  // namespace benchmark

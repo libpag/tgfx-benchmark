@@ -38,17 +38,17 @@ uint64_t GetCurrentTimeStampInMs() {
 }
 
 void SolidRectBench::InitRects() {
-  _rects.resize(kMaxRectCount);
+  rects.resize(kMaxRectCount);
   std::mt19937 rectRng(18);
   std::mt19937 speedRng(36);
   std::uniform_real_distribution<float> rectDistribution(0, 1);
   std::uniform_real_distribution<float> speedDistribution(1, 2);
   for (size_t i = 0; i < kMaxRectCount; i++) {
-    const auto x = rectDistribution(rectRng) * _width;
-    const auto y = rectDistribution(rectRng) * _height;
-    const auto width = 10.f + rectDistribution(rectRng) * 40.f;
-    _rects[i].rect.setXYWH(x, y, width, width);
-    _rects[i].speed = speedDistribution(speedRng);
+    const auto x = rectDistribution(rectRng) * width;
+    const auto y = rectDistribution(rectRng) * height;
+    const auto size = 10.f + rectDistribution(rectRng) * 40.f;
+    rects[i].rect.setXYWH(x, y, size, size);
+    rects[i].speed = speedDistribution(speedRng);
   }
 }
 
@@ -56,69 +56,68 @@ void SolidRectBench::InitPaints() {
   for (auto i = 0; i < 3; i++) {
     tgfx::Color color = tgfx::Color::Black();
     color[i] = 1.f;
-    _paints[i].setColor(color);
-    _paints[i].setAntiAlias(false);
+    paints[i].setColor(color);
+    paints[i].setAntiAlias(false);
   }
-  _fpsBackgroundpaint.setColor(tgfx::Color{0.32f, 0.42f, 0.62f, 0.9f});
+  fpsBackgroundpaint.setColor(tgfx::Color{0.32f, 0.42f, 0.62f, 0.9f});
 }
 
 void SolidRectBench::Init(const AppHost* host) {
-  if (_initialized) {
+  if (initialized) {
     return;
   }
-  _width = static_cast<float>(host->width());
-  _height = static_cast<float>(host->height());
-  _fpsBackgroundRect = tgfx::Rect::MakeWH(_width * 1.f, kFpsBackgroundHeight * host->density());
-  _fpsFont = tgfx::Font(host->getTypeface("default"), kFontSize * host->density());
+  width = static_cast<float>(host->width());
+  height = static_cast<float>(host->height());
+  fpsBackgroundRect = tgfx::Rect::MakeWH(width * 1.f, kFpsBackgroundHeight * host->density());
+  fpsFont = tgfx::Font(host->getTypeface("default"), kFontSize * host->density());
   InitRects();
   InitPaints();
-  _initialized = true;
+  initialized = true;
 }
 
 void SolidRectBench::AnimateRects() {
-  for (size_t i = 0; i < _curRectCount; i++) {
-    auto& rect = _rects[i].rect;
-    rect.offset(-_rects[i].speed, 0);
+  for (size_t i = 0; i < curRectCount; i++) {
+    auto& rect = rects[i].rect;
+    rect.offset(-rects[i].speed, 0);
     if (rect.right < 0) {
-      rect.offset(_width - rect.left, 0);
+      rect.offset(width - rect.left, 0);
     }
   }
 }
 
 void SolidRectBench::DrawRects(tgfx::Canvas* canvas) const {
-  for (size_t i = 0; i < _curRectCount; i++) {
-    canvas->drawRect(_rects[i].rect, _paints[i % 3]);
+  for (size_t i = 0; i < curRectCount; i++) {
+    canvas->drawRect(rects[i].rect, paints[i % 3]);
   }
 }
 
 void SolidRectBench::DrawFPS(tgfx::Canvas* canvas, const AppHost* host) {
-  _frameCount++;
-  if (_lastMs == 0) {
-    _lastMs = GetCurrentTimeStampInMs();
-    _fpsTextPaint.setColor(tgfx::Color::Green());
+  frameCount++;
+  if (lastMs == 0) {
+    lastMs = GetCurrentTimeStampInMs();
+    fpsTextPaint.setColor(tgfx::Color::Green());
   }
 
   auto currentMs = GetCurrentTimeStampInMs();
-  if (!_timeStamps.empty()) {
-    while (currentMs - _timeStamps.front() > 1000) {
-      _timeStamps.pop_front();
-      if (_timeStamps.empty()) {
+  if (!timeStamps.empty()) {
+    while (currentMs - timeStamps.front() > 1000) {
+      timeStamps.pop_front();
+      if (timeStamps.empty()) {
         break;
       }
     }
 
-    auto timeInterval = currentMs - _lastMs;
-    if (!_timeStamps.empty() && timeInterval > kFpsFlushInterval) {
-      auto fps = 1000.f * _timeStamps.size() / (currentMs - _timeStamps.front());
+    auto timeInterval = currentMs - lastMs;
+    if (!timeStamps.empty() && timeInterval > kFpsFlushInterval) {
+      auto fps = 1000.f * timeStamps.size() / (currentMs - timeStamps.front());
       std::stringstream ss;
-      ss << "Rectangles: " << _curRectCount << ", FPS:" << std::fixed << std::setprecision(1)
-         << fps;
-      _fpsInfo = ss.str();
+      ss << "Rectangles: " << curRectCount << ", FPS:" << std::fixed << std::setprecision(1) << fps;
+      fpsInfo = ss.str();
       auto accCount =
           static_cast<size_t>(1.f * timeInterval / kFpsFlushInterval * kRectIncreaseStep);
-      _curRectCount = std::min(_curRectCount + accCount, kMaxRectCount);
-      _lastMs = currentMs;
-      _frameCount = 0;
+      curRectCount = std::min(curRectCount + accCount, kMaxRectCount);
+      lastMs = currentMs;
+      frameCount = 0;
       auto fpsColor = tgfx::Color::Green();
       if (fps > 58.f) {
         fpsColor = tgfx::Color::Green();
@@ -127,14 +126,14 @@ void SolidRectBench::DrawFPS(tgfx::Canvas* canvas, const AppHost* host) {
       } else {
         fpsColor = tgfx::Color{0.91f, 0.31f, 0.28f, 1.f};
       }
-      _fpsTextPaint.setColor(fpsColor);
+      fpsTextPaint.setColor(fpsColor);
     }
   }
-  _timeStamps.push_back(currentMs);
+  timeStamps.push_back(currentMs);
 
-  canvas->drawRect(_fpsBackgroundRect, _fpsBackgroundpaint);
-  canvas->drawSimpleText(_fpsInfo, kFpsTextMarginLeft * host->density(),
-                         kFpsTextMarginTop * host->density(), _fpsFont, _fpsTextPaint);
+  canvas->drawRect(fpsBackgroundRect, fpsBackgroundpaint);
+  canvas->drawSimpleText(fpsInfo, kFpsTextMarginLeft * host->density(),
+                         kFpsTextMarginTop * host->density(), fpsFont, fpsTextPaint);
 }
 
 void SolidRectBench::onDraw(tgfx::Canvas* canvas, const AppHost* host) {
