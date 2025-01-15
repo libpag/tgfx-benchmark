@@ -32,6 +32,7 @@
   NSView* view;
   std::shared_ptr<tgfx::CGLWindow> cglWindow;
   std::unique_ptr<benchmark::AppHost> appHost;
+  int drawIndex;
 }
 
 - (void)dealloc {
@@ -60,12 +61,20 @@
   [window setDelegate:self];
   view = [[NSView alloc] initWithFrame:frame];
   [view setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
+  [view addGestureRecognizer:[[NSClickGestureRecognizer alloc]
+                                 initWithTarget:self
+                                         action:@selector(handleClick:)]];
   [window setContentView:view];
   [window center];
   [window makeKeyAndOrderFront:nil];
   [self updateSize];
+  drawIndex = 0;
   CADisplayLink* displayLink = [view displayLinkWithTarget:self selector:@selector(redraw)];
   [displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSRunLoopCommonModes];
+}
+
+- (void)handleClick:(NSClickGestureRecognizer*)gestureRecognizer {
+  drawIndex++;
 }
 
 - (void)updateSize {
@@ -92,10 +101,6 @@
 }
 
 - (void)redraw {
-  [self draw:0];
-}
-
-- (void)draw:(int)index {
   if (appHost->width() <= 0 || appHost->height() <= 0) {
     return;
   }
@@ -118,7 +123,7 @@
   auto canvas = surface->getCanvas();
   canvas->clear();
   auto numBenches = benchmark::Bench::Count();
-  index = (index % numBenches);
+  auto index = (drawIndex % numBenches);
   auto bench = benchmark::Bench::GetByIndex(index);
   bench->draw(canvas, appHost.get());
   context->flushAndSubmit();
