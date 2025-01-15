@@ -16,48 +16,60 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-#import "TGFXView.h"
+#import "TGFXWindow.h"
+#import <QuartzCore/CADisplayLink.h>
 #include <cmath>
 #include <filesystem>
 #include "base/AppHost.h"
 #include "base/Bench.h"
+#include "tgfx/core/Canvas.h"
+#include "tgfx/core/Surface.h"
+#include "tgfx/gpu/opengl/GLDevice.h"
+#include "tgfx/gpu/opengl/cgl/CGLWindow.h"
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-
-@implementation TGFXView {
-  std::shared_ptr<tgfx::CGLWindow> window;
+@implementation TGFXWindow {
+  NSWindow* window;
+  NSView* view;
+  std::shared_ptr<tgfx::CGLWindow> cglWindow;
   std::unique_ptr<benchmark::AppHost> appHost;
-  CVDisplayLinkRef displayLink;
 }
 
 - (void)dealloc {
-  if (displayLink != nullptr) {
-    CVDisplayLinkStop(displayLink);
-    CVDisplayLinkRelease(displayLink);
-    displayLink = nullptr;
-  }
+  [window release];
+  [view release];
   [super dealloc];
 }
 
-- (void)setBounds:(CGRect)bounds {
-  CGRect oldBounds = self.bounds;
-  [super setBounds:bounds];
-  if (oldBounds.size.width != bounds.size.width || oldBounds.size.height != bounds.size.height) {
-    [self updateSize];
-  }
+- (void)windowWillClose:(NSNotification*)notification {
+  [NSApp terminate:self];
 }
 
-- (void)setFrame:(CGRect)frame {
-  CGRect oldRect = self.frame;
-  [super setFrame:frame];
-  if (oldRect.size.width != frame.size.width || oldRect.size.height != frame.size.height) {
-    [self updateSize];
-  }
+- (void)windowDidResize:(NSNotification*)notification {
+  [self updateSize];
+}
+
+- (void)open {
+  NSRect frame = NSMakeRect(0, 0, 1024, 720);
+  NSWindowStyleMask styleMask = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable |
+                                NSWindowStyleMaskResizable | NSWindowStyleMaskMiniaturizable;
+  window = [[NSWindow alloc] initWithContentRect:frame
+                                       styleMask:styleMask
+                                         backing:NSBackingStoreBuffered
+                                           defer:NO];
+  [window setTitle:@"TGFX Benchmark"];
+  [window setDelegate:self];
+  view = [[NSView alloc] initWithFrame:frame];
+  [view setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
+  [window setContentView:view];
+  [window center];
+  [window makeKeyAndOrderFront:nil];
+  [self updateSize];
+  CADisplayLink* displayLink = [view displayLinkWithTarget:self selector:@selector(redraw)];
+  [displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSRunLoopCommonModes];
 }
 
 - (void)updateSize {
-  CGSize size = [self convertSizeToBacking:self.bounds.size];
+  CGSize size = [view convertSizeToBacking:view.bounds.size];
   auto width = static_cast<int>(round(size.width));
   auto height = static_cast<int>(round(size.height));
   if (appHost == nullptr) {
@@ -72,38 +84,11 @@
     typeface = tgfx::Typeface::MakeFromName("Apple Color Emoji", "");
     appHost->addTypeface("emoji", typeface);
   }
-  auto contentScale = static_cast<float>(size.height / self.bounds.size.height);
+  auto contentScale = static_cast<float>(size.height / view.bounds.size.height);
   auto sizeChanged = appHost->updateScreen(width, height, contentScale);
-  if (sizeChanged && window != nullptr) {
-    window->invalidSize();
+  if (sizeChanged && cglWindow != nullptr) {
+    cglWindow->invalidSize();
   }
-}
-
-- (void)viewDidMoveToWindow {
-  [super viewDidMoveToWindow];
-  [self updateSize];
-  [self setupDisplayLink];
-}
-
-- (void)setupDisplayLink {
-  if (displayLink != nullptr) {
-    return;
-  }
-  CVDisplayLinkCreateWithActiveCGDisplays(&displayLink);
-  CVDisplayLinkSetOutputCallback(displayLink, &DisplayLinkCallback, self);
-  CVDisplayLinkStart(displayLink);
-}
-
-static CVReturn DisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const CVTimeStamp*,
-                                    CVOptionFlags, CVOptionFlags*, void* displayLinkContext) {
-  @autoreleasepool {
-    TGFXView* self = (TGFXView*)displayLinkContext;
-    // draw Frame in mainThread
-    dispatch_async(dispatch_get_main_queue(), ^{
-      [self redraw];
-    });
-  }
-  return kCVReturnSuccess;
 }
 
 - (void)redraw {
@@ -111,24 +96,21 @@ static CVReturn DisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
 }
 
 - (void)draw:(int)index {
-  if (self.window == nil) {
-    return;
-  }
   if (appHost->width() <= 0 || appHost->height() <= 0) {
     return;
   }
-  if (window == nullptr) {
-    window = tgfx::CGLWindow::MakeFrom(self);
+  if (cglWindow == nullptr) {
+    cglWindow = tgfx::CGLWindow::MakeFrom(view);
   }
-  if (window == nullptr) {
+  if (cglWindow == nullptr) {
     return;
   }
-  auto device = window->getDevice();
+  auto device = cglWindow->getDevice();
   auto context = device->lockContext();
   if (context == nullptr) {
     return;
   }
-  auto surface = window->getSurface(context);
+  auto surface = cglWindow->getSurface(context);
   if (surface == nullptr) {
     device->unlock();
     return;
@@ -140,9 +122,7 @@ static CVReturn DisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
   auto bench = benchmark::Bench::GetByIndex(index);
   bench->draw(canvas, appHost.get());
   context->flushAndSubmit();
-  window->present(context);
+  cglWindow->present(context);
   device->unlock();
 }
-
 @end
-#pragma clang diagnostic pop

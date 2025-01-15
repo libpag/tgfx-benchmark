@@ -23,13 +23,12 @@
 #include "tgfx/layers/ShapeLayer.h"
 
 namespace benchmark {
-static constexpr size_t kMaxRectCount = 80000;
-constexpr float kFpsBackgroundHeight = 48.f;
-constexpr float kFontSize = 40.f;
-constexpr float kFpsTextMarginLeft = 262.f;
-constexpr float kFpsTextMarginTop = 38.f;
-constexpr uint64_t kFpsFlushInterval = 333;
-constexpr int kRectIncreaseStep = 400;
+static constexpr size_t MAX_RECT_COUNT = 200000;
+static constexpr float FPS_BACKGROUND_HEIGHT = 50.f;
+static constexpr float FONT_SIZE = 40.f;
+static constexpr float FPS_TEXT_WIDTH = 500.f;
+static constexpr uint64_t FPS_FLUSH_INTERVAL = 333;
+static constexpr int RECT_INCREASE_STEP = 800;
 
 uint64_t GetCurrentTimeStampInMs() {
   auto now = std::chrono::steady_clock::now();
@@ -38,12 +37,12 @@ uint64_t GetCurrentTimeStampInMs() {
 }
 
 void SolidRectBench::InitRects() {
-  rects.resize(kMaxRectCount);
+  rects.resize(MAX_RECT_COUNT);
   std::mt19937 rectRng(18);
   std::mt19937 speedRng(36);
   std::uniform_real_distribution<float> rectDistribution(0, 1);
   std::uniform_real_distribution<float> speedDistribution(1, 2);
-  for (size_t i = 0; i < kMaxRectCount; i++) {
+  for (size_t i = 0; i < MAX_RECT_COUNT; i++) {
     const auto x = rectDistribution(rectRng) * width;
     const auto y = rectDistribution(rectRng) * height;
     const auto size = 10.f + rectDistribution(rectRng) * 40.f;
@@ -63,16 +62,18 @@ void SolidRectBench::InitPaints() {
 }
 
 void SolidRectBench::Init(const AppHost* host) {
-  if (initialized) {
+  auto hostWidth = static_cast<float>(host->width());
+  auto hostHeight = static_cast<float>(host->height());
+  if (width == hostWidth && height == hostHeight) {
     return;
   }
-  width = static_cast<float>(host->width());
-  height = static_cast<float>(host->height());
-  fpsBackgroundRect = tgfx::Rect::MakeWH(width * 1.f, kFpsBackgroundHeight * host->density());
-  fpsFont = tgfx::Font(host->getTypeface("default"), kFontSize * host->density());
+  width = hostWidth;
+  height = hostHeight;
+  fpsBackgroundRect =
+      tgfx::Rect::MakeWH(static_cast<float>(width), FPS_BACKGROUND_HEIGHT * host->density());
+  fpsFont = tgfx::Font(host->getTypeface("default"), FONT_SIZE * host->density());
   InitRects();
   InitPaints();
-  initialized = true;
 }
 
 void SolidRectBench::AnimateRects() {
@@ -108,14 +109,16 @@ void SolidRectBench::DrawFPS(tgfx::Canvas* canvas, const AppHost* host) {
     }
 
     auto timeInterval = currentMs - lastMs;
-    if (!timeStamps.empty() && timeInterval > kFpsFlushInterval) {
+    if (!timeStamps.empty() && timeInterval > FPS_FLUSH_INTERVAL) {
       auto fps = 1000.f * timeStamps.size() / (currentMs - timeStamps.front());
       std::stringstream ss;
       ss << "Rectangles: " << curRectCount << ", FPS:" << std::fixed << std::setprecision(1) << fps;
       fpsInfo = ss.str();
-      auto accCount =
-          static_cast<size_t>(1.f * timeInterval / kFpsFlushInterval * kRectIncreaseStep);
-      curRectCount = std::min(curRectCount + accCount, kMaxRectCount);
+      if (fps >= 60.f) {
+        auto accCount =
+            static_cast<size_t>(1.f * timeInterval / FPS_FLUSH_INTERVAL * RECT_INCREASE_STEP);
+        curRectCount = std::min(curRectCount + accCount, MAX_RECT_COUNT);
+      }
       lastMs = currentMs;
       frameCount = 0;
       auto fpsColor = tgfx::Color::Green();
@@ -132,8 +135,9 @@ void SolidRectBench::DrawFPS(tgfx::Canvas* canvas, const AppHost* host) {
   timeStamps.push_back(currentMs);
 
   canvas->drawRect(fpsBackgroundRect, fpsBackgroundpaint);
-  canvas->drawSimpleText(fpsInfo, kFpsTextMarginLeft * host->density(),
-                         kFpsTextMarginTop * host->density(), fpsFont, fpsTextPaint);
+  auto left = (width - FPS_TEXT_WIDTH * host->density()) * 0.5f;
+  auto top = FONT_SIZE * host->density();
+  canvas->drawSimpleText(fpsInfo, left, top, fpsFont, fpsTextPaint);
 }
 
 void SolidRectBench::onDraw(tgfx::Canvas* canvas, const AppHost* host) {

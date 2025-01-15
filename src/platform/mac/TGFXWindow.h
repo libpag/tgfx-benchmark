@@ -16,8 +16,12 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
+#pragma once
+
 #import <Cocoa/Cocoa.h>
 
-@interface WindowDelegate : NSObject <NSWindowDelegate>
+@interface TGFXWindow : NSObject <NSWindowDelegate>
+
+- (void)open;
 
 @end

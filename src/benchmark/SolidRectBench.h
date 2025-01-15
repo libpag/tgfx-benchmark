@@ -49,13 +49,12 @@ class SolidRectBench : public Bench {
   void AnimateRects();
 
  private:
-  float width = 1024.f;  //appHost width
-  float height = 720.f;  //appHost height
+  float width = 0;   //appHost width
+  float height = 0;  //appHost height
   size_t frameCount = 0;
   size_t curRectCount = 0;
   std::string fpsInfo;
   std::vector<RectData> rects;
-  bool initialized = false;
   tgfx::Paint paints[3];           // red, green, blue solid paints
   tgfx::Paint fpsBackgroundpaint;  // red solid paint
   tgfx::Paint fpsTextPaint;        // white solid paint

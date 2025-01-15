@@ -17,40 +17,20 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 #import "AppDelegate.h"
-#import "TGFXView.h"
-#import "WindowDelegate.h"
+#import "TGFXWindow.h"
 
-@interface AppDelegate ()
-@property(strong, nonatomic) NSWindow* window;
-@property(strong, nonatomic) TGFXView* tgfxView;
-@property(strong, nonatomic) WindowDelegate* windowDelegate;
-@end
-
-@implementation AppDelegate
+@implementation AppDelegate {
+  TGFXWindow* window;
+}
 
 - (void)dealloc {
-  [_window release];
-  [_windowDelegate release];
-  [_tgfxView release];
+  [window release];
   [super dealloc];
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification*)aNotification {
-  NSRect frame = NSMakeRect(0, 0, 1024, 720);
-  NSWindowStyleMask styleMask = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable |
-                                NSWindowStyleMaskResizable | NSWindowStyleMaskMiniaturizable;
-  self.window = [[NSWindow alloc] initWithContentRect:frame
-                                            styleMask:styleMask
-                                              backing:NSBackingStoreBuffered
-                                                defer:NO];
-  [self.window setTitle:@"TGFX Benchmark"];
-  self.windowDelegate = [[WindowDelegate alloc] init];
-  [self.window setDelegate:self.windowDelegate];
-  self.tgfxView = [[TGFXView alloc] initWithFrame:frame];
-  [self.tgfxView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
-  [self.window setContentView:self.tgfxView];
-  [self.window center];
-  [self.window makeKeyAndOrderFront:nil];
+  window = [[TGFXWindow alloc] init];
+  [window open];
 }
 
 - (void)applicationWillTerminate:(NSNotification*)aNotification {
