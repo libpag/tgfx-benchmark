@@ -26,6 +26,13 @@
 #include <shellscalingapi.h>
 #endif
 
+extern "C" {
+//Enable dedicated graphics for NVIDIA:
+__declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
+//Enable dedicated graphics for AMD:
+__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+}
+
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow) {
