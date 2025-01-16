@@ -31,7 +31,9 @@ set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 add_subdirectory(${TGFX_DIR} tgfx EXCLUDE_FROM_ALL)
 
 list(APPEND BENCH_INCLUDES src)
-file(GLOB_RECURSE SRC_FILES src/*.cpp)
+file(GLOB_RECURSE SRC_FILES
+        src/base/*.cpp
+        src/benchmark/*.cpp)
 
 if (IOS)
     file(GLOB_RECURSE PLATFORM_FILES src/platform/ios/*.mm)
@@ -56,7 +58,7 @@ elseif (WIN32)
         list(APPEND BENCHMARK_LIBS ${USER32})
     endif ()
 
-    list(APPEND BENCH_INCLUDES  ${TGFX_DIR}/vendor/angle/include)
+    list(APPEND BENCH_INCLUDES ${TGFX_DIR}/vendor/angle/include)
     file(REMOVE ${CMAKE_CURRENT_BINARY_DIR}/libEGL.dll)
     file(COPY ${TGFX_DIR}/vendor/angle/win/${ARCH}/libEGL.dll DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
     file(REMOVE ${CMAKE_CURRENT_BINARY_DIR}/libGLESv2.dll)
@@ -64,11 +66,11 @@ elseif (WIN32)
 endif ()
 
 list(APPEND BENCHMARK_LIBS ${TGFX_SHARED_LIBS})
-if(WIN32)
+if (WIN32)
     add_executable(Benchmark WIN32 ${SRC_FILES})
 else ()
     add_executable(Benchmark ${SRC_FILES})
-endif()
+endif ()
 add_dependencies(Benchmark tgfx)
 target_include_directories(Benchmark PRIVATE ${BENCH_INCLUDES})
 target_compile_options(Benchmark PUBLIC ${BENCH_COMPILE_OPTIONS})
