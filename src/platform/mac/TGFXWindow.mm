@@ -27,6 +27,9 @@
 #include "tgfx/gpu/opengl/GLDevice.h"
 #include "tgfx/gpu/opengl/cgl/CGLWindow.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+
 @implementation TGFXWindow {
   NSWindow* window;
   NSView* view;
@@ -152,3 +155,5 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
   device->unlock();
 }
 @end
+
+#pragma clang diagnostic pop
