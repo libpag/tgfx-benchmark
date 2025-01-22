@@ -26,7 +26,7 @@ namespace benchmark {
 static constexpr size_t MAX_RECT_COUNT = 200000;
 static constexpr float FPS_BACKGROUND_HEIGHT = 50.f;
 static constexpr float FONT_SIZE = 40.f;
-static constexpr float FPS_TEXT_WIDTH = 500.f;
+static constexpr float FPS_TEXT_WIDTH = 530.f;
 static constexpr uint64_t FPS_FLUSH_INTERVAL = 333;
 static constexpr int RECT_INCREASE_STEP = 800;
 

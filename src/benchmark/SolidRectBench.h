@@ -52,7 +52,7 @@ class SolidRectBench : public Bench {
   float width = 0;   //appHost width
   float height = 0;  //appHost height
   size_t frameCount = 0;
-  size_t curRectCount = 0;
+  size_t curRectCount = 800;
   std::string fpsInfo;
   std::vector<RectData> rects;
   tgfx::Paint paints[3];           // red, green, blue solid paints
