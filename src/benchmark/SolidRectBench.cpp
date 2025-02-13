@@ -23,7 +23,7 @@
 #include "tgfx/layers/ShapeLayer.h"
 
 namespace benchmark {
-static constexpr size_t MAX_RECT_COUNT = 200000;
+static constexpr size_t MAX_RECT_COUNT = 300000;
 static constexpr float FPS_BACKGROUND_HEIGHT = 50.f;
 static constexpr float FONT_SIZE = 40.f;
 static constexpr float FPS_TEXT_WIDTH = 530.f;
