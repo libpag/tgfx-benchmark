@@ -28,7 +28,7 @@ option, for example:
 ./gen_mac -a x64
 ```
 
-Finally, open Xcode and launch the `mac/Benchmark/Benchmark.xcworkspace`. You are all set!
+Finally, open Xcode and launch the `mac/TGFX-Benchmark.xcodeproj`. You are all set!
 
 ### Windows
 
