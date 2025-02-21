@@ -21,6 +21,7 @@
 #if WINVER >= 0x0603  // Windows 8.1
 #include <shellscalingapi.h>
 #endif
+#include "tgfx/core/Clock.h"
 
 namespace benchmark {
 static constexpr LPCWSTR ClassName = L"TGFXWindow";
@@ -200,6 +201,7 @@ void TGFXWindow::createAppHost() {
 }
 
 void TGFXWindow::draw() {
+  auto currentTime = tgfx::Clock::Now();
   if (!tgfxWindow) {
     tgfxWindow = tgfx::EGLWindow::MakeFrom(windowHandle);
   }
@@ -239,5 +241,7 @@ void TGFXWindow::draw() {
   context->flushAndSubmit();
   tgfxWindow->present(context);
   device->unlock();
+  auto drawTime = tgfx::Clock::Now() - currentTime;
+  appHost->recordFrame(drawTime);
 }
 }  // namespace benchmark

@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <deque>
 #include <unordered_map>
 #include "tgfx/core/Data.h"
 #include "tgfx/core/Image.h"
@@ -85,10 +86,27 @@ class AppHost {
    */
   void addTypeface(const std::string& name, std::shared_ptr<tgfx::Typeface> typeface);
 
+  /**
+   * Returns the current frames per second. Returns 0 if the FPS is not available yet.
+   */
+  float getFPS() const;
+
+  /**
+   * Returns the average draw time in microseconds.
+   */
+  int64_t getAverageDrawTime() const;
+
+  /**
+   * Marks the end of a frame and records the frame time.
+   */
+  void recordFrame(int64_t drawTime);
+
  private:
   int _width = 1024;
   int _height = 720;
   float _density = 1.0f;
+  std::deque<int64_t> fpsTimeStamps = {};
+  std::deque<int64_t> drawTimes = {};
   std::unordered_map<std::string, std::shared_ptr<tgfx::Image>> images = {};
   std::unordered_map<std::string, std::shared_ptr<tgfx::Typeface>> typefaces = {};
 };

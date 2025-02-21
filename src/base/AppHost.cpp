@@ -17,6 +17,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "AppHost.h"
+#include "tgfx/core/Clock.h"
 #include "tgfx/platform/Print.h"
 
 namespace benchmark {
@@ -89,4 +90,36 @@ void AppHost::addTypeface(const std::string& name, std::shared_ptr<tgfx::Typefac
   }
   typefaces[name] = std::move(typeface);
 }
+
+float AppHost::getFPS() const {
+  if (fpsTimeStamps.size() < 30) {
+    return 0.0f;
+  }
+  auto duration = fpsTimeStamps.back() - fpsTimeStamps.front();
+  return static_cast<float>((fpsTimeStamps.size() - 1) * 1000000) / static_cast<float>(duration);
+}
+
+int64_t AppHost::getAverageDrawTime() const {
+  if (drawTimes.empty()) {
+    return 0;
+  }
+  int64_t total = 0;
+  for (auto& drawTime : drawTimes) {
+    total += drawTime;
+  }
+  return total / static_cast<int64_t>(drawTimes.size());
+}
+
+void AppHost::recordFrame(int64_t drawTime) {
+  auto currentTime = tgfx::Clock::Now();
+  fpsTimeStamps.push_back(currentTime);
+  while (fpsTimeStamps.size() > 120) {
+    fpsTimeStamps.pop_front();
+  }
+  drawTimes.push_back(drawTime);
+  while (drawTimes.size() > 120) {
+    drawTimes.pop_front();
+  }
+}
+
 }  // namespace benchmark

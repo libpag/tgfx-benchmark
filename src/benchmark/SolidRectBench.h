@@ -17,7 +17,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 #pragma once
-#include <deque>
+
 #include "../base/Bench.h"
 
 namespace benchmark {
@@ -42,26 +42,24 @@ class SolidRectBench : public Bench {
 
   void InitPaints();
 
+  void AnimateRects();
+
+  void FlushStatus(const AppHost* host);
+
   void DrawRects(tgfx::Canvas* canvas) const;
 
-  void DrawFPS(tgfx::Canvas* canvas, const AppHost* host);
-
-  void AnimateRects();
+  void DrawStatus(tgfx::Canvas* canvas, const AppHost* host) const;
 
  private:
   float width = 0;   //appHost width
   float height = 0;  //appHost height
-  size_t frameCount = 0;
-  size_t curRectCount = 800;
-  std::string fpsInfo;
+  size_t drawCount = 800;
   std::vector<RectData> rects;
-  tgfx::Paint paints[3];           // red, green, blue solid paints
-  tgfx::Paint fpsBackgroundpaint;  // red solid paint
-  tgfx::Paint fpsTextPaint;        // white solid paint
-  uint64_t lastMs = 0;
-  std::deque<uint64_t> timeStamps;
-  tgfx::Rect fpsBackgroundRect;
-  tgfx::Font fpsFont;
+  tgfx::Paint paints[3];  // red, green, blue solid paints
+  int64_t lastFlushTime = -1;
+  tgfx::Font fpsFont = {};
+  tgfx::Color fpsColor = tgfx::Color::Green();
+  std::vector<std::string> status = {};
 };
 
 }  // namespace benchmark

@@ -23,6 +23,7 @@
 #include "base/AppHost.h"
 #include "base/Bench.h"
 #include "tgfx/core/Canvas.h"
+#include "tgfx/core/Clock.h"
 #include "tgfx/core/Surface.h"
 #include "tgfx/gpu/opengl/GLDevice.h"
 #include "tgfx/gpu/opengl/cgl/CGLWindow.h"
@@ -125,6 +126,7 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
 }
 
 - (void)redraw {
+  auto currentTime = tgfx::Clock::Now();
   if (appHost->width() <= 0 || appHost->height() <= 0) {
     return;
   }
@@ -153,6 +155,8 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
   context->flushAndSubmit();
   cglWindow->present(context);
   device->unlock();
+  auto drawTime = tgfx::Clock::Now() - currentTime;
+  appHost->recordFrame(drawTime);
 }
 @end
 
