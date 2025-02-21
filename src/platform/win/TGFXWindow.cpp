@@ -239,9 +239,12 @@ void TGFXWindow::draw() {
   bench->draw(canvas, appHost.get());
   canvas->restore();
   context->flushAndSubmit();
+  auto presentStartTime = tgfx::Clock::Now();
+  // Exclude the present time from the draw time to avoid blocking caused by vsync.
   tgfxWindow->present(context);
+  auto presentTime = tgfx::Clock::Now() - presentStartTime;
   device->unlock();
-  auto drawTime = tgfx::Clock::Now() - currentTime;
+  auto drawTime = tgfx::Clock::Now() - currentTime - presentTime;
   appHost->recordFrame(drawTime);
 }
 }  // namespace benchmark
