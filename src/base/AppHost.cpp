@@ -113,11 +113,11 @@ int64_t AppHost::getAverageDrawTime() const {
 void AppHost::recordFrame(int64_t drawTime) {
   auto currentTime = tgfx::Clock::Now();
   fpsTimeStamps.push_back(currentTime);
-  while (fpsTimeStamps.size() > 120) {
+  while (fpsTimeStamps.size() > 60) {
     fpsTimeStamps.pop_front();
   }
   drawTimes.push_back(drawTime);
-  while (drawTimes.size() > 120) {
+  while (drawTimes.size() > 60) {
     drawTimes.pop_front();
   }
 }

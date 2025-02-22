@@ -42,7 +42,7 @@ class SolidRectBench : public Bench {
 
   void InitPaints();
 
-  void AnimateRects();
+  void AnimateRects(const AppHost* host);
 
   void FlushStatus(const AppHost* host);
 
@@ -53,7 +53,9 @@ class SolidRectBench : public Bench {
  private:
   float width = 0;   //appHost width
   float height = 0;  //appHost height
-  size_t drawCount = 800;
+  float fps = 60.f;
+  size_t drawCount = 100;
+  bool maxDrawCountReached = false;
   std::vector<RectData> rects;
   tgfx::Paint paints[3];  // red, green, blue solid paints
   int64_t lastFlushTime = -1;

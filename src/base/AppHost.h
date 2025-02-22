@@ -92,6 +92,13 @@ class AppHost {
   float getFPS() const;
 
   /**
+   * Returns the last draw time in microseconds.
+   */
+  int64_t getLastDrawTime() const {
+    return drawTimes.empty() ? 0 : drawTimes.back();
+  }
+
+  /**
    * Returns the average draw time in microseconds.
    */
   int64_t getAverageDrawTime() const;

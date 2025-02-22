@@ -24,7 +24,7 @@
 
 namespace benchmark {
 static constexpr size_t MAX_RECT_COUNT = 1000000;
-static constexpr size_t INCREASE_STEP = 5000;
+static constexpr size_t INCREASE_STEP = 400;
 static constexpr int64_t FLUSH_INTERVAL = 300000;
 static constexpr int64_t DRAW_INTERVAL = 16000;
 static constexpr float FPS_BACKGROUND_HEIGHT = 50.f;
@@ -75,7 +75,15 @@ void SolidRectBench::Init(const AppHost* host) {
   InitPaints();
 }
 
-void SolidRectBench::AnimateRects() {
+void SolidRectBench::AnimateRects(const AppHost* host) {
+  if (!maxDrawCountReached) {
+    auto idleTime = DRAW_INTERVAL - host->getLastDrawTime();
+    if (idleTime > 0) {
+      auto step = static_cast<int64_t>(INCREASE_STEP) * idleTime / DRAW_INTERVAL;
+      drawCount = std::min(drawCount + static_cast<size_t>(step), MAX_RECT_COUNT);
+    }
+  }
+
   for (size_t i = 0; i < drawCount; i++) {
     auto& rect = rects[i].rect;
     rect.offset(-rects[i].speed, 0);
@@ -98,18 +106,14 @@ void SolidRectBench::FlushStatus(const AppHost* host) {
   }
   auto flushInterval = currentTime - lastFlushTime;
   if (flushInterval > FLUSH_INTERVAL) {
-    auto fps = host->getFPS();
-    if (fps <= 0.0f) {
+    auto currentFPS = host->getFPS();
+    if (currentFPS <= 0.0f) {
       return;
     }
+    fps = currentFPS;
     auto drawTime = host->getAverageDrawTime();
-    auto idleTime = DRAW_INTERVAL - drawTime;
-    if (idleTime > 0) {
-      auto estimatedCount = static_cast<int64_t>(drawCount) * DRAW_INTERVAL / drawTime;
-      drawCount = std::min(drawCount + INCREASE_STEP, static_cast<size_t>(estimatedCount));
-      if (drawCount > MAX_RECT_COUNT) {
-        drawCount = MAX_RECT_COUNT;
-      }
+    if (!maxDrawCountReached && drawTime >= DRAW_INTERVAL) {
+      maxDrawCountReached = true;
     }
     status.clear();
     std::ostringstream oss;
@@ -120,8 +124,12 @@ void SolidRectBench::FlushStatus(const AppHost* host) {
     status.push_back("Time: " + oss.str());
     oss.str("");
     oss << drawCount;
-    status.push_back("Rects: " + oss.str());
-    if (fps > 58.f) {
+    auto countInfo = oss.str();
+    if (maxDrawCountReached) {
+      countInfo = "[" + countInfo + "]";
+    }
+    status.push_back("Rects: " + countInfo);
+    if (fps > 59.f) {
       fpsColor = tgfx::Color::Green();
     } else if (fps > 30.f) {
       fpsColor = tgfx::Color{1.f, 1.f, 0.f, 1.f};
@@ -135,7 +143,7 @@ void SolidRectBench::FlushStatus(const AppHost* host) {
 void SolidRectBench::onDraw(tgfx::Canvas* canvas, const AppHost* host) {
   Init(host);
   FlushStatus(host);
-  AnimateRects();
+  AnimateRects(host);
   DrawRects(canvas);
   DrawStatus(canvas, host);
 }
