@@ -31,36 +31,6 @@ static constexpr float FPS_BACKGROUND_HEIGHT = 50.f;
 static constexpr float STATUS_WIDTH = 250.f;
 static constexpr float FONT_SIZE = 40.f;
 
-int64_t GetCurrentTimeStampInMs() {
-  auto now = std::chrono::steady_clock::now();
-  auto time = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch());
-  return static_cast<int64_t>(time.count());
-}
-
-void SolidRectBench::InitRects() {
-  rects.resize(MAX_RECT_COUNT);
-  std::mt19937 rectRng(18);
-  std::mt19937 speedRng(36);
-  std::uniform_real_distribution<float> rectDistribution(0, 1);
-  std::uniform_real_distribution<float> speedDistribution(1, 2);
-  for (size_t i = 0; i < MAX_RECT_COUNT; i++) {
-    const auto x = rectDistribution(rectRng) * width;
-    const auto y = rectDistribution(rectRng) * height;
-    const auto size = 10.f + rectDistribution(rectRng) * 40.f;
-    rects[i].rect.setXYWH(x, y, size, size);
-    rects[i].speed = speedDistribution(speedRng);
-  }
-}
-
-void SolidRectBench::InitPaints() {
-  for (auto i = 0; i < 3; i++) {
-    tgfx::Color color = tgfx::Color::Black();
-    color[i] = 1.f;
-    paints[i].setColor(color);
-    paints[i].setAntiAlias(false);
-  }
-}
-
 void SolidRectBench::Init(const AppHost* host) {
   auto hostWidth = static_cast<float>(host->width());
   auto hostHeight = static_cast<float>(host->height());
@@ -71,11 +41,28 @@ void SolidRectBench::Init(const AppHost* host) {
   width = hostWidth;
   height = hostHeight;
   fpsFont = tgfx::Font(host->getTypeface("default"), FONT_SIZE * host->density());
-  InitRects();
-  InitPaints();
+  for (auto i = 0; i < 3; i++) {
+    tgfx::Color color = tgfx::Color::Black();
+    color[i] = 1.f;
+    paints[i].setColor(color);
+    paints[i].setAntiAlias(false);
+  }
+
+  rects.resize(MAX_RECT_COUNT);
+  std::mt19937 rectRng(18);
+  std::mt19937 speedRng(36);
+  std::uniform_real_distribution<float> rectDistribution(0, 1);
+  std::uniform_real_distribution<float> speedDistribution(-1, 1);
+  for (size_t i = 0; i < MAX_RECT_COUNT; i++) {
+    const auto size = (5.f + rectDistribution(rectRng) * 20.f) * host->density();
+    auto& item = rects[i];
+    item.rect.setXYWH(-size, -size, size, size);
+    item.speedX = speedDistribution(speedRng) * 5.0f;
+    item.speedY = speedDistribution(speedRng) * 5.0f;
+  }
 }
 
-void SolidRectBench::AnimateRects(const AppHost* host) {
+void SolidRectBench::AnimateRects(const AppHost* host, const tgfx::Point& startPoint) {
   if (!maxDrawCountReached) {
     auto idleTime = DRAW_INTERVAL - host->getLastDrawTime();
     if (idleTime > 0) {
@@ -83,12 +70,15 @@ void SolidRectBench::AnimateRects(const AppHost* host) {
       drawCount = std::min(drawCount + static_cast<size_t>(step), MAX_RECT_COUNT);
     }
   }
-
   for (size_t i = 0; i < drawCount; i++) {
-    auto& rect = rects[i].rect;
-    rect.offset(-rects[i].speed, 0);
-    if (rect.right < 0) {
-      rect.offset(width - rect.left, 0);
+    auto& item = rects[i];
+    auto& rect = item.rect;
+    if (rect.right <= 0 || rect.left >= width || rect.bottom <= 0 || rect.top >= height) {
+      auto offsetX = rect.width() * 0.5f;
+      auto offsetY = rect.height() * 0.5f;
+      rect.offsetTo(startPoint.x - offsetX, startPoint.y - offsetY);
+    } else {
+      rect.offset(item.speedX, item.speedY);
     }
   }
 }
@@ -143,7 +133,7 @@ void SolidRectBench::FlushStatus(const AppHost* host) {
 void SolidRectBench::onDraw(tgfx::Canvas* canvas, const AppHost* host) {
   Init(host);
   FlushStatus(host);
-  AnimateRects(host);
+  AnimateRects(host, {width * 0.5f, height * 0.5f});
   DrawRects(canvas);
   DrawStatus(canvas, host);
 }

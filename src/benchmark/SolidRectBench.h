@@ -24,7 +24,8 @@ namespace benchmark {
 
 struct RectData {
   tgfx::Rect rect{0, 0, 1, 1};
-  float speed;
+  float speedX;
+  float speedY;
 };
 
 class SolidRectBench : public Bench {
@@ -42,7 +43,7 @@ class SolidRectBench : public Bench {
 
   void InitPaints();
 
-  void AnimateRects(const AppHost* host);
+  void AnimateRects(const AppHost* host, const tgfx::Point& startPoint);
 
   void FlushStatus(const AppHost* host);
 
@@ -54,9 +55,9 @@ class SolidRectBench : public Bench {
   float width = 0;   //appHost width
   float height = 0;  //appHost height
   float fps = 60.f;
-  size_t drawCount = 100;
+  size_t drawCount = 1;
   bool maxDrawCountReached = false;
-  std::vector<RectData> rects;
+  std::vector<RectData> rects = {};
   tgfx::Paint paints[3];  // red, green, blue solid paints
   int64_t lastFlushTime = -1;
   tgfx::Font fpsFont = {};
