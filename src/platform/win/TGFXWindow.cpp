@@ -95,8 +95,33 @@ LRESULT TGFXWindow::handleMessage(HWND hwnd, UINT message, WPARAM wparam, LPARAM
     }
     case WM_LBUTTONDOWN:
       lastDrawIndex++;
+      if (appHost) {
+        appHost->resetFrames();
+      }
       ::InvalidateRect(windowHandle, nullptr, TRUE);
       break;
+    case WM_MOUSEMOVE: {
+      POINTS pt = MAKEPOINTS(lparam);
+      float mouseX = static_cast<float>(pt.x);
+      float mouseY = static_cast<float>(pt.y);
+      if (appHost) {
+        appHost->mouseMoved(mouseX, mouseY);
+      }
+
+      // Request mouse leave event notification
+      TRACKMOUSEEVENT tme;
+      tme.cbSize = sizeof(tme);
+      tme.dwFlags = TME_LEAVE;
+      tme.hwndTrack = hwnd;
+      TrackMouseEvent(&tme);
+      break;
+    }
+    case WM_MOUSELEAVE: {
+      if (appHost) {
+        appHost->mouseMoved(-1, -1);
+      }
+      break;
+    }
     default:
       result = DefWindowProc(windowHandle, message, wparam, lparam);
       break;
@@ -231,7 +256,7 @@ void TGFXWindow::draw() {
     return;
   }
   auto canvas = surface->getCanvas();
-  canvas->clear();
+  canvas->clear({0.87f, 0.87f, 0.87f, 1.0f});
   canvas->save();
   auto numBenches = Bench::Count();
   auto index = (lastDrawIndex % numBenches);
