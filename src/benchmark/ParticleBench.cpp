@@ -71,10 +71,12 @@ void ParticleBench::Init(const AppHost* host) {
 
 void ParticleBench::AnimateRects(const AppHost* host) {
   if (!maxDrawCountReached) {
-    auto drawInterval = static_cast<int64_t>(1000000 / targetFPS);
-    auto idleTime = drawInterval - host->getLastDrawTime();
+    auto halfDrawInterval = static_cast<int64_t>(500000 / targetFPS);
+    auto drawTime = host->getLastDrawTime();
+    auto idleTime = halfDrawInterval * 2 - drawTime;
     if (idleTime > 0) {
-      auto step = static_cast<int64_t>(INCREASE_STEP) * idleTime / drawInterval;
+      auto step = (idleTime > halfDrawInterval ? drawTime : idleTime) *
+                  static_cast<int64_t>(INCREASE_STEP) / halfDrawInterval;
       drawCount = std::min(drawCount + static_cast<size_t>(step), MAX_RECT_COUNT);
     }
   }
@@ -107,7 +109,9 @@ void ParticleBench::DrawStatus(tgfx::Canvas* canvas, const AppHost* host) {
     auto fps = host->getFPS();
     if (fps > 0.0f) {
       currentFPS = fps;
-      if (!maxDrawCountReached && currentFPS < targetFPS - 0.5f) {
+      auto drawTime = host->getAverageDrawTime();
+      if (!maxDrawCountReached && currentFPS < targetFPS - 0.2f &&
+          drawTime >= static_cast<int64_t>(1000000 / targetFPS)) {
         maxDrawCountReached = true;
       }
       status.clear();
@@ -115,7 +119,6 @@ void ParticleBench::DrawStatus(tgfx::Canvas* canvas, const AppHost* host) {
       oss << std::fixed << std::setprecision(1) << currentFPS;
       status.push_back("FPS: " + oss.str());
       oss.str("");
-      auto drawTime = host->getAverageDrawTime();
       oss << std::fixed << std::setprecision(1) << static_cast<float>(drawTime) / 1000.f;
       status.push_back("Time: " + oss.str());
       oss.str("");
