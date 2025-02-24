@@ -48,12 +48,12 @@ class ParticleBench : public Bench {
  private:
   float width = 0;   //appHost width
   float height = 0;  //appHost height
-  tgfx::Point startPoint = {0, 0};
   float targetFPS = 60.0f;
   float currentFPS = 0.f;
   size_t drawCount = 1;
   bool maxDrawCountReached = false;
   std::vector<RectData> rects = {};
+  tgfx::Rect startRect = tgfx::Rect::MakeEmpty();
   tgfx::Paint paints[3];  // red, green, blue solid paints
   int64_t lastFlushTime = -1;
   tgfx::Font fpsFont = {};

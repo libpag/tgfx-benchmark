@@ -91,7 +91,7 @@ void AppHost::addTypeface(const std::string& name, std::shared_ptr<tgfx::Typefac
   typefaces[name] = std::move(typeface);
 }
 
-float AppHost::getFPS() const {
+float AppHost::currentFPS() const {
   if (fpsTimeStamps.size() < 60) {
     return 0.0f;
   }
@@ -99,7 +99,7 @@ float AppHost::getFPS() const {
   return static_cast<float>((fpsTimeStamps.size() - 1) * 1000000) / static_cast<float>(duration);
 }
 
-int64_t AppHost::getAverageDrawTime() const {
+int64_t AppHost::averageDrawTime() const {
   if (drawTimes.empty()) {
     return 0;
   }
@@ -120,6 +120,11 @@ void AppHost::recordFrame(int64_t drawTime) {
   while (drawTimes.size() > 60) {
     drawTimes.pop_front();
   }
+}
+
+void AppHost::resetFrames() {
+  fpsTimeStamps.clear();
+  drawTimes.clear();
 }
 
 }  // namespace benchmark

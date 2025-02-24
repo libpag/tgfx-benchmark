@@ -82,6 +82,12 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
   [view addGestureRecognizer:[[NSClickGestureRecognizer alloc]
                                  initWithTarget:self
                                          action:@selector(handleClick:)]];
+  NSTrackingArea* trackingArea = [[NSTrackingArea alloc]
+      initWithRect:[view bounds]
+           options:(NSTrackingMouseEnteredAndExited | NSTrackingMouseMoved | NSTrackingActiveAlways)
+             owner:self
+          userInfo:nil];
+  [view addTrackingArea:trackingArea];
   [window setContentView:view];
   [window center];
   [window makeKeyAndOrderFront:nil];
@@ -99,7 +105,26 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
 }
 
 - (void)handleClick:(NSClickGestureRecognizer*)gestureRecognizer {
+  if (appHost != nullptr) {
+    appHost->resetFrames();
+  }
   drawIndex++;
+}
+
+- (void)mouseMoved:(NSEvent*)event {
+  NSPoint location = [view convertPoint:[event locationInWindow] fromView:nil];
+  location = [view convertPointToBacking:location];
+  if (appHost != nullptr) {
+    auto mouseX = static_cast<float>(location.x);
+    auto mouseY = static_cast<float>(appHost->height()) - static_cast<float>(location.y);
+    appHost->mouseMoved(mouseX, mouseY);
+  }
+}
+
+- (void)mouseExited:(NSEvent*)event {
+  if (appHost != nullptr) {
+    appHost->mouseMoved(-1, -1);
+  }
 }
 
 - (void)updateSize {
@@ -117,12 +142,23 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
     appHost->addTypeface("default", typeface);
     typeface = tgfx::Typeface::MakeFromName("Apple Color Emoji", "");
     appHost->addTypeface("emoji", typeface);
+  } else {
+    appHost->resetFrames();
   }
   auto contentScale = static_cast<float>(size.height / view.bounds.size.height);
   auto sizeChanged = appHost->updateScreen(width, height, contentScale);
   if (sizeChanged && cglWindow != nullptr) {
     cglWindow->invalidSize();
   }
+  for (NSTrackingArea* trackingArea in [view trackingAreas]) {
+    [view removeTrackingArea:trackingArea];
+  }
+  NSTrackingArea* trackingArea = [[NSTrackingArea alloc]
+      initWithRect:[view bounds]
+           options:(NSTrackingMouseEnteredAndExited | NSTrackingMouseMoved | NSTrackingActiveAlways)
+             owner:self
+          userInfo:nil];
+  [view addTrackingArea:trackingArea];
 }
 
 - (void)redraw {

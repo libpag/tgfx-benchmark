@@ -40,13 +40,14 @@ void ParticleBench::onDraw(tgfx::Canvas* canvas, const AppHost* host) {
 void ParticleBench::Init(const AppHost* host) {
   auto hostWidth = static_cast<float>(host->width());
   auto hostHeight = static_cast<float>(host->height());
-  if (width == hostWidth && height == hostHeight) {
+  if (width == hostWidth && height == hostHeight && !host->isFirstFrame()) {
     return;
   }
-  status = {};
-  startPoint = {hostWidth * 0.5f, hostHeight * 0.5f};
   width = hostWidth;
   height = hostHeight;
+  status = {};
+  drawCount = 1;
+  maxDrawCountReached = false;
   fpsFont = tgfx::Font(host->getTypeface("default"), FONT_SIZE * host->density());
   for (auto i = 0; i < 3; i++) {
     tgfx::Color color = tgfx::Color::Black();
@@ -55,6 +56,7 @@ void ParticleBench::Init(const AppHost* host) {
     paints[i].setAntiAlias(false);
   }
 
+  startRect = tgfx::Rect::MakeWH(25.f * host->density(), 25.f * host->density());
   rects.resize(MAX_RECT_COUNT);
   std::mt19937 rectRng(18);
   std::mt19937 speedRng(36);
@@ -72,7 +74,7 @@ void ParticleBench::Init(const AppHost* host) {
 void ParticleBench::AnimateRects(const AppHost* host) {
   if (!maxDrawCountReached) {
     auto halfDrawInterval = static_cast<int64_t>(500000 / targetFPS);
-    auto drawTime = host->getLastDrawTime();
+    auto drawTime = host->lastDrawTime();
     auto idleTime = halfDrawInterval * 2 - drawTime;
     if (idleTime > 0) {
       auto factor = static_cast<double>(idleTime > halfDrawInterval ? drawTime : idleTime) /
@@ -84,13 +86,21 @@ void ParticleBench::AnimateRects(const AppHost* host) {
       drawCount = std::min(drawCount + static_cast<size_t>(step), MAX_RECT_COUNT);
     }
   }
+  auto startX = host->mouseX();
+  auto startY = host->mouseY();
+  auto screenRect = tgfx::Rect::MakeWH(width, height);
+  if (!screenRect.contains(startX, startY)) {
+    startX = screenRect.centerX();
+    startY = screenRect.centerY();
+  }
+  startRect.offsetTo(startX - startRect.width() * 0.5f, startY - startRect.height() * 0.5f);
   for (size_t i = 0; i < drawCount; i++) {
     auto& item = rects[i];
     auto& rect = item.rect;
     if (rect.right <= 0 || rect.left >= width || rect.bottom <= 0 || rect.top >= height) {
       auto offsetX = rect.width() * 0.5f;
       auto offsetY = rect.height() * 0.5f;
-      rect.offsetTo(startPoint.x - offsetX, startPoint.y - offsetY);
+      rect.offsetTo(startX - offsetX, startY - offsetY);
     } else {
       rect.offset(item.speedX, item.speedY);
     }
@@ -99,8 +109,10 @@ void ParticleBench::AnimateRects(const AppHost* host) {
 
 void ParticleBench::DrawRects(tgfx::Canvas* canvas) const {
   for (size_t i = 0; i < drawCount; i++) {
-    canvas->drawRect(rects[i].rect, paints[i % 3]);
+    auto& item = rects[i];
+    canvas->drawRect(item.rect, paints[i % 3]);
   }
+  canvas->drawRect(startRect, {});
 }
 
 void ParticleBench::DrawStatus(tgfx::Canvas* canvas, const AppHost* host) {
@@ -110,10 +122,10 @@ void ParticleBench::DrawStatus(tgfx::Canvas* canvas, const AppHost* host) {
   }
   auto flushInterval = currentTime - lastFlushTime;
   if (flushInterval > FLUSH_INTERVAL) {
-    auto fps = host->getFPS();
+    auto fps = host->currentFPS();
     if (fps > 0.0f) {
       currentFPS = fps;
-      auto drawTime = host->getAverageDrawTime();
+      auto drawTime = host->averageDrawTime();
       if (!maxDrawCountReached) {
         if (currentFPS < targetFPS - 0.5f &&
             drawTime > static_cast<int64_t>(1000000 / targetFPS) - 2000) {
