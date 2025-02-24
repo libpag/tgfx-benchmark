@@ -24,7 +24,7 @@
 
 namespace benchmark {
 static constexpr size_t MAX_RECT_COUNT = 1000000;
-static constexpr size_t INCREASE_STEP = 400;
+static constexpr size_t INCREASE_STEP = 600;
 static constexpr int64_t FLUSH_INTERVAL = 300000;
 static constexpr float FPS_BACKGROUND_HEIGHT = 50.f;
 static constexpr float STATUS_WIDTH = 250.f;
@@ -75,8 +75,12 @@ void ParticleBench::AnimateRects(const AppHost* host) {
     auto drawTime = host->getLastDrawTime();
     auto idleTime = halfDrawInterval * 2 - drawTime;
     if (idleTime > 0) {
-      auto step = (idleTime > halfDrawInterval ? drawTime : idleTime) *
-                  static_cast<int64_t>(INCREASE_STEP) / halfDrawInterval;
+      auto factor = static_cast<double>(idleTime > halfDrawInterval ? drawTime : idleTime) /
+                    static_cast<double>(halfDrawInterval);
+      if (idleTime > halfDrawInterval) {
+        factor *= factor;
+      }
+      auto step = static_cast<int64_t>(INCREASE_STEP * factor);
       drawCount = std::min(drawCount + static_cast<size_t>(step), MAX_RECT_COUNT);
     }
   }
