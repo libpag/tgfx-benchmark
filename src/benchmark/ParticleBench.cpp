@@ -114,9 +114,11 @@ void ParticleBench::DrawStatus(tgfx::Canvas* canvas, const AppHost* host) {
     if (fps > 0.0f) {
       currentFPS = fps;
       auto drawTime = host->getAverageDrawTime();
-      if (!maxDrawCountReached && currentFPS < targetFPS - 0.2f &&
-          drawTime >= static_cast<int64_t>(1000000 / targetFPS)) {
-        maxDrawCountReached = true;
+      if (!maxDrawCountReached) {
+        if (currentFPS < targetFPS - 0.5f &&
+            drawTime > static_cast<int64_t>(1000000 / targetFPS) - 2000) {
+          maxDrawCountReached = true;
+        }
       }
       status.clear();
       std::ostringstream oss;

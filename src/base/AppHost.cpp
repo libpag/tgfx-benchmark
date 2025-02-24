@@ -117,7 +117,7 @@ void AppHost::recordFrame(int64_t drawTime) {
     fpsTimeStamps.pop_front();
   }
   drawTimes.push_back(drawTime);
-  while (drawTimes.size() > 30) {
+  while (drawTimes.size() > 60) {
     drawTimes.pop_front();
   }
 }
