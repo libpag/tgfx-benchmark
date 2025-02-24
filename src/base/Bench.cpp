@@ -18,11 +18,11 @@
 
 #include "base/Bench.h"
 #include <unordered_map>
-#include "benchmark/SolidRectBench.h"
+#include "benchmark/ParticleBench.h"
 #include "tgfx/platform/Print.h"
 
 namespace benchmark {
-static std::vector<Bench*> drawers = {new SolidRectBench()};
+static std::vector<Bench*> drawers = {new ParticleBench()};
 
 static std::vector<std::string> GetDrawerNames() {
   std::vector<std::string> names;

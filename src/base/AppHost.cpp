@@ -92,7 +92,7 @@ void AppHost::addTypeface(const std::string& name, std::shared_ptr<tgfx::Typefac
 }
 
 float AppHost::getFPS() const {
-  if (fpsTimeStamps.size() < 30) {
+  if (fpsTimeStamps.size() < 60) {
     return 0.0f;
   }
   auto duration = fpsTimeStamps.back() - fpsTimeStamps.front();
@@ -117,7 +117,7 @@ void AppHost::recordFrame(int64_t drawTime) {
     fpsTimeStamps.pop_front();
   }
   drawTimes.push_back(drawTime);
-  while (drawTimes.size() > 60) {
+  while (drawTimes.size() > 30) {
     drawTimes.pop_front();
   }
 }

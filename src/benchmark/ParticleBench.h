@@ -28,9 +28,9 @@ struct RectData {
   float speedY;
 };
 
-class SolidRectBench : public Bench {
+class ParticleBench : public Bench {
  public:
-  SolidRectBench() : Bench("SolidRectBench") {
+  ParticleBench() : Bench("ParticleBench") {
   }
 
  protected:
@@ -39,22 +39,18 @@ class SolidRectBench : public Bench {
  private:
   void Init(const AppHost* host);
 
-  void InitRects();
-
-  void InitPaints();
-
-  void AnimateRects(const AppHost* host, const tgfx::Point& startPoint);
-
-  void FlushStatus(const AppHost* host);
+  void AnimateRects(const AppHost* host);
 
   void DrawRects(tgfx::Canvas* canvas) const;
 
-  void DrawStatus(tgfx::Canvas* canvas, const AppHost* host) const;
+  void DrawStatus(tgfx::Canvas* canvas, const AppHost* host);
 
  private:
   float width = 0;   //appHost width
   float height = 0;  //appHost height
-  float fps = 60.f;
+  tgfx::Point startPoint = {0, 0};
+  float targetFPS = 60.0f;
+  float currentFPS = 0.f;
   size_t drawCount = 1;
   bool maxDrawCountReached = false;
   std::vector<RectData> rects = {};
