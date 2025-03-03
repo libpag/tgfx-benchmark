@@ -121,6 +121,10 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
   }
 }
 
+- (void)mouseEntered:(NSEvent*)event {
+  [self mouseMoved:event];
+}
+
 - (void)mouseExited:(NSEvent*)event {
   if (appHost != nullptr) {
     appHost->mouseMoved(-1, -1);
