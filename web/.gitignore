@@ -1,0 +1,13 @@
+package-lock.json
+lib
+types
+*.js.map
+demo/*.js
+demo/wasm
+demo/wasm-mt
+demo/build-benchmark
+demo/.benchmark.wasm.md5
+demo/.benchmark.wasm-mt.md5
+src/wasm
+emsdk/
+
