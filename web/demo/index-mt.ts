@@ -30,7 +30,7 @@ if (typeof window !== 'undefined') {
 
             let tgfxView = shareData.BenchmarkModule.TGFXThreadsView.MakeFrom('#benchmark');
             shareData.tgfxBaseView = tgfxView;
-            var imagePath = "http://localhost:8061/../../resources/assets/bridge.jpg";
+            var imagePath = "../../resources/assets/bridge.jpg";
             await tgfxView.setImagePath(imagePath);
 
             var fontPath = "../../resources/font/NotoSansSC-Regular.otf";
