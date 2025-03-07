@@ -24,7 +24,7 @@ const banner = `////////////////////////////////////////////////////////////////
 `;
 
 const umdConfig = {
-    input: 'src/binding.ts',
+    input: '../third_party/tgfx/web/src/binding.ts',
     output: [
         {
             name: 'tgfx',
@@ -47,7 +47,7 @@ const umdConfig = {
 };
 
 const umdMinConfig = {
-    input: 'src/binding.ts',
+    input: '../third_party/tgfx/web/src/binding.ts',
     output: [
         {
             name: 'tgfx',
@@ -74,7 +74,7 @@ export default [
     umdConfig,
     umdMinConfig,
     {
-        input: 'src/binding.ts',
+        input: '../third_party/tgfx/web/src/binding.ts',
         output: [
             {banner, file: 'lib/tgfx.esm.js', format: 'esm', sourcemap: true},
             {banner, file: 'lib/tgfx.cjs.js', format: 'cjs', exports: 'auto', sourcemap: true},

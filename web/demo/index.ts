@@ -17,7 +17,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 import {TGFXBind} from '../lib/tgfx';
-import Benchmark from './wasm/benchmark';
+import Benchmark from './wasm-mt/benchmark';
 import {ShareData, updateSize, onresizeEvent, startDraw} from "./common";
 
 let shareData: ShareData = new ShareData();
@@ -25,15 +25,23 @@ let shareData: ShareData = new ShareData();
 if (typeof window !== 'undefined') {
     window.onload = async () => {
         try {
-            shareData.BenchmarkModule = await Benchmark({ locateFile: (file: string) => './wasm/' + file });
+            shareData.BenchmarkModule = await Benchmark({ locateFile: (file: string) => './wasm-mt/' + file });
             TGFXBind(shareData.BenchmarkModule);
-            let tgfxView = shareData.BenchmarkModule.TGFXView.MakeFrom('#benchmark');
+
+            let tgfxView = shareData.BenchmarkModule.TGFXThreadsView.MakeFrom('#benchmark');
             shareData.tgfxBaseView = tgfxView;
             var imagePath = "../../resources/assets/bridge.jpg";
             await tgfxView.setImagePath(imagePath);
+
+            var fontPath = "../../resources/font/NotoSansSC-Regular.otf";
+            const fontBuffer = await fetch(fontPath).then((response) => response.arrayBuffer());
+            const fontUIntArray = new Uint8Array(fontBuffer);
+            var emojiFontPath = "../../resources/font/NotoColorEmoji.ttf";
+            const emojiFontBuffer = await fetch(emojiFontPath).then((response) => response.arrayBuffer());
+            const emojiFontUIntArray = new Uint8Array(emojiFontBuffer);
+            tgfxView.registerFonts(fontUIntArray, emojiFontUIntArray);
             updateSize(shareData);
             startDraw(shareData);
-
         } catch (error) {
             console.error(error);
             throw new Error("Benchmark init failed. Please check the .wasm file path!.");
@@ -45,4 +53,3 @@ if (typeof window !== 'undefined') {
         window.setTimeout(updateSize(shareData), 300);
     };
 }
-

@@ -23,7 +23,7 @@ const banner = `////////////////////////////////////////////////////////////////
 `;
 
 const arch = process.env.ARCH;
-var fileName = (arch === 'wasm-mt'? 'index-mt': 'index');
+var fileName = (arch === 'wasm-mt'? 'index': 'index-st');
 
 const plugins = [
     esbuild({tsconfig: "tsconfig.json", minify: false}),
@@ -34,7 +34,7 @@ const plugins = [
 
 export default [
     {
-        input: 'src/binding.ts',
+        input: '../third_party/tgfx/web/src/binding.ts',
         output: {
             banner,
             file: `demo/${fileName}.js`,

@@ -11,9 +11,9 @@
     "moduleResolution": "Node",
     "baseUrl": ".", 
     "paths": {
-      "@tgfx/*": ["./src/*"]
+      "@tgfx/*": ["../third_party/tgfx/web/src/*"]
     },
     "resolveJsonModule": true
   },
-  "include": ["src/tgfx.ts"]
+  "include": ["../third_party/tgfx/web/src/tgfx.ts"]
 }
