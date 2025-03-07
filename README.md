@@ -56,3 +56,72 @@ cmake -G "Visual Studio 16 2019" -A Win32 -DCMAKE_CONFIGURATION_TYPES="Release" 
 
 Finally, open the `Benchmark.sln` file in the `win/Debug-x64/` or `win/Release-x86/` directory, and set
 the `Benchmark` project as the startup project. You are all set!
+
+### Web
+
+To run the web demo, you need the **Emscripten SDK**. You can download and install it from the
+[official website](https://emscripten.org/). We recommend using the latest version. If you’re on
+macOS, you can also install it using the following script:
+
+```
+brew install emscripten
+```
+
+To get started, go to the `web/` directory and run the following command to install the necessary
+node modules:
+
+```
+npm install
+```
+
+Then, in the `web/` directory, run the following command to build the demo project:
+
+```
+npm run build
+```
+
+This will generate the `benchmark.js` and `benchmark.wasm` files in the `web/demo/wasm` directory.
+Next, you can start an HTTP server by running the following command:
+
+```
+npm run server
+```
+
+This will open [http://localhost:8061/web/demo/index.html](http://localhost:8061/web/demo/index.html)
+in your default browser. You can also open it manually to view the demo.
+
+To debug the C++ code, install the browser plugin:
+[**C/C++ DevTools Support (DWARF)**](https://chromewebstore.google.com/detail/cc++-devtools-support-dwa/pdcpmagijalfljmkmjngeonclgbbannb).
+Then, open Chrome DevTools, go to Settings > Experiments, and enable the option
+**WebAssembly Debugging: Enable DWARF support**.
+
+Next, replace the previous build command with:
+
+```
+npm run build:debug
+```
+
+With these steps completed, you can debug C++ files directly in Chrome DevTools.
+
+The above commands build and run a multithreaded version. To build a single-threaded version,
+just add the suffix ":st" to each command. For example:
+
+```
+npm run build:st
+npm run build:st:debug
+npm run serser:st
+``` 
+
+To build the demo project in CLion, open the `Settings` panel and go to `Build, Execution, Deployment` > `CMake`.
+Create a new build target and set the `CMake options` to:
+
+```
+DCMAKE_TOOLCHAIN_FILE="path/to/emscripten/emscripten/version/cmake/Modules/Platform/Emscripten.cmake"
+```
+
+After creating the build target, adjust the `Configurations` to match the new build target. This will
+allow you to build the tgfx library in CLion.
+
+Additionally, when using `ESModule` for your project, you need to manually include the generated
+`.wasm` file in the final web program. Common packing tools often ignore the `.wasm` file. Also,
+make sure to upload the `.wasm` file to a server so users can access it.
