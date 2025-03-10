@@ -43,19 +43,19 @@ If you prefer using Visual Studio IDE, open the `x64 Native Tools Command Prompt
 run the following command in the root directory:
 
 ```
-cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_CONFIGURATION_TYPES="Debug" -B ./win/Debug-x64
+cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_CONFIGURATION_TYPES="Release" -B ./win/Release-x64
 ```
 
-This will generate a project for the `x64` architecture with the `Debug` configuration. To generate
-a project for the `x86` architecture with the `Release` configuration, open the
+This will generate a project for the `x64` architecture with the `Release` configuration. To generate
+a project for the `x86` architecture with the `Debug` configuration, open the
 `x86 Native Tools Command Prompt for VS 2019` and run the following command:
 
 ```
-cmake -G "Visual Studio 16 2019" -A Win32 -DCMAKE_CONFIGURATION_TYPES="Release" -B ./win/Release-x86
+cmake -G "Visual Studio 16 2019" -A Win32 -DCMAKE_CONFIGURATION_TYPES="Debug" -B ./win/Debug-x86
 ```
 
-Finally, open the `Benchmark.sln` file in the `win/Debug-x64/` or `win/Release-x86/` directory, and set
-the `Benchmark` project as the startup project. You are all set!
+Finally, open the `Benchmark.sln` file in the `win/Release-x64/` or `win/Debug-x86/` directory, and 
+set the `Benchmark` project as the startup project. You are all set!
 
 ### Web
 
