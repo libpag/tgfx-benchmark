@@ -82,12 +82,6 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
   [view addGestureRecognizer:[[NSClickGestureRecognizer alloc]
                                  initWithTarget:self
                                          action:@selector(handleClick:)]];
-  NSTrackingArea* trackingArea = [[NSTrackingArea alloc]
-      initWithRect:[view bounds]
-           options:(NSTrackingMouseEnteredAndExited | NSTrackingMouseMoved | NSTrackingActiveAlways)
-             owner:self
-          userInfo:nil];
-  [view addTrackingArea:trackingArea];
   [window setContentView:view];
   [window center];
   [window makeKeyAndOrderFront:nil];
@@ -162,6 +156,7 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
            options:(NSTrackingMouseEnteredAndExited | NSTrackingMouseMoved | NSTrackingActiveAlways)
              owner:self
           userInfo:nil];
+  [trackingArea autorelease];
   [view addTrackingArea:trackingArea];
 }
 
