@@ -11,7 +11,13 @@ endif ()
 
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../ ./third_party/tgfx)
+
+if (NOT TGFX_DIR)
+    set(TGFX_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/tgfx)
+else ()
+    message("Custom TGFX_DIR: ${TGFX_DIR}")
+endif ()
+add_subdirectory(${TGFX_DIR} ./tgfx)
 
 file(GLOB_RECURSE BENCHMARK_FILES
         ../../src/base/*.*
