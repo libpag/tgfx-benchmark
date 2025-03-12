@@ -228,7 +228,11 @@ void TGFXWindow::createAppHost() {
 void TGFXWindow::draw() {
   auto currentTime = tgfx::Clock::Now();
   if (!tgfxWindow) {
+#ifdef TGFX_USE_ANGLE
     tgfxWindow = tgfx::EGLWindow::MakeFrom(windowHandle);
+#else
+    tgfxWindow = tgfx::WGLWindow::MakeFrom(windowHandle);
+#endif
   }
   if (tgfxWindow == nullptr) {
     return;
