@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 cmake_policy(SET CMP0063 NEW)
 
-option(TGFX_USE_ANGLE "Allow build with the ANGLE library" ON)
+option(TGFX_USE_ANGLE "Allow build with the ANGLE library" OFF)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     list(APPEND BENCH_COMPILE_OPTIONS -Werror -Wall -Wextra -Weffc++ -Wconversion -pedantic -Werror=return-type -Wno-unused-command-line-argument)
