@@ -7,12 +7,138 @@
           content="width=device-width,initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no"/>
     <meta name="full-screen" content="true"/>
     <title>TGFX Benchmark</title>
-    <link rel="stylesheet" href="./index.css"/>
+    <link rel="stylesheet" href="static/css/index.css"/>
+    <link rel="stylesheet" href="static/css/browser-alert.css">
 </head>
 <body>
-<div id="container" class="container">
-    <canvas class="canvas" id="benchmark"></canvas>
+<div class="page-content">
+    <div id="sidebar" class="sidebar">
+        <div class="perf-info">
+            <p>FPS: <span class="fps">119</span></p>
+            <p>Time: <span class="time">2.1</span></p>
+            <p>Count: <span class="count">9904</span></p>
+        </div>
+        <div id="engine-info" class="engine-info common-style">
+            <div id="engine-type" class="engine-type">
+                <div class="radio-group">
+                    <p data-locale="engineTypeP"></p>
+                    <div id="engine-type-radio-options" class="radio-options">
+                        <div id="tgfx-radio-item" class="radio-item">
+                            <input type="radio" id="tgfx" name="engine-type" value="tgfx">
+                            <label for="tgfx">tgfx</label>
+                        </div>
+                        <div id="skia-radio-item" class="radio-item">
+                            <input type="radio" id="skia" name="engine-type" value="skia">
+                            <label for="skia">skia</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="version-info" class="version-info">
+                <div class="select-container">
+                    <label for="engine-version" data-locale="engineVersionLabel"></label>
+                    <select id="engine-version">
+                    </select>
+                </div>
+            </div>
+            <div id="thread-type" class="thread-type">
+                <div class="radio-group">
+                    <p data-locale="threadTypeP"></p>
+                    <div class="radio-options">
+                        <div id="st-radio-item" class="radio-item">
+                            <input type="radio" id="st" name="thread-type" value="st">
+                            <label for="st" data-locale="stLabel"></label>
+                        </div>
+                        <div id="mt-radio-item" class="radio-item">
+                            <input type="radio" id="mt" name="thread-type" value="mt">
+                            <label for="mt" data-locale="mtLabel"></label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="config-param" class="config-param common-style">
+            <div class="input-group">
+                <label for="startCount" data-locale="startCountLabel"></label>
+                <input type="number" id="startCount"  min="0">
+            </div>
+
+            <div class="input-group">
+                <label for="stepCount" data-locale="stepCountLabel"></label>
+                <input type="number" id="stepCount"  min="1">
+            </div>
+
+            <div class="input-group">
+                <label for="maxShapes" data-locale="maxShapesLabel"></label>
+                <input type="number" id="maxShapes"  min="1">
+            </div>
+
+            <div class="input-group">
+                <label for="minFPS" data-locale="minFPSLabel"></label>
+                <input type="number" id="minFPS" min="0">
+            </div>
+        </div>
+        <div id="" class="common-style">
+            <div class="radio-group">
+                <p data-locale="graphicTypeP"></p>
+                <div class="radio-options">
+                    <label class="radio-item">
+                        <input type="radio" name="graphic-type" value="rectangle">
+                        <span data-locale="rectangleSpan"></span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="graphic-type" value="round">
+                        <span data-locale="roundSpan"></span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="graphic-type" value="roundedRectangle">
+                        <span data-locale="roundedRectangleSpan"></span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="graphic-type" value="oval">
+                        <span data-locale="ovalSpan"></span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="graphic-type" value="simpleGraphicBlending">
+                        <span data-locale="simpleGraphicBlendingSpan"></span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="graphic-type" value="complexGraphics">
+                        <span data-locale="complexGraphicsSpan"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div id="language" class="language common-style">
+            <div class="select-container language-select-container">
+                <label for="language-type" data-locale="languageTypeLabel"></label>
+                <select id="language-type">
+                    <option value="auto" data-locale="autoOption"></option>
+                    <option value="zh" data-locale="chineseOption"></option>
+                    <option value="en" data-locale="englishOption"></option>
+                </select>
+            </div>
+        </div>
+        <div class="restart-wrapper">
+            <div class="restart-container">
+                <button id="restartBtn" onclick="handleRestart()" data-locale="restartBtn"></button>
+            </div>
+        </div>
+    </div>
+    <div id="container" class="container">
+        <canvas class="canvas" id="benchmark"></canvas>
+    </div>
 </div>
+<div id="mobile-warning" class="mobile-alert hidden">
+    <p data-locale="mobileWarning"></p>
+</div>
+<div id="browser-warning" class="desktop-alert hidden">
+    <p data-locale="desktopWarning"></p>
+</div>
+<script src="static/js/locale/zh_CN.js"></script>
+<script src="static/js/locale/en_US.js"></script>
+<script src="static/js/eventHandling.js"></script>
 <script src="./index.js"></script>
 </body>
 </html>

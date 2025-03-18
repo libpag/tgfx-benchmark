@@ -1,0 +1,30 @@
+{
+  "engineVersion": {
+    "tgfx": {
+      "savePath": "static/tgfx/",
+      "versions": {
+        "V4.3.4": [
+          "st",
+          "mt"
+        ],
+        "V4.0.0": [
+          "st",
+          "mt"
+        ]
+      }
+    },
+    "skia": {
+      "savePath": "static/tgfx/",
+      "versions": {
+        "V4.3.4": [
+          "st",
+          "mt"
+        ],
+        "V3.1.2": [
+          "st",
+          "mt"
+        ]
+      }
+    }
+  }
+}
