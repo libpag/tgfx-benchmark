@@ -14,9 +14,9 @@
 <div class="page-content">
     <div id="sidebar" class="sidebar">
         <div class="perf-info">
-            <p>FPS: <span class="fps">119</span></p>
-            <p>Time: <span class="time">2.1</span></p>
-            <p>Count: <span class="count">9904</span></p>
+            <p>FPS: <span class="fps"></span></p>
+            <p>Time: <span class="time"></span></p>
+            <p>Count: <span class="count"></span></p>
         </div>
         <div id="engine-info" class="engine-info common-style">
             <div id="engine-type" class="engine-type">
@@ -42,7 +42,7 @@
                 </div>
             </div>
             <div id="thread-type" class="thread-type">
-                <div class="radio-group">
+                <div class="radio-group-thread-type">
                     <p data-locale="threadTypeP"></p>
                     <div class="radio-options">
                         <div id="st-radio-item" class="radio-item">
@@ -76,11 +76,11 @@
 
             <div class="input-group">
                 <label for="minFPS" data-locale="minFPSLabel"></label>
-                <input type="number" id="minFPS" min="0">
+                <input type="number" id="minFPS" min="0" step="0.1">
             </div>
         </div>
         <div id="" class="common-style">
-            <div class="radio-group">
+            <div id="radio-group-graphic-type" class="radio-group">
                 <p data-locale="graphicTypeP"></p>
                 <div class="radio-options">
                     <label class="radio-item">

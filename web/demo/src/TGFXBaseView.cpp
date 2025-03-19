@@ -164,6 +164,33 @@ void TGFXBaseView::updatePerfInfo(const PerfData& data) {
     }
 }
 
+void TGFXBaseView::updateDrawParam(int type, const float value) const {
+    auto dataType = static_cast<DataType>(type);
+    switch (dataType) {
+        case DataType::startCount:
+            appHost->setStartDrawCount(static_cast<size_t>(value));
+            break;
+        case DataType::stepCount:
+            appHost->setStepCount(static_cast<size_t>(value));
+        case DataType::maxDrawCount:
+            appHost->setMaxDrawCount(static_cast<size_t>(value));
+            break;
+        case DataType::minFPS:
+            appHost->setMinFPS(value);
+            break;
+        default:
+            break;
+    }
+    appHost->setUpdateDrawParamFlag(true);
+    appHost->resetFrames();
+}
+
+void TGFXBaseView::updateGraphicType(int type) const {
+    const auto graphicType = static_cast<GraphicType>(type);
+    appHost->setGraphicType(graphicType);
+    appHost->resetFrames();
+}
+
 } // namespace benchmark
 
 int main() {

@@ -45,6 +45,8 @@ class ParticleBench : public Bench {
 
   void DrawStatus(tgfx::Canvas* canvas, const AppHost* host);
 
+  void DrawGraphics(tgfx::Canvas* canvas, const AppHost* host);
+
  private:
   float width = 0;   //appHost width
   float height = 0;  //appHost height

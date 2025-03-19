@@ -24,6 +24,14 @@
 
 namespace benchmark {
 
+enum DataType {
+ startCount=0,
+ stepCount=1,
+ maxDrawCount=2,
+ minFPS=3,
+};
+
+
 class TGFXBaseView {
  public:
   TGFXBaseView(const std::string& canvasID);
@@ -39,6 +47,10 @@ class TGFXBaseView {
   void restartDraw() const;
 
   void updatePerfInfo(const PerfData& data);
+
+  void updateDrawParam(int type,float value) const;
+
+  void updateGraphicType(int type) const;
 
   int drawIndex = 0;
   std::shared_ptr<benchmark::AppHost> appHost = nullptr;

@@ -149,4 +149,53 @@ PerfData AppHost::getPerfData() const {
   return perfData;
 }
 
+void AppHost::setMinFPS(const float minFPS) const {
+  _minFPS = minFPS;
+}
+
+float AppHost::getMinFPS() const {
+  return  _minFPS;
+}
+
+void AppHost::setStartDrawCount(const size_t startDrawCount) const {
+  _startDrawCount = startDrawCount;
+}
+
+size_t AppHost::getStartDrawCount() const {
+  return _startDrawCount;
+}
+
+void AppHost::setStepCount(const size_t stepCount) const {
+  _stepCount = stepCount;
+}
+
+size_t AppHost::getStepCount() const {
+  return _stepCount;
+}
+
+void AppHost::setMaxDrawCount(const size_t maxDrawCount) const {
+  _maxDrawCount = maxDrawCount;
+}
+
+size_t AppHost::getMaxDrawCount() const {
+  return _maxDrawCount;
+}
+
+void AppHost::setUpdateDrawParamFlag(const bool updateDrawParamFlag) const {
+  _updateDrawParamFlag = updateDrawParamFlag;
+}
+
+bool AppHost::getUpdateDrawParamFlag() const {
+  return _updateDrawParamFlag;
+}
+
+
+void AppHost::setGraphicType(GraphicType graphicType) const {
+  _graphicType = graphicType;
+}
+
+GraphicType AppHost::getGraphicType() const {
+  return _graphicType;
+}
+
 }  // namespace benchmark

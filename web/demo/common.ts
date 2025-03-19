@@ -22,6 +22,8 @@ export class TGFXBaseView {
     public updateSize: (devicePixelRatio: number) => void;
     public startDraw: () => void;
     public restartDraw: () => void;
+    public updateDrawParam: (type: number, value: number) => void;
+    public updateGraphicType: (type: number) => void;
 }
 
 export class ShareData {
@@ -29,6 +31,22 @@ export class ShareData {
     public tgfxBaseView: TGFXBaseView = null;
     public resized: boolean = false;
 }
+
+export enum DataType {
+    startCount = 0,
+    stepCount = 1,
+    maxDrawCount = 2,
+    minFPS = 3,
+};
+
+export enum GraphicType {
+    rectangle=0,
+    round=1,
+    roundedRectangle=2,
+    oval=3,
+    simpleGraphicBlending=4,
+    complexGraphics=5
+};
 
 export function updateSize(shareData: ShareData) {
     if (!shareData.tgfxBaseView) {
@@ -431,10 +449,10 @@ function setDefaultValues() {
         mtRadio.checked = true;
     }
     const defaultParams = {
-        startCount: 100,
-        stepCount: 40,
-        maxShapes: 300000,
-        minFPS: 60
+        startCount: 1,
+        stepCount: 600,
+        maxShapes: 1000000,
+        minFPS: 60.0
     };
 
     Object.entries(defaultParams).forEach(([key, value]) => {

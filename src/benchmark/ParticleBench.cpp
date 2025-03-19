@@ -23,23 +23,33 @@
 #include "tgfx/core/Clock.h"
 
 namespace benchmark {
-static constexpr size_t MAX_RECT_COUNT = 1000000;
-static constexpr size_t INCREASE_STEP = 600;
+static  size_t MAX_RECT_COUNT = 1000000;
+static  size_t INCREASE_STEP = 600;
 static constexpr int64_t FLUSH_INTERVAL = 300000;
 static constexpr float FPS_BACKGROUND_HEIGHT = 50.f;
 static constexpr float STATUS_WIDTH = 250.f;
 static constexpr float FONT_SIZE = 40.f;
+constexpr float PI = 3.14159265358979323846f;
+
 
 void ParticleBench::onDraw(tgfx::Canvas* canvas, const AppHost* host) {
   Init(host);
   AnimateRects(host);
-  DrawRects(canvas);
   if (!host->isWeb()) {
+    DrawRects(canvas);
     DrawStatus(canvas, host);
+  }else {
+    DrawGraphics(canvas, host);
   }
 }
 
 void ParticleBench::Init(const AppHost* host) {
+  if (host->getUpdateDrawParamFlag()) {
+    MAX_RECT_COUNT=host->getMaxDrawCount();
+    INCREASE_STEP=host->getStepCount();
+    targetFPS = host->getMinFPS();
+    host->setUpdateDrawParamFlag(false);
+  }
   auto hostWidth = static_cast<float>(host->width());
   auto hostHeight = static_cast<float>(host->height());
   if (width == hostWidth && height == hostHeight && !host->isFirstFrame()) {
@@ -48,7 +58,7 @@ void ParticleBench::Init(const AppHost* host) {
   width = hostWidth;
   height = hostHeight;
   status = {};
-  drawCount = 1;
+  drawCount = host->getStartDrawCount();
   maxDrawCountReached = false;
   fpsFont = tgfx::Font(host->getTypeface("default"), FONT_SIZE * host->density());
   for (auto i = 0; i < 3; i++) {
@@ -171,6 +181,72 @@ void ParticleBench::DrawStatus(tgfx::Canvas* canvas, const AppHost* host) {
     canvas->drawSimpleText(line, left, top, fpsFont, paint);
     left += STATUS_WIDTH * host->density();
   }
+}
+
+void ParticleBench::DrawGraphics(tgfx::Canvas* canvas, const AppHost* host) {
+  auto graphicType = host->getGraphicType();
+  for (size_t i = 0; i < drawCount; i++) {
+      auto& item = rects[i];
+      auto& rect = item.rect;
+      tgfx::Paint paint = paints[i % 3];
+      switch (graphicType) {
+          case GraphicType::rectangle:
+              canvas->drawRect(rect, paint);
+              break;
+          case GraphicType::round:
+              canvas->drawCircle(rect.centerX(), rect.centerY(), rect.width() * 0.5f, paint);
+              break;
+          case GraphicType::roundedRectangle: {
+              float radius = rect.width() * 0.2f;
+              canvas->drawRoundRect(rect, radius, radius, paint);
+              break;
+          }
+          case GraphicType::oval: {
+            canvas->drawOval(rect, paint);
+            break;
+          }
+          case GraphicType::simpleGraphicBlending: {
+              size_t type = i % 4;
+              switch (type) {
+                  case 0:
+                      canvas->drawRect(rect, paint);
+                      break;
+                  case 1:
+                      canvas->drawCircle(rect.centerX(), rect.centerY(), rect.width() * 0.5f, paint);
+                      break;
+                  case 2:
+                      canvas->drawRoundRect(rect, rect.width() * 0.2f, rect.width() * 0.2f, paint);
+                      break;
+                  case 3:
+                      canvas->drawOval(rect, paint);
+                      break;
+              }
+              break;
+          }
+          case GraphicType::complexGraphics: {
+              const int points = 5;
+              const float outerRadius = rect.width() * 0.5f;
+              const float innerRadius = outerRadius * 0.382f;
+              tgfx::Path path;
+              for (int i = 0; i < points * 2; i++) {
+                  float radius = (i % 2 == 0) ? outerRadius : innerRadius;
+                  float angle = static_cast<float>(i) * PI / points;
+                  float x = rect.centerX() + radius * std::sin(angle);
+                  float y = rect.centerY() - radius * std::cos(angle);
+                  if (i == 0) {
+                      path.moveTo(x, y);
+                  } else {
+                      path.lineTo(x, y);
+                  }
+              }
+              path.close();
+              canvas->drawPath(path, paint);
+              break;
+          }
+      }
+  }
+
+  canvas->drawRect(startRect, {});
 }
 
 }  // namespace benchmark
