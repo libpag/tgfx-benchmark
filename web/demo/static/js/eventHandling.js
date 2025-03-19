@@ -98,6 +98,16 @@ function initResourceBundle(locale) {
     return resourceBundle;
 }
 
+function updatePerfInfo(fps, drawTime, drawCount) {
+    const fpsElement = document.querySelector('.fps');
+    const timeElement = document.querySelector('.time');
+    const countElement = document.querySelector('.count');
+    if (fpsElement) fpsElement.textContent = Number(fps).toFixed(1);
+    if (timeElement) timeElement.textContent = Number(drawTime).toFixed(1);
+    if (countElement) countElement.textContent = drawCount;
+}
+
+window.updatePerfInfo = updatePerfInfo;
 document.addEventListener('DOMContentLoaded', eventHandling);
 document.addEventListener('DOMContentLoaded', initLanguage);
 document.addEventListener('DOMContentLoaded', function () {

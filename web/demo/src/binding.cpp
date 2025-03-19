@@ -28,7 +28,8 @@ EMSCRIPTEN_BINDINGS(TGFXDemo) {
   class_<TGFXBaseView>("TGFXBaseView")
       .function("setImagePath", &TGFXBaseView::setImagePath)
       .function("updateSize", &TGFXBaseView::updateSize)
-      .function("startDraw", &TGFXBaseView::startDraw);
+      .function("startDraw", &TGFXBaseView::startDraw)
+      .function("restartDraw", &TGFXBaseView::restartDraw);
 
   class_<TGFXView, base<TGFXBaseView>>("TGFXView")
       .smart_ptr<std::shared_ptr<TGFXView>>("TGFXView")

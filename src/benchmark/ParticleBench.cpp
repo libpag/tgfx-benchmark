@@ -34,7 +34,9 @@ void ParticleBench::onDraw(tgfx::Canvas* canvas, const AppHost* host) {
   Init(host);
   AnimateRects(host);
   DrawRects(canvas);
-  DrawStatus(canvas, host);
+  if (!host->isWeb()) {
+    DrawStatus(canvas, host);
+  }
 }
 
 void ParticleBench::Init(const AppHost* host) {
@@ -84,6 +86,7 @@ void ParticleBench::AnimateRects(const AppHost* host) {
       }
       auto step = static_cast<int64_t>(INCREASE_STEP * factor);
       drawCount = std::min(drawCount + static_cast<size_t>(step), MAX_RECT_COUNT);
+      host->setDrawCount(drawCount);
     }
   }
   auto startX = host->mouseX();

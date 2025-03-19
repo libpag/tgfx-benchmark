@@ -36,6 +36,10 @@ class TGFXBaseView {
 
   void draw();
 
+  void restartDraw() const;
+
+  void updatePerfInfo(const PerfData& data);
+
   int drawIndex = 0;
   std::shared_ptr<benchmark::AppHost> appHost = nullptr;
 

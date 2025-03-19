@@ -16,7 +16,7 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 import {TGFXBind} from '../lib/tgfx';
-import {ShareData, updateSize, onresizeEvent, startDraw, pageInit, handleRestart} from "./common";
+import {ShareData, updateSize, onresizeEvent, startDraw, pageInit, pageRestart} from "./common";
 
 let shareData: ShareData;
 
@@ -90,7 +90,7 @@ async function handleThreadTypeChange(event: Event) {
         localStorage.setItem('threadType', threadType);
         console.log(`Thread type changed to ${threadType}`);
         await loadModule(threadType);
-        handleRestart();
+        pageRestart();
     }
 }
 
@@ -99,6 +99,16 @@ function bindEventListeners() {
     radios.forEach(radio => {
         radio.addEventListener('change', handleThreadTypeChange);
     });
+
+    const restartBtn = document.getElementById('restartBtn');
+    if (restartBtn) {
+        restartBtn.addEventListener('click', () => {
+            if (!shareData.tgfxBaseView) {
+                return;
+            }
+            shareData.tgfxBaseView.restartDraw();
+        });
+    }
 }
 
 function refreshThreadType() {

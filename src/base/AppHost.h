@@ -25,6 +25,16 @@
 #include "tgfx/core/Typeface.h"
 
 namespace benchmark {
+
+/**
+* record the performance data
+*/
+struct PerfData {
+  float fps;
+  float drawTime;
+  size_t drawCount;
+};
+
 /**
  * AppHost provides information about the current app context.
  */
@@ -141,6 +151,26 @@ class AppHost {
    * Resets the app host to the first frame.
    */
   void resetFrames();
+  /**
+   * Set a flag to determine whether it is web.
+   */
+  void setWebFlag(bool webFlag);
+  /**
+   * Get a flag to determine whether it is web.
+   */
+  bool isWeb() const;
+
+  /**
+   * Set draw count.
+   */
+  void setDrawCount(size_t drawCount)const;
+
+  /**
+   * Get draw count.
+   */
+  size_t getDrawCount() const;
+
+  PerfData getPerfData() const;
 
  private:
   int _width = 1024;
@@ -152,5 +182,7 @@ class AppHost {
   std::deque<int64_t> drawTimes = {};
   std::unordered_map<std::string, std::shared_ptr<tgfx::Image>> images = {};
   std::unordered_map<std::string, std::shared_ptr<tgfx::Typeface>> typefaces = {};
+  bool _webFlag = false;
+  mutable size_t _drawCount = 1;
 };
 }  // namespace benchmark

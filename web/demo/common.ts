@@ -21,6 +21,7 @@ import * as types from '../types/types';
 export class TGFXBaseView {
     public updateSize: (devicePixelRatio: number) => void;
     public startDraw: () => void;
+    public restartDraw: () => void;
 }
 
 export class ShareData {
@@ -314,7 +315,7 @@ function getPageSettings(): PageSettings {
     };
 }
 
-export function handleRestart() {
+export function pageRestart() {
     const settings = getPageSettings();
 
     localStorage.setItem('pageSettings', JSON.stringify(settings));
