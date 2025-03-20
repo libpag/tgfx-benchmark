@@ -220,6 +220,8 @@ void ParticleBench::DrawGraphics(tgfx::Canvas* canvas, const AppHost* host) {
                   case 3:
                       canvas->drawOval(rect, paint);
                       break;
+                  default:
+                      break;
               }
               break;
           }
@@ -243,6 +245,8 @@ void ParticleBench::DrawGraphics(tgfx::Canvas* canvas, const AppHost* host) {
               canvas->drawPath(path, paint);
               break;
           }
+          default:
+            break;
       }
   }
 
