@@ -16,7 +16,18 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 import {TGFXBind} from '../lib/tgfx';
-import {ShareData, DataType, GraphicType, updateSize, onresizeEvent, startDraw, pageInit, pageRestart} from "./common";
+import {
+    ShareData,
+    DataType,
+    GraphicType,
+    engineVensionInfo,
+    updateSize,
+    onresizeEvent,
+    startDraw,
+    pageInit,
+    pageRestart,
+    getEngineDir
+} from "./common";
 
 let shareData: ShareData;
 
@@ -74,17 +85,60 @@ function handleGraphicTypeChange(event: Event) {
     }
 }
 
+function handleEngineTypeChange(event: Event) {
+    const target = event.target as HTMLInputElement;
+    let engineDir = "";
+    if (target.type === 'radio' && target.name === 'engine-type' && target.checked) {
+        const selectedEngine = target.value;
+        const engineVersionSelect = document.getElementById('engine-version') as HTMLSelectElement;
+        engineVersionSelect.innerHTML = '';
+        const versions = engineVensionInfo.engineVersion[selectedEngine]?.versions || {};
 
-async function loadModule(type: string) {
-    try {
-
-        let wasmDir="wasm";
-        if(type === 'mt'){
-            wasmDir = "wasm-mt";
+        Object.keys(versions).forEach(version => {
+            const option = document.createElement('option');
+            option.value = version;
+            option.textContent = version;
+            engineVersionSelect.appendChild(option);
+        });
+        const firstVersion = Object.keys(versions)[0];
+        if (firstVersion) {
+            engineVersionSelect.value = firstVersion;
+            engineDir = `${engineVensionInfo.engineVersion[selectedEngine].savePath}benchmark-${firstVersion}`;
+            localStorage.setItem('engineDir', engineDir);
+            pageRestart();
+        } else {
+            console.warn('未知的引擎类型:', selectedEngine);
         }
+    }
+}
 
+function handleEngineVersionChange(event: Event) {
+    const target = event.target as HTMLSelectElement;
+    let engineDir = "";
+    const selectedEngine = document.querySelector('input[name="engine-type"]:checked') as HTMLInputElement;
+    if (!selectedEngine) {
+        console.warn('未选择引擎类型');
+        return;
+    }
+    const selectedVersion = target.value;
+    if (!selectedVersion) {
+        console.warn('未选择版本');
+        return;
+    }
+    const engineConfig = engineVensionInfo.engineVersion[selectedEngine.value];
+    if (engineConfig) {
+        engineDir = `${engineConfig.savePath}benchmark-${selectedVersion}`;
+        localStorage.setItem('engineDir', engineDir);
+        pageRestart();
+    } else {
+        console.error('无效的引擎配置:', selectedEngine.value);
+    }
+}
+
+async function loadModule(engineDir: string, type: string = "mt") {
+    try {
         shareData = new ShareData();
-        const Benchmark = await import(`./${wasmDir}/benchmark.js`);
+        const Benchmark = await import(`./${engineDir}.js`);
         console.log('load BenchmarkModule');
         if (type === 'mt') {
             if (!crossOriginIsolated) {
@@ -98,7 +152,7 @@ async function loadModule(type: string) {
         }
         const moduleConfig = {
             locateFile: (file: string) => {
-                const path = `./${wasmDir}/` + file;
+                const path = `${engineDir}.wasm`;
                 console.log('Loading WebAssembly file:', path);
                 return path;
             },
@@ -114,7 +168,7 @@ async function loadModule(type: string) {
         };
 
         if (type === 'mt') {
-            moduleConfig['mainScriptUrlOrBlob'] = `./${wasmDir}/benchmark.js`;
+            moduleConfig['mainScriptUrlOrBlob'] = `${engineDir}.js`;
         }
 
         shareData.BenchmarkModule = await Benchmark.default(moduleConfig);
@@ -170,7 +224,6 @@ function bindEventListeners() {
         });
     }
 
-
     const configParamContainer = document.getElementById('config-param');
     if (configParamContainer) {
         configParamContainer.addEventListener('change', handleConfigParamChange);
@@ -180,34 +233,23 @@ function bindEventListeners() {
     if (graphicTypeRadioGroup) {
         graphicTypeRadioGroup.addEventListener('change', handleGraphicTypeChange);
     }
-}
 
-function refreshThreadType() {
-    const threadTypeRadios = document.querySelectorAll<HTMLInputElement>('input[name="thread-type"]');
+    const engineTypeOptions = document.getElementById('engine-type-radio-options');
+    engineTypeOptions.addEventListener('change', handleEngineTypeChange);
 
-    if (threadTypeRadios.length === 2) {
-        const savedThreadType = localStorage.getItem('threadType') || 'mt';
-        const targetRadio = document.querySelector<HTMLInputElement>(`input[name="thread-type"][value="${savedThreadType}"]`);
-        if (targetRadio) {
-            targetRadio.checked = true;
-        }
-    } else if (threadTypeRadios.length === 1) {
-        threadTypeRadios[0].checked = true;
-    } else {
-        console.warn(`异常：发现 ${threadTypeRadios.length} 个 thread-type radio`);
-    }
+    const engineVersionSelect = document.getElementById('engine-version');
+    engineVersionSelect.addEventListener('change', handleEngineVersionChange);
+
 }
 
 if (typeof window !== 'undefined') {
     window.onload = () => {
         pageInit();
-
-        const savedThreadType = localStorage.getItem('threadType') || 'mt';
-        const radio = document.querySelector(`input[name="thread-type"][value="${savedThreadType}"]`) as HTMLInputElement;
-        if (radio) {
-            radio.checked = true;
+        const engineDir = getEngineDir();
+        if (engineDir === "") {
+            throw "engineDir is None";
         }
-        loadModule(savedThreadType);
+        loadModule(engineDir);
         bindEventListeners();
     };
     window.onresize = () => {

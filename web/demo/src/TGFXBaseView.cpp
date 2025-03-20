@@ -159,7 +159,7 @@ void TGFXBaseView::updatePerfInfo(const PerfData& data) {
     }
     if (const auto flushInterval = currentTime - lastFlushTime; flushInterval > FLUSH_INTERVAL) {
         auto window = emscripten::val::global("window");
-        window.call<void>("updatePerfInfo", data.fps, data.drawTime, data.drawCount);
+        window.call<void>("updatePerfInfo", data.fps, data.drawTime, data.drawCount,appHost->getMaxDrawCountReached());
         lastFlushTime = currentTime - (flushInterval % FLUSH_INTERVAL);
     }
 }

@@ -37,10 +37,10 @@ void ParticleBench::onDraw(tgfx::Canvas* canvas, const AppHost* host) {
   AnimateRects(host);
   if (!host->isWeb()) {
     DrawRects(canvas);
-    DrawStatus(canvas, host);
   }else {
     DrawGraphics(canvas, host);
   }
+  DrawStatus(canvas, host);
 }
 
 void ParticleBench::Init(const AppHost* host) {
@@ -60,6 +60,7 @@ void ParticleBench::Init(const AppHost* host) {
   status = {};
   drawCount = host->getStartDrawCount();
   maxDrawCountReached = false;
+  host->setMaxDrawCountReached(maxDrawCountReached);
   fpsFont = tgfx::Font(host->getTypeface("default"), FONT_SIZE * host->density());
   for (auto i = 0; i < 3; i++) {
     tgfx::Color color = tgfx::Color::Black();
@@ -74,10 +75,15 @@ void ParticleBench::Init(const AppHost* host) {
   std::mt19937 speedRng(36);
   std::uniform_real_distribution<float> rectDistribution(0, 1);
   std::uniform_real_distribution<float> speedDistribution(-1, 1);
+  auto graphicType = host->getGraphicType();
   for (size_t i = 0; i < MAX_RECT_COUNT; i++) {
     const auto size = (5.f + rectDistribution(rectRng) * 20.f) * host->density();
     auto& item = rects[i];
-    item.rect.setXYWH(-size, -size, size, size);
+    if (graphicType==GraphicType::oval) {
+      item.rect.setXYWH(-size, -size, size, 0.8f*size);
+    }else {
+      item.rect.setXYWH(-size, -size, size, size);
+    }
     item.speedX = speedDistribution(speedRng) * 5.0f;
     item.speedY = speedDistribution(speedRng) * 5.0f;
   }
@@ -143,6 +149,7 @@ void ParticleBench::DrawStatus(tgfx::Canvas* canvas, const AppHost* host) {
         if (currentFPS < targetFPS - 0.5f &&
             drawTime > static_cast<int64_t>(1000000 / targetFPS) - 2000) {
           maxDrawCountReached = true;
+          host->setMaxDrawCountReached(maxDrawCountReached);
         }
       }
       status.clear();
@@ -169,6 +176,9 @@ void ParticleBench::DrawStatus(tgfx::Canvas* canvas, const AppHost* host) {
       lastFlushTime = currentTime - (flushInterval % FLUSH_INTERVAL);
     }
   }
+  if (host->isWeb()) {
+    return;
+  }
   tgfx::Paint paint = {};
   paint.setColor(tgfx::Color{0.32f, 0.42f, 0.62f, 0.9f});
   auto backgroundRect =
@@ -183,74 +193,117 @@ void ParticleBench::DrawStatus(tgfx::Canvas* canvas, const AppHost* host) {
   }
 }
 
+
+void ParticleBench::DrawRound(tgfx::Canvas* canvas) const {
+  for (size_t i = 0; i < drawCount; i++) {
+    auto& item = rects[i];
+    auto& rect = item.rect;
+    tgfx::Paint paint = paints[i % 3];
+    canvas->drawCircle(rect.centerX(), rect.centerY(), rect.width() * 0.5f, paint);
+  }
+  canvas->drawRect(startRect, {});
+}
+
+void ParticleBench::DrawRoundedRectangle(tgfx::Canvas* canvas) const {
+  for (size_t i = 0; i < drawCount; i++) {
+    auto& item = rects[i];
+    auto& rect = item.rect;
+    tgfx::Paint paint = paints[i % 3];
+    const float radius = rect.width() * 0.2f;
+    canvas->drawRoundRect(rect, radius, radius, paint);
+  }
+  canvas->drawRect(startRect, {});
+}
+
+void ParticleBench::DrawOval(tgfx::Canvas* canvas) const {
+  for (size_t i = 0; i < drawCount; i++) {
+    auto& item = rects[i];
+    auto& rect = item.rect;
+    tgfx::Paint paint = paints[i % 3];
+    canvas->drawOval(rect, paint);
+  }
+  canvas->drawRect(startRect, {});
+}
+
+void ParticleBench::DrawSimpleGraphicBlending(tgfx::Canvas* canvas) const {
+  for (size_t i = 0; i < drawCount; i++) {
+    auto& item = rects[i];
+    auto& rect = item.rect;
+    tgfx::Paint paint = paints[i % 3];
+    canvas->drawOval(rect, paint);
+    auto type = static_cast<GraphicType>(i % 4);
+    switch (type) {
+      case GraphicType::rectangle:
+        canvas->drawRect(rect, paint);
+        break;
+      case GraphicType::round:
+        canvas->drawCircle(rect.centerX(), rect.centerY(), rect.width() * 0.5f, paint);
+        break;
+      case GraphicType::roundedRectangle:
+        canvas->drawRoundRect(rect, rect.width() * 0.2f, rect.width() * 0.2f, paint);
+        break;
+      case GraphicType::oval:
+        canvas->drawOval(rect, paint);
+        break;
+      default:
+        break;
+    }
+  }
+  canvas->drawRect(startRect, {});
+}
+
+void ParticleBench::DrawComplexGraphics(tgfx::Canvas* canvas) const {
+  for (size_t i = 0; i < drawCount; i++) {
+    auto& item = rects[i];
+    auto& rect = item.rect;
+    tgfx::Paint paint = paints[i % 3];
+    canvas->drawOval(rect, paint);
+    constexpr int points = 5;
+    const float outerRadius = rect.width() * 0.5f;
+    const float innerRadius = outerRadius * 0.382f;
+    tgfx::Path path;
+    for (int j = 0; j < points * 2; j++) {
+      const float radius = (j % 2 == 0) ? outerRadius : innerRadius;
+      const float angle = static_cast<float>(j) * PI / points;
+      const float x = rect.centerX() + radius * std::sin(angle);
+      const float y = rect.centerY() - radius * std::cos(angle);
+      if (j == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    path.close();
+    canvas->drawPath(path, paint);
+  }
+  canvas->drawRect(startRect, {});
+}
+
 void ParticleBench::DrawGraphics(tgfx::Canvas* canvas, const AppHost* host) {
   auto graphicType = host->getGraphicType();
-  for (size_t i = 0; i < drawCount; i++) {
-      auto& item = rects[i];
-      auto& rect = item.rect;
-      tgfx::Paint paint = paints[i % 3];
-      switch (graphicType) {
-          case GraphicType::rectangle:
-              canvas->drawRect(rect, paint);
-              break;
-          case GraphicType::round:
-              canvas->drawCircle(rect.centerX(), rect.centerY(), rect.width() * 0.5f, paint);
-              break;
-          case GraphicType::roundedRectangle: {
-              float radius = rect.width() * 0.2f;
-              canvas->drawRoundRect(rect, radius, radius, paint);
-              break;
-          }
-          case GraphicType::oval: {
-            canvas->drawOval(rect, paint);
-            break;
-          }
-          case GraphicType::simpleGraphicBlending: {
-              size_t type = i % 4;
-              switch (type) {
-                  case 0:
-                      canvas->drawRect(rect, paint);
-                      break;
-                  case 1:
-                      canvas->drawCircle(rect.centerX(), rect.centerY(), rect.width() * 0.5f, paint);
-                      break;
-                  case 2:
-                      canvas->drawRoundRect(rect, rect.width() * 0.2f, rect.width() * 0.2f, paint);
-                      break;
-                  case 3:
-                      canvas->drawOval(rect, paint);
-                      break;
-                  default:
-                      break;
-              }
-              break;
-          }
-          case GraphicType::complexGraphics: {
-              const int points = 5;
-              const float outerRadius = rect.width() * 0.5f;
-              const float innerRadius = outerRadius * 0.382f;
-              tgfx::Path path;
-              for (int i = 0; i < points * 2; i++) {
-                  float radius = (i % 2 == 0) ? outerRadius : innerRadius;
-                  float angle = static_cast<float>(i) * PI / points;
-                  float x = rect.centerX() + radius * std::sin(angle);
-                  float y = rect.centerY() - radius * std::cos(angle);
-                  if (i == 0) {
-                      path.moveTo(x, y);
-                  } else {
-                      path.lineTo(x, y);
-                  }
-              }
-              path.close();
-              canvas->drawPath(path, paint);
-              break;
-          }
-          default:
-            break;
-      }
+  switch (graphicType) {
+    case GraphicType::rectangle:
+      DrawRects(canvas);
+      break;
+    case GraphicType::round:
+      DrawRound(canvas);
+      break;
+    case GraphicType::roundedRectangle:
+      DrawRoundedRectangle(canvas);
+      break;
+    case GraphicType::oval:
+      DrawOval(canvas);
+      break;
+    case GraphicType::simpleGraphicBlending:
+      DrawSimpleGraphicBlending(canvas);
+      break;
+    case GraphicType::complexGraphics:
+      DrawComplexGraphics(canvas);
+      break;
+    default:
+      DrawRects(canvas);
+      break;
   }
-
-  canvas->drawRect(startRect, {});
 }
 
 }  // namespace benchmark

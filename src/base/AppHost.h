@@ -248,6 +248,16 @@ class AppHost {
    */
   GraphicType getGraphicType() const;
 
+  /**
+   * Set maxDrawCountReached.
+   */
+  void setMaxDrawCountReached(bool maxDrawCountReached) const;
+
+  /**
+   * Get maxDrawCountReached.
+   */
+  bool getMaxDrawCountReached() const;
+
 
 
  private:
@@ -268,5 +278,6 @@ class AppHost {
   mutable size_t _maxDrawCount = 1000000;
   mutable bool _updateDrawParamFlag=false;
   mutable GraphicType _graphicType = GraphicType::rectangle;
+  mutable bool _maxDrawCountReached = false;
 };
 }  // namespace benchmark

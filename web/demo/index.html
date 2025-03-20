@@ -11,12 +11,13 @@
     <link rel="stylesheet" href="static/css/browser-alert.css">
 </head>
 <body>
-<div class="page-content">
+<div class="page-content hidden">
     <div id="sidebar" class="sidebar">
         <div class="perf-info">
-            <p>FPS: <span class="fps"></span></p>
-            <p>Time: <span class="time"></span></p>
-            <p>Count: <span class="count"></span></p>
+            <div class="info-row"><p data-locale="fpsP" class="fpsP"></p><span class="fps"></span></div>
+            <div class="info-row"><p data-locale="timeP" class="timeP"></p><span class="time"></span></div>
+            <div class="info-row"><p data-locale="countP"></p><span class="count"></span></div>
+            <div class="info-row"><p data-locale="resolutionP"></p><span class="resolution"></span></div>
         </div>
         <div id="engine-info" class="engine-info common-style">
             <div id="engine-type" class="engine-type">
@@ -41,37 +42,37 @@
                     </select>
                 </div>
             </div>
-            <div id="thread-type" class="thread-type">
-                <div class="radio-group-thread-type">
-                    <p data-locale="threadTypeP"></p>
-                    <div class="radio-options">
-                        <div id="st-radio-item" class="radio-item">
-                            <input type="radio" id="st" name="thread-type" value="st">
-                            <label for="st" data-locale="stLabel"></label>
-                        </div>
-                        <div id="mt-radio-item" class="radio-item">
-                            <input type="radio" id="mt" name="thread-type" value="mt">
-                            <label for="mt" data-locale="mtLabel"></label>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <!--            <div id="thread-type" class="thread-type">-->
+            <!--                <div class="radio-group radio-group-thread-type">-->
+            <!--                    <p data-locale="threadTypeP"></p>-->
+            <!--                    <div class="radio-options">-->
+            <!--                        <div id="mt-radio-item" class="radio-item">-->
+            <!--                            <input type="radio" id="mt" name="thread-type" value="mt">-->
+            <!--                            <label for="mt" data-locale="mtLabel"></label>-->
+            <!--                        </div>-->
+            <!--                        <div id="st-radio-item" class="radio-item">-->
+            <!--                            <input type="radio" id="st" name="thread-type" value="st">-->
+            <!--                            <label for="st" data-locale="stLabel"></label>-->
+            <!--                        </div>-->
+            <!--                    </div>-->
+            <!--                </div>-->
+            <!--            </div>-->
         </div>
 
         <div id="config-param" class="config-param common-style">
             <div class="input-group">
                 <label for="startCount" data-locale="startCountLabel"></label>
-                <input type="number" id="startCount"  min="0">
+                <input type="number" id="startCount" min="0">
             </div>
 
             <div class="input-group">
                 <label for="stepCount" data-locale="stepCountLabel"></label>
-                <input type="number" id="stepCount"  min="1">
+                <input type="number" id="stepCount" min="1">
             </div>
 
             <div class="input-group">
                 <label for="maxShapes" data-locale="maxShapesLabel"></label>
-                <input type="number" id="maxShapes"  min="1">
+                <input type="number" id="maxShapes" min="1">
             </div>
 
             <div class="input-group">
@@ -92,21 +93,21 @@
                         <span data-locale="roundSpan"></span>
                     </label>
                     <label class="radio-item">
-                        <input type="radio" name="graphic-type" value="roundedRectangle">
-                        <span data-locale="roundedRectangleSpan"></span>
-                    </label>
-                    <label class="radio-item">
                         <input type="radio" name="graphic-type" value="oval">
                         <span data-locale="ovalSpan"></span>
                     </label>
                     <label class="radio-item">
-                        <input type="radio" name="graphic-type" value="simpleGraphicBlending">
-                        <span data-locale="simpleGraphicBlendingSpan"></span>
+                        <input type="radio" name="graphic-type" value="roundedRectangle">
+                        <span data-locale="roundedRectangleSpan"></span>
                     </label>
-                    <label class="radio-item">
-                        <input type="radio" name="graphic-type" value="complexGraphics">
-                        <span data-locale="complexGraphicsSpan"></span>
-                    </label>
+                    <!--                    <label class="radio-item">-->
+                    <!--                        <input type="radio" name="graphic-type" value="simpleGraphicBlending">-->
+                    <!--                        <span data-locale="simpleGraphicBlendingSpan"></span>-->
+                    <!--                    </label>-->
+                    <!--                    <label class="radio-item">-->
+                    <!--                        <input type="radio" name="graphic-type" value="complexGraphics">-->
+                    <!--                        <span data-locale="complexGraphicsSpan"></span>-->
+                    <!--                    </label>-->
                 </div>
             </div>
         </div>

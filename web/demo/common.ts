@@ -40,13 +40,15 @@ export enum DataType {
 };
 
 export enum GraphicType {
-    rectangle=0,
-    round=1,
-    roundedRectangle=2,
-    oval=3,
-    simpleGraphicBlending=4,
-    complexGraphics=5
+    rectangle = 0,
+    round = 1,
+    roundedRectangle = 2,
+    oval = 3,
+    simpleGraphicBlending = 4,
+    complexGraphics = 5
 };
+
+export let engineVensionInfo;
 
 export function updateSize(shareData: ShareData) {
     if (!shareData.tgfxBaseView) {
@@ -62,6 +64,9 @@ export function updateSize(shareData: ShareData) {
     canvas.style.width = screenRect.width + "px";
     canvas.style.height = screenRect.height + "px";
     shareData.tgfxBaseView.updateSize(scaleFactor);
+
+    const resolutionSpan = document.querySelector('.resolution');
+    resolutionSpan.textContent = `${canvas.width}x${canvas.height}`;
 }
 
 export function startDraw(shareData: ShareData) {
@@ -92,14 +97,12 @@ interface SideBarConfig {
     };
 }
 
-export async function parseSideBarParam(): Promise<SideBarConfig> {
+export function parseSideBarParam(): SideBarConfig {
     try {
-        const response = await fetch('static/sideBarConfigParam.json');
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const config = await response.json() as SideBarConfig;
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', 'static/sideBarConfigParam.json', false);
+        xhr.send();
+        const config = JSON.parse(xhr.responseText) as SideBarConfig;
         if (!config.engineVersion) {
             throw new Error('配置文件格式错误：缺少 engineVersion 配置项');
         }
@@ -128,6 +131,7 @@ export async function parseSideBarParam(): Promise<SideBarConfig> {
         if (!config.engineVersion.tgfx && !config.engineVersion.skia) {
             throw new Error('配置文件格式错误：至少需要一个引擎配置');
         }
+        engineVensionInfo = config;
         return config;
     } catch (error) {
         console.error('解析侧边栏配置文件失败:', error);
@@ -143,116 +147,111 @@ export function pageInit() {
     } else {
         restoreEngineType();
     }
-    parseSideBarParam().then(config => {
-        const tgfxRadioItem = document.getElementById('tgfx-radio-item');
-        const skiaRadioItem = document.getElementById('skia-radio-item');
-        const engineTypeInputs = document.getElementsByName('engine-type') as NodeListOf<HTMLInputElement>;
-        const versionSelect = document.getElementById('engine-version') as HTMLSelectElement;
-        const engineTypeOptions = document.getElementById('engine-type-radio-options');
+    const config = parseSideBarParam();
+    const tgfxRadioItem = document.getElementById('tgfx-radio-item');
+    const skiaRadioItem = document.getElementById('skia-radio-item');
+    const engineTypeInputs = document.getElementsByName('engine-type') as NodeListOf<HTMLInputElement>;
+    const versionSelect = document.getElementById('engine-version') as HTMLSelectElement;
+    const engineTypeOptions = document.getElementById('engine-type-radio-options');
 
-        function handleEngineVisibility() {
-            if (!config.engineVersion.tgfx && tgfxRadioItem) {
-                tgfxRadioItem.style.display = 'none';
-            }
-            if (!config.engineVersion.skia && skiaRadioItem) {
-                skiaRadioItem.style.display = 'none';
-            }
-            let selectedEngine = '';
-            if (config.engineVersion.tgfx && !config.engineVersion.skia) {
-                selectedEngine = 'tgfx';
-            } else if (!config.engineVersion.tgfx && config.engineVersion.skia) {
-                selectedEngine = 'skia';
-            }
-            if (selectedEngine) {
-                const radio = document.querySelector(`input[name="engine-type"][value="${selectedEngine}"]`) as HTMLInputElement;
-                if (radio) {
-                    radio.checked = true;
-                }
+    function handleEngineVisibility() {
+        if (!config.engineVersion.tgfx && tgfxRadioItem) {
+            tgfxRadioItem.style.display = 'none';
+        }
+        if (!config.engineVersion.skia && skiaRadioItem) {
+            skiaRadioItem.style.display = 'none';
+        }
+        let selectedEngine = '';
+        if (config.engineVersion.tgfx && !config.engineVersion.skia) {
+            selectedEngine = 'tgfx';
+        } else if (!config.engineVersion.tgfx && config.engineVersion.skia) {
+            selectedEngine = 'skia';
+        }
+        if (selectedEngine) {
+            const radio = document.querySelector(`input[name="engine-type"][value="${selectedEngine}"]`) as HTMLInputElement;
+            if (radio) {
+                radio.checked = true;
             }
         }
+    }
 
-        function updateVersionSelect(engineType: string) {
-            if (!versionSelect) return;
-            if (needRestore) return;
+    function updateVersionSelect(engineType: string) {
+        if (!versionSelect) return;
+        if (needRestore) return;
 
-            versionSelect.innerHTML = '';
+        versionSelect.innerHTML = '';
 
-            const engineConfig = config.engineVersion[engineType as keyof typeof config.engineVersion];
-            if (engineConfig) {
-                Object.keys(engineConfig.versions).forEach(version => {
-                    const option = document.createElement('option');
-                    option.value = version;
-                    option.textContent = version;
-                    versionSelect.appendChild(option);
-                });
-            }
-        }
-
-        function updateThreadTypeOptions(engineType: string, version: string) {
-            const stRadioItem = document.getElementById('st-radio-item');
-            const mtRadioItem = document.getElementById('mt-radio-item');
-
-            const engineConfig = config.engineVersion[engineType as keyof typeof config.engineVersion];
-            if (!engineConfig || !engineConfig.versions[version]) return;
-
-            const threadTypes = engineConfig.versions[version];
-
-            if (stRadioItem) {
-                stRadioItem.style.display = threadTypes.includes('st') ? '' : 'none';
-            }
-
-            if (mtRadioItem) {
-                mtRadioItem.style.display = threadTypes.includes('mt') ? '' : 'none';
-            }
-
-            if (threadTypes.length === 1) {
-                const radio = document.querySelector(`input[name="thread-type"][value="${threadTypes[0]}"]`) as HTMLInputElement;
-                if (radio) {
-                    radio.checked = true;
-                }
-            }
-        }
-
-        handleEngineVisibility();
-
-        const checkedEngine = Array.from(engineTypeInputs).find(input => input.checked);
-        if (checkedEngine) {
-            updateVersionSelect(checkedEngine.value);
-            if (versionSelect) {
-                updateThreadTypeOptions(checkedEngine.value, versionSelect.value);
-            }
-        }
-
-        if (engineTypeOptions) {
-            engineTypeOptions.addEventListener('change', (e) => {
-                const target = e.target as HTMLInputElement;
-                if (target.type === 'radio' && target.name === 'engine-type' && target.checked) {
-                    updateVersionSelect(target.value);
-                    if (versionSelect) {
-                        updateThreadTypeOptions(target.value, versionSelect.value);
-                    }
-                }
+        const engineConfig = config.engineVersion[engineType as keyof typeof config.engineVersion];
+        if (engineConfig) {
+            Object.keys(engineConfig.versions).forEach(version => {
+                const option = document.createElement('option');
+                option.value = version;
+                option.textContent = version;
+                versionSelect.appendChild(option);
             });
         }
+    }
 
+    function updateThreadTypeOptions(engineType: string, version: string) {
+        const stRadioItem = document.getElementById('st-radio-item');
+        const mtRadioItem = document.getElementById('mt-radio-item');
+
+        const engineConfig = config.engineVersion[engineType as keyof typeof config.engineVersion];
+        if (!engineConfig || !engineConfig.versions[version]) return;
+
+        const threadTypes = engineConfig.versions[version];
+
+        if (stRadioItem) {
+            stRadioItem.style.display = threadTypes.includes('st') ? '' : 'none';
+        }
+
+        if (mtRadioItem) {
+            mtRadioItem.style.display = threadTypes.includes('mt') ? '' : 'none';
+        }
+
+        if (threadTypes.length === 1) {
+            const radio = document.querySelector(`input[name="thread-type"][value="${threadTypes[0]}"]`) as HTMLInputElement;
+            if (radio) {
+                radio.checked = true;
+            }
+        }
+    }
+
+    handleEngineVisibility();
+
+    const checkedEngine = Array.from(engineTypeInputs).find(input => input.checked);
+    if (checkedEngine) {
+        updateVersionSelect(checkedEngine.value);
         if (versionSelect) {
-            versionSelect.addEventListener('change', (e) => {
-                const target = e.target as HTMLSelectElement;
-                const checkedEngine = Array.from(engineTypeInputs).find(input => input.checked);
-                if (checkedEngine) {
-                    updateThreadTypeOptions(checkedEngine.value, target.value);
+            updateThreadTypeOptions(checkedEngine.value, versionSelect.value);
+        }
+    }
+
+    if (engineTypeOptions) {
+        engineTypeOptions.addEventListener('change', (e) => {
+            const target = e.target as HTMLInputElement;
+            if (target.type === 'radio' && target.name === 'engine-type' && target.checked) {
+                updateVersionSelect(target.value);
+                if (versionSelect) {
+                    updateThreadTypeOptions(target.value, versionSelect.value);
                 }
-            }, true);
-        }
+            }
+        });
+    }
 
-        if (localStorage.getItem('needRestore') === 'true') {
-            restorePageSettings();
-            localStorage.removeItem('needRestore');
-        }
+    if (versionSelect) {
+        versionSelect.addEventListener('change', (e) => {
+            const target = e.target as HTMLSelectElement;
+            const checkedEngine = Array.from(engineTypeInputs).find(input => input.checked);
+            if (checkedEngine) {
+                updateThreadTypeOptions(checkedEngine.value, target.value);
+            }
+        }, true);
+    }
 
-    }).catch(error => {
-        console.error('加载配置失败:', error);
-    });
+    if (localStorage.getItem('needRestore') === 'true') {
+        restorePageSettings();
+    }
 }
 
 
@@ -469,4 +468,25 @@ function setDefaultValues() {
     if (languageSelect) {
         languageSelect.value = 'auto';
     }
+}
+
+
+export function getEngineDir(): string {
+    const needRestore = localStorage.getItem('needRestore') === 'true';
+    if (!needRestore) {
+        if (engineVensionInfo.engineVersion.tgfx) {
+            const firstVersion = Object.keys(engineVensionInfo.engineVersion.tgfx.versions)[0];
+            return `${engineVensionInfo.engineVersion.tgfx.savePath}benchmark-${firstVersion}`;
+        } else if (engineVensionInfo.engineVersion.skia) {
+            const firstVersion = Object.keys(engineVensionInfo.engineVersion.skia.versions)[0];
+            return `${engineVensionInfo.engineVersion.skia.savePath}benchmark-${firstVersion}`;
+        }
+    }else{
+        const engineDir=localStorage.getItem('engineDir');
+        localStorage.removeItem('needRestore');
+        if (engineDir) {
+            return engineDir;
+        }
+    }
+    return '';
 }

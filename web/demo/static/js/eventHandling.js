@@ -26,7 +26,7 @@ function applyLanguage(language) {
     initResourceBundle(language);
 }
 
-function eventHandling() {
+function checkBrowser() {
     const pageContent = document.querySelector('.page-content');
     const mobileWarning = document.getElementById('mobile-warning');
     const browserWarning = document.getElementById('browser-warning');
@@ -62,6 +62,7 @@ function eventHandling() {
         return false;
     }
 
+    pageContent.classList.remove('hidden');
     return true;
 }
 
@@ -98,17 +99,36 @@ function initResourceBundle(locale) {
     return resourceBundle;
 }
 
-function updatePerfInfo(fps, drawTime, drawCount) {
+function updatePerfInfo(fps, drawTime, drawCount,maxDrawCountReached) {
     const fpsElement = document.querySelector('.fps');
+    const fpsParagraph = document.querySelector('.fpsP');
     const timeElement = document.querySelector('.time');
+    const timeParagraph = document.querySelector('.timeP');
     const countElement = document.querySelector('.count');
-    if (fpsElement) fpsElement.textContent = Number(fps).toFixed(1);
-    if (timeElement) timeElement.textContent = Number(drawTime).toFixed(1);
-    if (countElement) countElement.textContent = drawCount;
+    if (fpsElement && fpsParagraph) {
+        fpsElement.textContent = Number(fps).toFixed(1);
+        const color = fps < 29 ? '#FF4444' : fps < 59 ? '#FFAA00' : '#4CAF50';
+        fpsElement.style.color = color;
+        fpsParagraph.style.color = color;
+    }
+    if (timeElement && timeParagraph) {
+        timeElement.textContent = Number(drawTime).toFixed(1);
+        const color = drawTime > 34.3 ? '#FF4444' : drawTime > 16.9 ? '#FFAA00' : '#4CAF50';
+        timeElement.style.color = color;
+        timeParagraph.style.color = color;
+    }
+    const targetFPS = parseFloat(document.getElementById('minFPS').value) || 60;
+
+    maxDrawCountReached = !!maxDrawCountReached;
+    if(maxDrawCountReached){
+        if (countElement) countElement.textContent = `[${drawCount}]`;
+    }else {
+        if (countElement) countElement.textContent = drawCount;
+    }
 }
 
 window.updatePerfInfo = updatePerfInfo;
-document.addEventListener('DOMContentLoaded', eventHandling);
+document.addEventListener('DOMContentLoaded', checkBrowser);
 document.addEventListener('DOMContentLoaded', initLanguage);
 document.addEventListener('DOMContentLoaded', function () {
     const languageSelect = document.getElementById('language-type');

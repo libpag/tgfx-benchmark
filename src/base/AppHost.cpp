@@ -198,4 +198,13 @@ GraphicType AppHost::getGraphicType() const {
   return _graphicType;
 }
 
+void AppHost::setMaxDrawCountReached(const bool maxDrawCountReached) const {
+  _maxDrawCountReached = maxDrawCountReached;
+}
+
+bool AppHost::getMaxDrawCountReached() const {
+  return _maxDrawCountReached;
+}
+
+
 }  // namespace benchmark

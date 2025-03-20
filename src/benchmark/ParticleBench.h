@@ -45,6 +45,16 @@ class ParticleBench : public Bench {
 
   void DrawStatus(tgfx::Canvas* canvas, const AppHost* host);
 
+  void DrawRound(tgfx::Canvas* canvas) const;
+
+  void DrawRoundedRectangle(tgfx::Canvas* canvas) const;
+
+  void DrawOval(tgfx::Canvas* canvas) const;
+
+  void DrawSimpleGraphicBlending(tgfx::Canvas* canvas) const;
+
+  void DrawComplexGraphics(tgfx::Canvas* canvas) const;
+
   void DrawGraphics(tgfx::Canvas* canvas, const AppHost* host);
 
  private:

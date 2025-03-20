@@ -27,6 +27,7 @@ html, body {
     height: 100%;
     overflow-y: auto;
     background-color: #1e1e1e;
+    border-right: 3px solid #2c2c2c;
 }
 
 .benchmark {
@@ -45,37 +46,42 @@ html, body {
 .perf-info {
     margin: 10px 0;
     width: 100%;
-    text-align: center;
+    text-align: left;
 }
 
 .perf-info p {
-    margin: 5px auto;
+    margin: 2px auto;
     display: inline-block;
-    width: 150px;
+    /*width: 200px;*/
     text-align: left;
-    padding-left: 50px;
+
+    color: #4CAF50;
+    font-size: 18px;
+}
+.info-row {
+    display: flex;
+    align-items: center;
+    padding-left: 30px;
 }
 
-.perf-info p:nth-child(1) {
-    color: #ee7d56;
+.info-row p, .info-row span {
+    margin: 0;
+    padding: 0;
 }
 
-.perf-info p:nth-child(2) {
-    color: #ec6278;
-}
-
-.perf-info p:nth-child(3) {
-    color: #eb5193;
-}
-
-.perf-info p span {
-    color: inherit;
+.perf-info span {
+    color: #4CAF50;
+    font-size: 18px;
 }
 
 .common-style {
     padding-left: 30px;
     color: #ffffff;
     border-top: 2px solid #2c2c2c;
+}
+
+.version-info{
+    margin-bottom: 10px;
 }
 
 .input-group {
@@ -125,18 +131,24 @@ html, body {
 
 .input-group input[type="number"]::-webkit-inner-spin-button,
 .input-group input[type="number"]::-webkit-outer-spin-button {
-    opacity: 1;
-    background-color: #505050;
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type="number"] {
+    -webkit-appearance: none;
+    -moz-appearance: textfield;
+    appearance: textfield;
 }
 
 
 .radio-group {
-    margin: 15px 0;
+    margin: 10px 0;
     color: #ffffff;
 }
 
 .radio-group p {
-    margin: 0 0 10px 0;
+    margin: 0 0 5px 0;
     font-size: 15px;
 }
 
@@ -251,8 +263,8 @@ select option:hover {
 
 #restartBtn {
     padding: 8px 15px;
-    background-color: #600ff2;
-    color: #111111;
+    background-color: #4CAF50;
+    color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
@@ -261,11 +273,11 @@ select option:hover {
 }
 
 #restartBtn:hover {
-    background-color: #106ebe;
+    background-color: #45a049;
 }
 
 #restartBtn:active {
-    background-color: #005a9e;
+    background-color: #3d8b40;
 }
 
 .language-select-container {

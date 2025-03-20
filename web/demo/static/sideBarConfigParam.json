@@ -4,25 +4,21 @@
       "savePath": "static/tgfx/",
       "versions": {
         "V4.3.4": [
-          "st",
           "mt"
         ],
         "V4.0.0": [
-          "st",
           "mt"
         ]
       }
     },
     "skia": {
-      "savePath": "static/tgfx/",
+      "savePath": "static/skia/",
       "versions": {
         "V4.3.4": [
-          "st",
-          "mt"
+          "st"
         ],
         "V3.1.2": [
-          "st",
-          "mt"
+          "st"
         ]
       }
     }
