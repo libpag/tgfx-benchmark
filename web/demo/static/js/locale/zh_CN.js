@@ -1,8 +1,8 @@
 const LocaleMaps_zh_CN = {
-    'fpsP.innerHTML':'当前帧率:',
-    'timeP.innerHTML':'每帧耗时:',
-    'countP.innerHTML':'渲染数量:',
-    'resolutionP.innerHTML':'分辨率:',
+    'fpsP.innerHTML':'当前帧率: ',
+    'timeP.innerHTML':'每帧耗时: ',
+    'countP.innerHTML':'渲染数量: ',
+    'resolutionP.innerHTML':'分辨率: ',
     'engineTypeP.innerHTML':'引擎:',
     'engineVersionLabel.innerHTML':"版本:",
     'threadTypeP.innerHTML':"多线程开关:",
@@ -24,6 +24,5 @@ const LocaleMaps_zh_CN = {
     'autoOption.innerHTML': '自动',
     'chineseOption.innerHTML': '中文 (简体)',
     'englishOption.innerHTML': 'English (US)',
-    'mobileWarning.innerHTML': '当前页面仅支持桌面端Chromium内核浏览器（Chrome或Edge），请切换到桌面端访问。',
-    'desktopWarning.innerHTML': '当前页面仅支持桌面端Chromium内核浏览器（Chrome或Edge），请切换浏览器访问。',
+    'desktopWarning.innerHTML': '当前页面仅支持桌面端Chromium内核浏览器(Chrome或Edge),请切换浏览器访问.',
 }

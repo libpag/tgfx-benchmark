@@ -11,7 +11,12 @@
     <link rel="stylesheet" href="static/css/browser-alert.css">
 </head>
 <body>
-<div class="page-content hidden">
+<div id="mask-overlay" class="mask-overlay hidden">
+    <div id="browser-warning" class="desktop-alert hidden">
+        <p data-locale="desktopWarning"></p>
+    </div>
+</div>
+<div class="page-content">
     <div id="sidebar" class="sidebar">
         <div class="perf-info">
             <div class="info-row"><p data-locale="fpsP" class="fpsP"></p><span class="fps"></span></div>
@@ -21,18 +26,12 @@
         </div>
         <div id="engine-info" class="engine-info common-style">
             <div id="engine-type" class="engine-type">
-                <div class="radio-group">
-                    <p data-locale="engineTypeP"></p>
-                    <div id="engine-type-radio-options" class="radio-options">
-                        <div id="tgfx-radio-item" class="radio-item">
-                            <input type="radio" id="tgfx" name="engine-type" value="tgfx">
-                            <label for="tgfx">tgfx</label>
-                        </div>
-                        <div id="skia-radio-item" class="radio-item">
-                            <input type="radio" id="skia" name="engine-type" value="skia">
-                            <label for="skia">skia</label>
-                        </div>
-                    </div>
+                <div class="select-container">
+                    <label for="engine-type-select" data-locale="engineTypeP"></label>
+                    <select id="engine-type-select">
+                        <option selected>tgfx</option>
+                        <option>skia</option>
+                    </select>
                 </div>
             </div>
             <div id="version-info" class="version-info">
@@ -130,12 +129,6 @@
     <div id="container" class="container">
         <canvas class="canvas" id="benchmark"></canvas>
     </div>
-</div>
-<div id="mobile-warning" class="mobile-alert hidden">
-    <p data-locale="mobileWarning"></p>
-</div>
-<div id="browser-warning" class="desktop-alert hidden">
-    <p data-locale="desktopWarning"></p>
 </div>
 <script src="static/js/locale/zh_CN.js"></script>
 <script src="static/js/locale/en_US.js"></script>

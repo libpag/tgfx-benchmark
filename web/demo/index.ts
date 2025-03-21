@@ -86,38 +86,37 @@ function handleGraphicTypeChange(event: Event) {
 }
 
 function handleEngineTypeChange(event: Event) {
-    const target = event.target as HTMLInputElement;
+    const target = event.target as HTMLSelectElement;
     let engineDir = "";
-    if (target.type === 'radio' && target.name === 'engine-type' && target.checked) {
-        const selectedEngine = target.value;
-        const engineVersionSelect = document.getElementById('engine-version') as HTMLSelectElement;
-        engineVersionSelect.innerHTML = '';
-        const versions = engineVensionInfo.engineVersion[selectedEngine]?.versions || {};
+    const selectedEngine = target.value;
+    const engineVersionSelect = document.getElementById('engine-version') as HTMLSelectElement;
+    engineVersionSelect.innerHTML = '';
+    const versions = engineVensionInfo.engineVersion[selectedEngine]?.versions || {};
 
-        Object.keys(versions).forEach(version => {
-            const option = document.createElement('option');
-            option.value = version;
-            option.textContent = version;
-            engineVersionSelect.appendChild(option);
-        });
-        const firstVersion = Object.keys(versions)[0];
-        if (firstVersion) {
-            engineVersionSelect.value = firstVersion;
-            engineDir = `${engineVensionInfo.engineVersion[selectedEngine].savePath}benchmark-${firstVersion}`;
-            localStorage.setItem('engineDir', engineDir);
-            pageRestart();
-        } else {
-            console.warn('未知的引擎类型:', selectedEngine);
-        }
+    Object.keys(versions).forEach(version => {
+        const option = document.createElement('option');
+        option.value = version;
+        option.textContent = version;
+        engineVersionSelect.appendChild(option);
+    });
+
+    const firstVersion = Object.keys(versions)[0];
+    if (firstVersion) {
+        engineVersionSelect.value = firstVersion;
+        engineDir = `${engineVensionInfo.engineVersion[selectedEngine].savePath}benchmark-${firstVersion}`;
+        localStorage.setItem('engineDir', engineDir);
+        pageRestart();
+    } else {
+        console.warn('未知的引擎类型:', selectedEngine);
     }
 }
 
 function handleEngineVersionChange(event: Event) {
     const target = event.target as HTMLSelectElement;
     let engineDir = "";
-    const selectedEngine = document.querySelector('input[name="engine-type"]:checked') as HTMLInputElement;
-    if (!selectedEngine) {
-        console.warn('未选择引擎类型');
+    const engineTypeSelect = document.getElementById('engine-type-select') as HTMLSelectElement;
+    if (!engineTypeSelect) {
+        console.warn('未找到引擎类型选择器');
         return;
     }
     const selectedVersion = target.value;
@@ -125,13 +124,13 @@ function handleEngineVersionChange(event: Event) {
         console.warn('未选择版本');
         return;
     }
-    const engineConfig = engineVensionInfo.engineVersion[selectedEngine.value];
+    const engineConfig = engineVensionInfo.engineVersion[engineTypeSelect.value];
     if (engineConfig) {
         engineDir = `${engineConfig.savePath}benchmark-${selectedVersion}`;
         localStorage.setItem('engineDir', engineDir);
         pageRestart();
     } else {
-        console.error('无效的引擎配置:', selectedEngine.value);
+        console.error('无效的引擎配置:', engineTypeSelect.value);
     }
 }
 
@@ -234,8 +233,8 @@ function bindEventListeners() {
         graphicTypeRadioGroup.addEventListener('change', handleGraphicTypeChange);
     }
 
-    const engineTypeOptions = document.getElementById('engine-type-radio-options');
-    engineTypeOptions.addEventListener('change', handleEngineTypeChange);
+    const engineTypeSelect = document.getElementById('engine-type-select');
+    engineTypeSelect.addEventListener('change', handleEngineTypeChange);
 
     const engineVersionSelect = document.getElementById('engine-version');
     engineVersionSelect.addEventListener('change', handleEngineVersionChange);
@@ -245,15 +244,23 @@ function bindEventListeners() {
 if (typeof window !== 'undefined') {
     window.onload = () => {
         pageInit();
-        const engineDir = getEngineDir();
-        if (engineDir === "") {
-            throw "engineDir is None";
+        const isSupported = JSON.parse(localStorage.getItem('isSupported'));
+        if (isSupported) {
+            const engineDir = getEngineDir();
+            if (engineDir === "") {
+                throw "engineDir is None";
+            }
+            loadModule(engineDir);
+            bindEventListeners();
+        } else {
+            throw "This website only supports desktop browsers based on Chromium (like Chrome or Edge). Please switch to one of these browsers to access it.";
         }
-        loadModule(engineDir);
-        bindEventListeners();
     };
     window.onresize = () => {
-        onresizeEvent(shareData);
-        window.setTimeout(updateSize(shareData), 300);
+        const isSupported = JSON.parse(localStorage.getItem('isSupported'));
+        if (isSupported) {
+            onresizeEvent(shareData);
+            window.setTimeout(() => updateSize(shareData), 300);
+        }
     };
 }

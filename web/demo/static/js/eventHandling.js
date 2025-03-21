@@ -27,9 +27,8 @@ function applyLanguage(language) {
 }
 
 function checkBrowser() {
-    const pageContent = document.querySelector('.page-content');
-    const mobileWarning = document.getElementById('mobile-warning');
     const browserWarning = document.getElementById('browser-warning');
+    const maskOverlay = document.getElementById('mask-overlay');
 
     function isMobile() {
         return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -44,26 +43,17 @@ function checkBrowser() {
         return !isMobile();
     }
 
-    if (!isDesktop()) {
-        pageContent.classList.add('hidden');
-        mobileWarning.classList.remove('hidden');
-        setTimeout(() => {
-            mobileWarning.classList.add('show');
-        }, 100);
-        return false;
-    }
-
-    if (!isChromiumBased()) {
-        pageContent.classList.add('hidden');
+    let isSupported = true;
+    if (!isDesktop() || !isChromiumBased()) {
         browserWarning.classList.remove('hidden');
+        maskOverlay.classList.remove('hidden');
         setTimeout(() => {
             browserWarning.classList.add('show');
         }, 100);
-        return false;
+        isSupported = false;
     }
-
-    pageContent.classList.remove('hidden');
-    return true;
+    localStorage.setItem('isSupported', JSON.stringify(isSupported));
+    return isSupported;
 }
 
 
@@ -99,7 +89,7 @@ function initResourceBundle(locale) {
     return resourceBundle;
 }
 
-function updatePerfInfo(fps, drawTime, drawCount,maxDrawCountReached) {
+function updatePerfInfo(fps, drawTime, drawCount, maxDrawCountReached) {
     const fpsElement = document.querySelector('.fps');
     const fpsParagraph = document.querySelector('.fpsP');
     const timeElement = document.querySelector('.time');
@@ -120,9 +110,9 @@ function updatePerfInfo(fps, drawTime, drawCount,maxDrawCountReached) {
     const targetFPS = parseFloat(document.getElementById('minFPS').value) || 60;
 
     maxDrawCountReached = !!maxDrawCountReached;
-    if(maxDrawCountReached){
+    if (maxDrawCountReached) {
         if (countElement) countElement.textContent = `[${drawCount}]`;
-    }else {
+    } else {
         if (countElement) countElement.textContent = drawCount;
     }
 }

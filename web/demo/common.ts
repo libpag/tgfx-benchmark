@@ -148,30 +148,24 @@ export function pageInit() {
         restoreEngineType();
     }
     const config = parseSideBarParam();
-    const tgfxRadioItem = document.getElementById('tgfx-radio-item');
-    const skiaRadioItem = document.getElementById('skia-radio-item');
     const engineTypeInputs = document.getElementsByName('engine-type') as NodeListOf<HTMLInputElement>;
     const versionSelect = document.getElementById('engine-version') as HTMLSelectElement;
-    const engineTypeOptions = document.getElementById('engine-type-radio-options');
 
     function handleEngineVisibility() {
-        if (!config.engineVersion.tgfx && tgfxRadioItem) {
-            tgfxRadioItem.style.display = 'none';
+        const engineTypeSelect = document.getElementById('engine-type-select') as HTMLSelectElement;
+        if (!engineTypeSelect) return;
+
+        const tgfxOption = engineTypeSelect.querySelector('option[value="tgfx"]') as HTMLOptionElement;
+        if (tgfxOption && !config.engineVersion.tgfx) {
+            engineTypeSelect.removeChild(tgfxOption);
         }
-        if (!config.engineVersion.skia && skiaRadioItem) {
-            skiaRadioItem.style.display = 'none';
+        const skiaOption = engineTypeSelect.querySelector('option[value="skia"]') as HTMLOptionElement;
+        if (skiaOption && !config.engineVersion.skia) {
+            engineTypeSelect.removeChild(skiaOption);
         }
-        let selectedEngine = '';
-        if (config.engineVersion.tgfx && !config.engineVersion.skia) {
-            selectedEngine = 'tgfx';
-        } else if (!config.engineVersion.tgfx && config.engineVersion.skia) {
-            selectedEngine = 'skia';
-        }
-        if (selectedEngine) {
-            const radio = document.querySelector(`input[name="engine-type"][value="${selectedEngine}"]`) as HTMLInputElement;
-            if (radio) {
-                radio.checked = true;
-            }
+
+        if (engineTypeSelect.options.length === 1) {
+            engineTypeSelect.value = engineTypeSelect.options[0].value;
         }
     }
 
@@ -219,22 +213,20 @@ export function pageInit() {
 
     handleEngineVisibility();
 
-    const checkedEngine = Array.from(engineTypeInputs).find(input => input.checked);
-    if (checkedEngine) {
-        updateVersionSelect(checkedEngine.value);
+    const engineTypeSelect = document.getElementById('engine-type-select') as HTMLSelectElement;
+    if (engineTypeSelect) {
+        updateVersionSelect(engineTypeSelect.value);
         if (versionSelect) {
-            updateThreadTypeOptions(checkedEngine.value, versionSelect.value);
+            updateThreadTypeOptions(engineTypeSelect.value, versionSelect.value);
         }
     }
 
-    if (engineTypeOptions) {
-        engineTypeOptions.addEventListener('change', (e) => {
-            const target = e.target as HTMLInputElement;
-            if (target.type === 'radio' && target.name === 'engine-type' && target.checked) {
-                updateVersionSelect(target.value);
-                if (versionSelect) {
-                    updateThreadTypeOptions(target.value, versionSelect.value);
-                }
+    if (engineTypeSelect) {
+        engineTypeSelect.addEventListener('change', (e) => {
+            const target = e.target as HTMLSelectElement;
+            updateVersionSelect(target.value);
+            if (versionSelect) {
+                updateThreadTypeOptions(target.value, versionSelect.value);
             }
         });
     }
@@ -242,9 +234,9 @@ export function pageInit() {
     if (versionSelect) {
         versionSelect.addEventListener('change', (e) => {
             const target = e.target as HTMLSelectElement;
-            const checkedEngine = Array.from(engineTypeInputs).find(input => input.checked);
-            if (checkedEngine) {
-                updateThreadTypeOptions(checkedEngine.value, target.value);
+            const engineTypeSelect = document.getElementById('engine-type-select') as HTMLSelectElement;
+            if (engineTypeSelect) {
+                updateThreadTypeOptions(engineTypeSelect.value, target.value);
             }
         }, true);
     }
@@ -285,10 +277,10 @@ interface PageSettings {
 }
 
 function getPageSettings(): PageSettings {
-    const engineTypeInputs = document.getElementsByName('engine-type') as NodeListOf<HTMLInputElement>;
+    const engineTypeSelect = document.getElementById('engine-type-select') as HTMLSelectElement;
     const engineType = {
-        options: Array.from(engineTypeInputs).map(input => input.value),
-        selected: Array.from(engineTypeInputs).find(input => input.checked)?.value || ''
+        options: Array.from(engineTypeSelect.options).map(option => option.value),
+        selected: engineTypeSelect.value
     };
 
     const versionSelect = document.getElementById('engine-version') as HTMLSelectElement;
@@ -353,11 +345,9 @@ function restoreEngineType(): void {
         console.error('解析保存的设置失败:', error);
         return;
     }
-    const engineTypeRadio = document.querySelector(
-        `input[name="engine-type"][value="${settings.engineType.selected}"]`
-    ) as HTMLInputElement;
-    if (engineTypeRadio) {
-        engineTypeRadio.checked = true;
+    const engineTypeSelect = document.getElementById('engine-type-select') as HTMLSelectElement;
+    if (engineTypeSelect && settings.engineType.selected) {
+        engineTypeSelect.value = settings.engineType.selected;
     }
 }
 
@@ -439,10 +429,6 @@ export function restorePageSettings(): void {
 
 
 function setDefaultValues() {
-    const tgfxRadio = document.querySelector('input[name="engine-type"][value="tgfx"]') as HTMLInputElement;
-    if (tgfxRadio) {
-        tgfxRadio.checked = true;
-    }
     const mtRadio = document.querySelector('input[name="thread-type"][value="mt"]') as HTMLInputElement;
     if (mtRadio) {
         mtRadio.checked = true;
