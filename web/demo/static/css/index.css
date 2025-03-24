@@ -27,7 +27,8 @@ html, body {
     width: 260px;
     height: 100%;
     overflow-y: auto;
-    background-color: #1e1e1e;
+    /*background-color: #1e1e1e;*/
+    background-color: #16161c;
     border-right: 3px solid #2c2c2c;
 }
 
@@ -304,6 +305,6 @@ select option:hover {
 .language-select-container label {
     font-size: 15px;
     width: 105px;
-    margin: 0;
+    margin: 10px 0;
     display: inline-block;
 }
