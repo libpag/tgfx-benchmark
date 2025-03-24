@@ -335,7 +335,9 @@ export function pageInit() {
 
             if (param['graphicType']) {
                 let graphicType = param['graphicType'].toString().toLowerCase();
-                const selectedInput = document.querySelector(`input[name="graphic-type"][value="${graphicType}"]`) as HTMLInputElement;
+                // const selectedInput = document.querySelector(`input[name="graphic-type"][value="${graphicType}"]`) as HTMLInputElement;
+                const selectedInput = Array.from<HTMLInputElement>(document.querySelectorAll('input[name="graphic-type"]'))
+                    .find(input => input.value.toLowerCase() === graphicType.toLowerCase()) as HTMLInputElement;
 
                 if (selectedInput) {
                     selectedInput.checked = true;
@@ -617,6 +619,7 @@ function handleConfigParamChange(event: Event) {
 }
 
 function setGraphicType(graphicType: string) {
+    graphicType=graphicType.toLowerCase();
     let type: GraphicType;
     switch (graphicType) {
         case 'rectangle':
@@ -625,16 +628,16 @@ function setGraphicType(graphicType: string) {
         case 'round':
             type = GraphicType.round;
             break;
-        case 'roundedRectangle':
+        case 'roundedRectangle'.toLowerCase():
             type = GraphicType.roundedRectangle;
             break;
         case 'oval':
             type = GraphicType.oval;
             break;
-        case 'simpleGraphicBlending':
+        case 'simpleGraphicBlending'.toLowerCase():
             type = GraphicType.simpleGraphicBlending;
             break;
-        case 'complexGraphics':
+        case 'complexGraphics'.toLowerCase():
             type = GraphicType.complexGraphics;
             break;
         default:
