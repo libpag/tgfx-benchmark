@@ -1,8 +1,8 @@
 const LocaleMaps_zh_CN = {
-    'fpsP.innerHTML':'当前帧率: ',
-    'timeP.innerHTML':'每帧耗时: ',
-    'countP.innerHTML':'渲染数量: ',
-    'resolutionP.innerHTML':'分辨率: ',
+    'fpsP.innerHTML':'当前帧率:',
+    'timeP.innerHTML':'每帧耗时:',
+    'countP.innerHTML':'渲染数量:',
+    'resolutionP.innerHTML':'分辨率:',
     'engineTypeP.innerHTML':'引擎:',
     'engineVersionLabel.innerHTML':"版本:",
     'threadTypeP.innerHTML':"多线程开关:",

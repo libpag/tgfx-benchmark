@@ -1,8 +1,8 @@
 const LocaleMaps_en_US = {
-    'fpsP.innerHTML': 'FPS: ',
-    'timeP.innerHTML': 'Time: ',
-    'countP.innerHTML': 'Count: ',
-    'resolutionP.innerHTML': 'Resolution: ',
+    'fpsP.innerHTML': 'FPS:',
+    'timeP.innerHTML': 'Time:',
+    'countP.innerHTML': 'Count:',
+    'resolutionP.innerHTML': 'Resolution:',
     'engineTypeP.innerHTML': 'Engine:',
     'engineVersionLabel.innerHTML': "Version:",
     'threadTypeP.innerHTML': "Multi-thread:",

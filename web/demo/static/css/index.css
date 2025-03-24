@@ -68,8 +68,13 @@ html, body {
     margin: 10px 0;
 }
 
-.info-row p, .info-row span {
+.info-row p {
     margin: 0;
+    padding: 0;
+}
+
+.info-row span{
+    margin-left: 5px;
     padding: 0;
 }
 

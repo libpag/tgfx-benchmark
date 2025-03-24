@@ -172,6 +172,7 @@ void TGFXBaseView::updateDrawParam(int type, const float value) const {
             break;
         case DataType::stepCount:
             appHost->setStepCount(static_cast<size_t>(value));
+            break;
         case DataType::maxDrawCount:
             appHost->setMaxDrawCount(static_cast<size_t>(value));
             break;
