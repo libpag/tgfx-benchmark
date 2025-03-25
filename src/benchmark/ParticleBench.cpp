@@ -23,21 +23,20 @@
 #include "tgfx/core/Clock.h"
 
 namespace benchmark {
-static  size_t MAX_RECT_COUNT = 1000000;
-static  size_t INCREASE_STEP = 600;
+static size_t MAX_RECT_COUNT = 1000000;
+static size_t INCREASE_STEP = 600;
 static constexpr int64_t FLUSH_INTERVAL = 300000;
 static constexpr float FPS_BACKGROUND_HEIGHT = 50.f;
 static constexpr float STATUS_WIDTH = 250.f;
 static constexpr float FONT_SIZE = 40.f;
 constexpr float PI = 3.14159265358979323846f;
 
-
 void ParticleBench::onDraw(tgfx::Canvas* canvas, const AppHost* host) {
   Init(host);
   AnimateRects(host);
   if (!host->isWeb()) {
     DrawRects(canvas);
-  }else {
+  } else {
     DrawGraphics(canvas, host);
   }
   DrawStatus(canvas, host);
@@ -45,8 +44,8 @@ void ParticleBench::onDraw(tgfx::Canvas* canvas, const AppHost* host) {
 
 void ParticleBench::Init(const AppHost* host) {
   if (host->getUpdateDrawParamFlag()) {
-    MAX_RECT_COUNT=host->getMaxDrawCount();
-    INCREASE_STEP=host->getStepCount();
+    MAX_RECT_COUNT = host->getMaxDrawCount();
+    INCREASE_STEP = host->getStepCount();
     targetFPS = host->getMinFPS();
     host->setUpdateDrawParamFlag(false);
   }
@@ -79,9 +78,9 @@ void ParticleBench::Init(const AppHost* host) {
   for (size_t i = 0; i < MAX_RECT_COUNT; i++) {
     const auto size = (5.f + rectDistribution(rectRng) * 20.f) * host->density();
     auto& item = rects[i];
-    if (graphicType==GraphicType::oval) {
-      item.rect.setXYWH(-size, -size, size, 0.8f*size);
-    }else {
+    if (graphicType == GraphicType::oval) {
+      item.rect.setXYWH(-size, -size, size, 0.8f * size);
+    } else {
       item.rect.setXYWH(-size, -size, size, size);
     }
     item.speedX = speedDistribution(speedRng) * 5.0f;
@@ -147,7 +146,7 @@ void ParticleBench::DrawStatus(tgfx::Canvas* canvas, const AppHost* host) {
       auto drawTime = host->averageDrawTime();
       if (!maxDrawCountReached) {
         if ((currentFPS < targetFPS - 0.5f &&
-            drawTime > static_cast<int64_t>(1000000 / targetFPS) - 2000) ||
+             drawTime > static_cast<int64_t>(1000000 / targetFPS) - 2000) ||
             drawCount >= MAX_RECT_COUNT) {
           maxDrawCountReached = true;
           host->setMaxDrawCountReached(maxDrawCountReached);
@@ -193,7 +192,6 @@ void ParticleBench::DrawStatus(tgfx::Canvas* canvas, const AppHost* host) {
     left += STATUS_WIDTH * host->density();
   }
 }
-
 
 void ParticleBench::DrawRound(tgfx::Canvas* canvas) const {
   for (size_t i = 0; i < drawCount; i++) {

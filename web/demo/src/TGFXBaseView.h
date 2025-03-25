@@ -24,13 +24,12 @@
 
 namespace benchmark {
 
-enum DataType {
- startCount=0,
- stepCount=1,
- maxDrawCount=2,
- minFPS=3,
+enum class DataType {
+  startCount = 0,
+  stepCount = 1,
+  maxDrawCount = 2,
+  minFPS = 3,
 };
-
 
 class TGFXBaseView {
  public:
@@ -48,7 +47,7 @@ class TGFXBaseView {
 
   void updatePerfInfo(const PerfData& data);
 
-  void updateDrawParam(int type,float value) const;
+  void updateDrawParam(int type, float value) const;
 
   void updateGraphicType(int type) const;
 

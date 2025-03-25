@@ -17,12 +17,7 @@
         <p data-locale="desktopWarning"></p>
     </div>
 </div>
-<div id="progressContainer" class="hidden">
-    <div id="progressBar">
-        <div id="progressFill"></div>
-    </div>
-    <div id="loadingText"></div>
-</div>
+
 <div class="page-content">
     <div id="sidebar" class="sidebar">
         <div class="perf-info">
@@ -133,6 +128,18 @@
     </div>
     <div id="container" class="container">
         <canvas class="canvas" id="benchmark"></canvas>
+        <div id="progressContainer" class="hidden">
+            <div class="progress-wrapper">
+                <div id="progressBar">
+                    <div id="progressFill"></div>
+                </div>
+                <div id="loadingText"></div>
+            </div>
+            <div id="descriptionText">
+                <p data-locale="progressBarDescP"></p>
+                <span id="versionDesc" class="versionDesc"></span>
+            </div>
+        </div>
     </div>
 </div>
 <script src="static/js/locale/zh_CN.js"></script>

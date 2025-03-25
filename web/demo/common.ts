@@ -63,7 +63,7 @@ export enum DataType {
     stepCount = 1,
     maxDrawCount = 2,
     minFPS = 3,
-};
+}
 
 export enum GraphicType {
     rectangle = 0,
@@ -72,7 +72,7 @@ export enum GraphicType {
     oval = 3,
     simpleGraphicBlending = 4,
     complexGraphics = 5
-};
+}
 
 export let engineVersionInfo: SideBarConfig;
 
@@ -144,38 +144,37 @@ export function parseSideBarParam(): SideBarConfig {
         xhr.send();
         const config = JSON.parse(xhr.responseText) as SideBarConfig;
         if (!config.engineVersion) {
-            throw new Error('配置文件格式错误：缺少 engineVersion 配置项');
+            throw new Error('Configuration file format error: engineVersion configuration item is missing');
         }
 
         for (const engine of ['tgfx', 'skia'] as const) {
             const engineConfig = config.engineVersion[engine];
             if (engineConfig) {
                 if (!engineConfig.savePath) {
-                    throw new Error(`配置文件格式错误：${engine.toUpperCase()} 引擎缺少 savePath`);
+                    throw new Error(`Configuration file format error: ${engine.toUpperCase()} missing savePath`);
                 }
                 if (!engineConfig.versions || Object.keys(engineConfig.versions).length === 0) {
-                    throw new Error(`配置文件格式错误：${engine.toUpperCase()} 引擎缺少版本信息`);
+                    throw new Error(`Configuration file format error: ${engine.toUpperCase()} missing versionInfo`);
                 }
 
                 for (const [version, threadTypes] of Object.entries(engineConfig.versions)) {
                     if (!Array.isArray(threadTypes) || threadTypes.length === 0) {
-                        throw new Error(`配置文件格式错误：${engine.toUpperCase()} 引擎 ${version} 版本的线程类型配置无效`);
+                        throw new Error(`Configuration file format error: the thread type configuration of ${engine.toUpperCase()} in ${version} is empty`);
                     }
                     if (!threadTypes.every(type => type === 'st' || type === 'mt')) {
-                        throw new Error(`配置文件格式错误：${engine.toUpperCase()} 引擎 ${version} 版本包含无效的线程类型`);
+                        throw new Error(`Configuration file format error: the thread type configuration of ${engine.toUpperCase()} in ${version} is invalid`);
                     }
                 }
             }
         }
 
         if (!config.engineVersion.tgfx && !config.engineVersion.skia) {
-            throw new Error('配置文件格式错误：至少需要一个引擎配置');
+            throw new Error('Configuration file format error: at least one engine configuration is required');
         }
         engineVersionInfo = config;
         return config;
     } catch (error) {
-        console.error('解析侧边栏配置文件失败:', error);
-        throw error;
+        throw new Error(`Failed to parse sidebar configuration file: ${error}`);
     }
 }
 
@@ -348,7 +347,7 @@ export function pageInit() {
                     if (typeof value === 'number') {
                         element.value = value.toString();
                     } else {
-                        console.warn(`参数 ${key} 的值不是数字类型`);
+                        console.warn(`The value of ${key} is not of numeric type`);
                     }
                 }
             });
@@ -364,7 +363,7 @@ export function pageInit() {
             }
 
         } catch (error) {
-            console.error('url参数错误:', error);
+            throw new Error(`The url parameter is incorrect: ${error}`);
         }
     }
     if (engineTypeSelect.value === 'tgfx') {
@@ -470,7 +469,7 @@ function restoreEngineType(): void {
     try {
         settings = JSON.parse(savedSettings);
     } catch (error) {
-        console.error('解析保存的设置失败:', error);
+        console.error('Page parameter parsing failed:', error);
         return;
     }
     const engineTypeSelect = document.getElementById('engine-type-select') as HTMLSelectElement;
@@ -489,7 +488,7 @@ export function restorePageSettings(): void {
     try {
         settings = JSON.parse(savedSettings);
     } catch (error) {
-        console.error('解析保存的设置失败:', error);
+        console.error('Page parameter parsing failed:', error);
         return;
     }
 
@@ -553,7 +552,7 @@ export function restorePageSettings(): void {
         }
 
     } catch (error) {
-        console.error('恢复页面设置失败:', error);
+        console.error('Failed to restore page configuration:', error);
     }
 }
 
@@ -635,7 +634,7 @@ function handleConfigParamChange(event: Event) {
     } else if (target.id === 'minFPS') {
         type = DataType.minFPS;
     } else {
-        console.error('未知的参数类型:', target.id);
+        console.error('Unknown parameter type:', target.id);
     }
     shareData.baseView.updateDrawParam(type, Number(target.value));
     UrlParamsManager.setUrlParams(param);
@@ -705,11 +704,11 @@ function handleEngineTypeChange(event: Event) {
         engineVersionSelect.value = firstVersion;
         engineDir = `${engineVersionInfo.engineVersion[selectedEngine].savePath}benchmark-${firstVersion}`;
         localStorage.setItem('engineDir', engineDir);
-        const url = window.location.href.split('?')[0]; // 去掉查询字符串部分
+        const url = window.location.href.split('?')[0];
         window.history.replaceState({}, '', url);
         pageRestart();
     } else {
-        console.warn('未知的引擎类型:', selectedEngine);
+        console.warn('Unknown engine type:', selectedEngine);
     }
 }
 
@@ -718,12 +717,12 @@ function handleEngineVersionChange(event: Event) {
     let engineDir = "";
     const engineTypeSelect = document.getElementById('engine-type-select') as HTMLSelectElement;
     if (!engineTypeSelect) {
-        console.warn('未找到引擎类型选择器');
+        console.warn('Engine type selector not found');
         return;
     }
     const selectedVersion = target.value;
     if (!selectedVersion) {
-        console.warn('未选择版本');
+        console.warn('No version selected');
         return;
     }
     let param: ParamsObject = {};
@@ -735,7 +734,7 @@ function handleEngineVersionChange(event: Event) {
         localStorage.setItem('engineDir', engineDir);
         pageRestart();
     } else {
-        console.error('无效的引擎配置:', engineTypeSelect.value);
+        console.error('Invalid engine configuration:', engineTypeSelect.value);
     }
 }
 
@@ -744,6 +743,18 @@ function showProgress(): void {
     const container = document.getElementById('progressContainer');
     if (container) {
         container.classList.remove('hidden');
+    }
+    const engineTypeSelect = document.getElementById('engine-type-select') as HTMLSelectElement;
+    const versionSelect = document.getElementById('engine-version') as HTMLSelectElement;
+
+    if (engineTypeSelect && versionSelect) {
+        const engineType = engineTypeSelect.value;
+        const version = versionSelect.value;
+
+        const versionDescSpan = document.getElementById('versionDesc');
+        if (versionDescSpan) {
+            versionDescSpan.innerHTML = `${engineType}-${version}`;
+        }
     }
 }
 
@@ -778,6 +789,10 @@ function getRandomInt(min: number, max: number): number {
     return Math.floor(Math.random() * (max - min)) + min;
 }
 
+function sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export async function loadModule(engineDir: string, type: string = "mt") {
     try {
         showProgress();
@@ -786,8 +801,7 @@ export async function loadModule(engineDir: string, type: string = "mt") {
         updateProgress(getRandomInt(10, 30));
         if (type === 'mt') {
             if (!crossOriginIsolated) {
-                console.error('当前环境不支持多线程WebAssembly，请检查COOP和COEP设置');
-                throw new Error('多线程WebAssembly不可用');
+                throw new Error('The current environment does not support multi-threaded WebAssembly, please check the COOP and COEP settings');
             }
 
             if (typeof SharedArrayBuffer === 'undefined') {

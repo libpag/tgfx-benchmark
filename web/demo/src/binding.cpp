@@ -33,8 +33,8 @@ EMSCRIPTEN_BINDINGS(TGFXDemo) {
       .function("updateDrawParam", &TGFXBaseView::updateDrawParam)
       .function("updateGraphicType", &TGFXBaseView::updateGraphicType);
 
-  class_<TGFXView, base<TGFXBaseView>>("TGFXView")
-      .smart_ptr<std::shared_ptr<TGFXView>>("TGFXView")
+  class_<TGFXView, base<TGFXBaseView> >("TGFXView")
+      .smart_ptr<std::shared_ptr<TGFXView> >("TGFXView")
       .class_function("MakeFrom", optional_override([](const std::string& canvasID) {
                         if (canvasID.empty()) {
                           return std::shared_ptr<TGFXView>(nullptr);
@@ -42,8 +42,8 @@ EMSCRIPTEN_BINDINGS(TGFXDemo) {
                         return std::make_shared<TGFXView>(canvasID);
                       }));
 
-  class_<TGFXThreadsView, base<TGFXBaseView>>("TGFXThreadsView")
-      .smart_ptr<std::shared_ptr<TGFXThreadsView>>("TGFXThreadsView")
+  class_<TGFXThreadsView, base<TGFXBaseView> >("TGFXThreadsView")
+      .smart_ptr<std::shared_ptr<TGFXThreadsView> >("TGFXThreadsView")
       .class_function("MakeFrom", optional_override([](const std::string& canvasID) {
                         if (canvasID.empty()) {
                           return std::shared_ptr<TGFXThreadsView>(nullptr);

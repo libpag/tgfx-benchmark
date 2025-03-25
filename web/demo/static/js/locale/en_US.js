@@ -25,4 +25,5 @@ const LocaleMaps_en_US = {
     'chineseOption.innerHTML': 'Chinese (CN)',
     'englishOption.innerHTML': 'English (US)',
     'desktopWarning.innerHTML': 'This website only supports desktop browsers based on Chromium (like Chrome or Edge). Please switch to one of these browsers to access it.',
+    'progressBarDescP.innerHTML': 'Loading engine:',
 }

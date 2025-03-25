@@ -1,13 +1,20 @@
 #progressContainer {
-    position: fixed;
+    position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+    display: flex;
     width: 450px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index:100001
+}
+
+.progress-wrapper {
     display: flex;
     align-items: center;
-    gap: 10px;
-    pointer-events: none;
+    width: 100%;
 }
 
 #progressBar {
@@ -29,6 +36,8 @@
     font-size: 14px;
     color: #000;
     white-space: nowrap;
+    margin-left: 5px;
+    line-height: 1.2;
 }
 
 
@@ -39,4 +48,24 @@
 .fade-out {
     opacity: 0;
     transition: opacity 0.5s ease-out;
+}
+
+
+#descriptionText {
+    margin-top: 5px;
+    font-size: 14px;
+    color: #000;
+    text-align: center;
+}
+
+#descriptionText p {
+    display: inline;
+    margin: 0;
+    line-height: 1.2;
+}
+
+#descriptionText span {
+    display: inline;
+    margin-left: 5px;
+    line-height: 1.2;
 }

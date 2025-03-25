@@ -38,13 +38,13 @@ struct PerfData {
 /**
 * Record the type of graphics to be drawn
 */
-enum GraphicType {
-  rectangle=0,
-  round=1,
-  roundedRectangle=2,
-  oval=3,
-  simpleGraphicBlending=4,
-  complexGraphics=5
+enum class GraphicType {
+  rectangle = 0,
+  round = 1,
+  roundedRectangle = 2,
+  oval = 3,
+  simpleGraphicBlending = 4,
+  complexGraphics = 5,
 };
 
 /**
@@ -163,10 +163,12 @@ class AppHost {
    * Resets the app host to the first frame.
    */
   void resetFrames();
+
   /**
    * Set a flag to determine whether it is web.
    */
   void setWebFlag(bool webFlag);
+
   /**
    * Get a flag to determine whether it is web.
    */
@@ -175,13 +177,12 @@ class AppHost {
   /**
    * Set draw count.
    */
-  void setDrawCount(size_t drawCount)const;
+  void setDrawCount(size_t drawCount) const;
 
   /**
    * Get draw count.
    */
   size_t getDrawCount() const;
-
 
   /**
    * Get perf data.
@@ -258,8 +259,6 @@ class AppHost {
    */
   bool getMaxDrawCountReached() const;
 
-
-
  private:
   int _width = 1024;
   int _height = 720;
@@ -268,15 +267,15 @@ class AppHost {
   float _mouseY = -1.0f;
   std::deque<int64_t> fpsTimeStamps = {};
   std::deque<int64_t> drawTimes = {};
-  std::unordered_map<std::string, std::shared_ptr<tgfx::Image>> images = {};
-  std::unordered_map<std::string, std::shared_ptr<tgfx::Typeface>> typefaces = {};
+  std::unordered_map<std::string, std::shared_ptr<tgfx::Image> > images = {};
+  std::unordered_map<std::string, std::shared_ptr<tgfx::Typeface> > typefaces = {};
   bool _webFlag = false;
   mutable size_t _drawCount = 1;
   mutable float _minFPS = 60.0f;
   mutable size_t _startDrawCount = 1;
   mutable size_t _stepCount = 600;
   mutable size_t _maxDrawCount = 1000000;
-  mutable bool _updateDrawParamFlag=false;
+  mutable bool _updateDrawParamFlag = false;
   mutable GraphicType _graphicType = GraphicType::rectangle;
   mutable bool _maxDrawCountReached = false;
 };

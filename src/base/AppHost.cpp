@@ -127,7 +127,6 @@ void AppHost::resetFrames() {
   drawTimes.clear();
 }
 
-
 void AppHost::setWebFlag(bool webFlag) {
   _webFlag = webFlag;
 }
@@ -135,6 +134,7 @@ void AppHost::setWebFlag(bool webFlag) {
 bool AppHost::isWeb() const {
   return _webFlag;
 }
+
 void AppHost::setDrawCount(const size_t drawCount) const {
   _drawCount = drawCount;
 }
@@ -144,7 +144,8 @@ size_t AppHost::getDrawCount() const {
 }
 
 PerfData AppHost::getPerfData() const {
-  const PerfData perfData={currentFPS(),static_cast<float>(averageDrawTime() / 1000.f),getDrawCount()};
+  const PerfData perfData = {currentFPS(), static_cast<float>(averageDrawTime() / 1000.f),
+                             getDrawCount()};
 
   return perfData;
 }
@@ -154,7 +155,7 @@ void AppHost::setMinFPS(const float minFPS) const {
 }
 
 float AppHost::getMinFPS() const {
-  return  _minFPS;
+  return _minFPS;
 }
 
 void AppHost::setStartDrawCount(const size_t startDrawCount) const {
@@ -189,7 +190,6 @@ bool AppHost::getUpdateDrawParamFlag() const {
   return _updateDrawParamFlag;
 }
 
-
 void AppHost::setGraphicType(GraphicType graphicType) const {
   _graphicType = graphicType;
 }
@@ -205,6 +205,5 @@ void AppHost::setMaxDrawCountReached(const bool maxDrawCountReached) const {
 bool AppHost::getMaxDrawCountReached() const {
   return _maxDrawCountReached;
 }
-
 
 }  // namespace benchmark
