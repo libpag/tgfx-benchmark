@@ -74,20 +74,20 @@ export enum GraphicType {
     complexGraphics = 5
 };
 
-export let engineVensionInfo;
+export let engineVersionInfo: SideBarConfig;
 
 export interface ParamsObject {
     [key: string]: string | number | boolean;
 }
 
-export let defaultParams: ParamsObject = {
-    engineType: "tgfx",
-    engineVersion: '',
-    startCount: 1,
-    stepCount: 600,
-    MaxDrawCount: 1000000,
-    minFps: 60,
-    graphicType: "rectangle",
+export let defaultUrlParams: ParamsObject = {
+    engine: "tgfx",
+    version: '',
+    start: 1,
+    step: 600,
+    max: 1000000,
+    min: 60,
+    graphic: "rectangle",
 };
 
 export function updateSize(shareData: ShareData) {
@@ -171,7 +171,7 @@ export function parseSideBarParam(): SideBarConfig {
         if (!config.engineVersion.tgfx && !config.engineVersion.skia) {
             throw new Error('配置文件格式错误：至少需要一个引擎配置');
         }
-        engineVensionInfo = config;
+        engineVersionInfo = config;
         return config;
     } catch (error) {
         console.error('解析侧边栏配置文件失败:', error);
@@ -188,7 +188,14 @@ export function pageInit() {
     const config = parseSideBarParam();
     const versionSelect = document.getElementById('engine-version') as HTMLSelectElement;
     let param: ParamsObject = {};
-    const queryString = window.location.search;
+    let queryString = window.location.search;
+    if (queryString !== '') {
+        const urlParams = UrlParamsManager.getUrlParams();
+        if (!UrlParamsManager.validateUrlParams(urlParams)) {
+            queryString = '';
+            UrlParamsManager.clearUrlParams();
+        }
+    }
 
     function handleEngineVisibility() {
         const engineTypeSelect = document.getElementById('engine-type-select') as HTMLSelectElement;
@@ -213,12 +220,12 @@ export function pageInit() {
             restoreEngineType();
             return;
         }
-        if(queryString!==''){
+        if (queryString !== '') {
             param = UrlParamsManager.getUrlParams();
 
-            if (param['engineType']) {
-                let type = param['engineType'].toString().toLowerCase();
-                if(type==='tgfx'||type==='skia'){
+            if (param['engine']) {
+                let type = param['engine'].toString().toLowerCase();
+                if (type === 'tgfx' || type === 'skia') {
                     engineTypeSelect.value = type;
                     return;
                 }
@@ -306,47 +313,48 @@ export function pageInit() {
     }
 
     if (queryString === '') {
-        param['engineType'] = engineTypeSelect.value;
-        param['engineVersion'] = versionSelect.value;
+        param['engine'] = engineTypeSelect.value;
+        param['version'] = versionSelect.value;
 
         const configInputs = document.querySelectorAll('#config-param input[type="number"]');
         configInputs.forEach(input => {
             const element = input as HTMLInputElement;
             if (element.value) {
-                param[element.id] = Number(element.value);
+                let key: string = htmlParamConvertUrlParam(element.id);
+                param[key] = Number(element.value);
             }
         });
         const selectedInput = document.querySelector('input[name="graphic-type"]:checked') as HTMLInputElement;
         if (selectedInput) {
-            param["graphicType"] = selectedInput.value;
+            param["graphic"] = selectedInput.value;
         }
         UrlParamsManager.setUrlParams(param);
     } else {
         try {
             param = UrlParamsManager.getUrlParams();
-            if (param['engineType']) {
-                engineTypeSelect.value = param['engineType'].toString().toLowerCase();
+            if (param['engine']) {
+                engineTypeSelect.value = param['engine'].toString().toLowerCase();
             }
-            if (param['engineVersion']) {
-                versionSelect.value = param['engineVersion'].toString();
+            if (param['version']) {
+                versionSelect.value = param['version'].toString();
             }
             const configInputs = document.querySelectorAll('#config-param input[type="number"]');
 
             configInputs.forEach(input => {
                 const element = input as HTMLInputElement;
-                if (element.id in param && param[element.id] !== undefined) {
-                    const value = Number(param[element.id]);
+                let key: string = htmlParamConvertUrlParam(element.id);
+                if (key in param && param[key] !== undefined) {
+                    const value = Number(param[key]);
                     if (typeof value === 'number') {
                         element.value = value.toString();
                     } else {
-                        console.warn(`参数 ${element.id} 的值不是数字类型`);
+                        console.warn(`参数 ${key} 的值不是数字类型`);
                     }
                 }
             });
 
-            if (param['graphicType']) {
-                let graphicType = param['graphicType'].toString().toLowerCase();
-                // const selectedInput = document.querySelector(`input[name="graphic-type"][value="${graphicType}"]`) as HTMLInputElement;
+            if (param['graphic']) {
+                let graphicType = param['graphic'].toString().toLowerCase();
                 const selectedInput = Array.from<HTMLInputElement>(document.querySelectorAll('input[name="graphic-type"]'))
                     .find(input => input.value.toLowerCase() === graphicType.toLowerCase()) as HTMLInputElement;
 
@@ -501,7 +509,7 @@ export function restorePageSettings(): void {
             if (settings.engineVersion.selected) {
                 versionSelect.value = settings.engineVersion.selected;
                 versionSelect.dispatchEvent(new Event('change'));
-                param["engineVersion"] = settings.engineVersion.selected;
+                param["version"] = settings.engineVersion.selected;
             }
         }
 
@@ -586,9 +594,9 @@ export function getEngineDir(): string {
         const version = versionSelect.value;
         const engineTypeSelect = document.getElementById('engine-type-select') as HTMLSelectElement;
         if (engineTypeSelect.value === 'tgfx') {
-            return `${engineVensionInfo.engineVersion.tgfx.savePath}benchmark-${version}`;
+            return `${engineVersionInfo.engineVersion.tgfx.savePath}benchmark-${version}`;
         } else if (engineTypeSelect.value === 'skia') {
-            return `${engineVensionInfo.engineVersion.skia.savePath}benchmark-${version}`;
+            return `${engineVersionInfo.engineVersion.skia.savePath}benchmark-${version}`;
         }
     } else {
         const engineDir = localStorage.getItem('engineDir');
@@ -616,21 +624,25 @@ function handleConfigParamChange(event: Event) {
     if (currentValue < minValue) {
         target.value = minValue.toString();
     }
-    param[target.id] = Number(target.value);
+    param[htmlParamConvertUrlParam(target.id)] = Number(target.value);
+    let type: DataType = DataType.startCount;
     if (target.id === 'startCount') {
-        shareData.baseView.updateDrawParam(DataType.startCount, Number(target.value));
+        type = DataType.startCount;
     } else if (target.id === 'stepCount') {
-        shareData.baseView.updateDrawParam(DataType.stepCount, Number(target.value));
+        type = DataType.stepCount;
     } else if (target.id === 'maxShapes') {
-        shareData.baseView.updateDrawParam(DataType.maxDrawCount, Number(target.value));
+        type = DataType.maxDrawCount;
     } else if (target.id === 'minFPS') {
-        shareData.baseView.updateDrawParam(DataType.minFPS, Number(target.value));
+        type = DataType.minFPS;
+    } else {
+        console.error('未知的参数类型:', target.id);
     }
+    shareData.baseView.updateDrawParam(type, Number(target.value));
     UrlParamsManager.setUrlParams(param);
 }
 
 function setGraphicType(graphicType: string) {
-    graphicType=graphicType.toLowerCase();
+    graphicType = graphicType.toLowerCase();
     let type: GraphicType;
     switch (graphicType) {
         case 'rectangle':
@@ -668,7 +680,7 @@ function handleGraphicTypeChange(event: Event) {
 
         let graphicType = target.value;
         setGraphicType(graphicType);
-        param["graphicType"] = graphicType;
+        param["graphic"] = graphicType;
         UrlParamsManager.setUrlParams(param);
     }
 }
@@ -679,10 +691,7 @@ function handleEngineTypeChange(event: Event) {
     const selectedEngine = target.value;
     const engineVersionSelect = document.getElementById('engine-version') as HTMLSelectElement;
     engineVersionSelect.innerHTML = '';
-    const versions = engineVensionInfo.engineVersion[selectedEngine]?.versions || {};
-    // let param: ParamsObject = {};
-    // param["engineType"] = selectedEngine.toLowerCase();
-    // UrlParamsManager.setUrlParams(param);
+    const versions = engineVersionInfo.engineVersion[selectedEngine]?.versions || {};
 
     Object.keys(versions).forEach(version => {
         const option = document.createElement('option');
@@ -694,7 +703,7 @@ function handleEngineTypeChange(event: Event) {
     const firstVersion = Object.keys(versions)[0];
     if (firstVersion) {
         engineVersionSelect.value = firstVersion;
-        engineDir = `${engineVensionInfo.engineVersion[selectedEngine].savePath}benchmark-${firstVersion}`;
+        engineDir = `${engineVersionInfo.engineVersion[selectedEngine].savePath}benchmark-${firstVersion}`;
         localStorage.setItem('engineDir', engineDir);
         const url = window.location.href.split('?')[0]; // 去掉查询字符串部分
         window.history.replaceState({}, '', url);
@@ -718,9 +727,9 @@ function handleEngineVersionChange(event: Event) {
         return;
     }
     let param: ParamsObject = {};
-    param["engineVersion"] = selectedVersion;
+    param["version"] = selectedVersion;
     UrlParamsManager.setUrlParams(param);
-    const engineConfig = engineVensionInfo.engineVersion[engineTypeSelect.value];
+    const engineConfig = engineVersionInfo.engineVersion[engineTypeSelect.value];
     if (engineConfig) {
         engineDir = `${engineConfig.savePath}benchmark-${selectedVersion}`;
         localStorage.setItem('engineDir', engineDir);
@@ -774,7 +783,7 @@ export async function loadModule(engineDir: string, type: string = "mt") {
         showProgress();
         shareData = new ShareData();
         const Benchmark = await import(`./${engineDir}.js`);
-        updateProgress(getRandomInt(10,30));
+        updateProgress(getRandomInt(10, 30));
         if (type === 'mt') {
             if (!crossOriginIsolated) {
                 console.error('当前环境不支持多线程WebAssembly，请检查COOP和COEP设置');
@@ -806,7 +815,7 @@ export async function loadModule(engineDir: string, type: string = "mt") {
             moduleConfig['mainScriptUrlOrBlob'] = `${engineDir}.js`;
         }
         const module = await Benchmark.default(moduleConfig);
-        updateProgress(getRandomInt(31,50));
+        updateProgress(getRandomInt(31, 50));
         if (enumEngineType === EnumEngineType.tgfx) {
             shareData.BenchmarkModule = module;
             console.log(`BenchmarkModule:${shareData.BenchmarkModule}`);
@@ -817,11 +826,11 @@ export async function loadModule(engineDir: string, type: string = "mt") {
 
             var fontPath = "static/font/NotoSansSC-Regular.otf";
             const fontBuffer = await fetch(fontPath).then((response) => response.arrayBuffer());
-            updateProgress(getRandomInt(51,70));
+            updateProgress(getRandomInt(51, 70));
             const fontUIntArray = new Uint8Array(fontBuffer);
             var emojiFontPath = "static/font/NotoColorEmoji.ttf";
             const emojiFontBuffer = await fetch(emojiFontPath).then((response) => response.arrayBuffer());
-            updateProgress(getRandomInt(71,90));
+            updateProgress(getRandomInt(71, 90));
             const emojiFontUIntArray = new Uint8Array(emojiFontBuffer);
             tgfxView.registerFonts(fontUIntArray, emojiFontUIntArray);
             shareData.baseView = tgfxView;
@@ -829,11 +838,11 @@ export async function loadModule(engineDir: string, type: string = "mt") {
             let skiaView: SkiaView = module.SkiaView.MakeFrom('#benchmark');
             var fontPath = "static/font//SFNSRounded.ttf";
             const fontBuffer = await fetch(fontPath).then((response) => response.arrayBuffer());
-            updateProgress(getRandomInt(51,70));
+            updateProgress(getRandomInt(51, 70));
             const fontUIntArray = new Uint8Array(fontBuffer);
             var emojiFontPath = "static/font/NotoColorEmoji.ttf";
             const emojiFontBuffer = await fetch(emojiFontPath).then((response) => response.arrayBuffer());
-            updateProgress(getRandomInt(71,90));
+            updateProgress(getRandomInt(71, 90));
             const emojiFontUIntArray = new Uint8Array(emojiFontBuffer);
             skiaView.registerFonts(fontUIntArray, emojiFontUIntArray);
             shareData.baseView = skiaView;
@@ -895,6 +904,45 @@ export function bindEventListeners() {
 
 }
 
+function urlParamConvertHtmlParam(urlParam: string): string {
+    urlParam = urlParam.toString().toLowerCase();
+    if (urlParam === "start") {
+        return "startCount";
+    } else if (urlParam === "step") {
+        return "stepCount";
+    } else if (urlParam === "max") {
+        return "maxShapes";
+    } else if (urlParam === "min") {
+        return "minFPS";
+    } else if (urlParam === 'graphic') {
+        return "graphicType";
+    } else if (urlParam === 'engine') {
+        return "engineType";
+    } else if (urlParam === 'version') {
+        return "engineVersion";
+    }
+}
+
+function htmlParamConvertUrlParam(htmlParam: string): string {
+    htmlParam = htmlParam.toString().toLowerCase();
+    if (htmlParam === "startcount") {
+        return "start";
+    } else if (htmlParam === "stepcount") {
+        return "step";
+    } else if (htmlParam === "maxshapes") {
+        return "max";
+    } else if (htmlParam === "minfps") {
+        return "min";
+    } else if (htmlParam === 'graphictype') {
+        return "graphic";
+    } else if (htmlParam === 'enginetype') {
+        return "engine";
+    } else if (htmlParam === 'engineversion') {
+        return "version";
+    }
+    return "";
+}
+
 export class UrlParamsManager {
     static setUrlParams(params: ParamsObject): void {
         const url = new URL(window.location.href);
@@ -910,6 +958,7 @@ export class UrlParamsManager {
         const searchParams = new URLSearchParams(window.location.search);
         const params: ParamsObject = {};
         searchParams.forEach((value, key) => {
+            key = key.toString().toLowerCase();
             if (value === 'true') {
                 params[key] = true;
             } else if (value === 'false') {
@@ -944,20 +993,72 @@ export class UrlParamsManager {
         const newUrl = `${window.location.pathname}?${searchParams.toString()}`;
         window.history.pushState({}, '', newUrl);
     }
+
+    static validateUrlParams(params: ParamsObject): boolean {
+        for (const key of Object.keys(defaultUrlParams)) {
+            if (!(key in params)) {
+                return false;
+            }
+        }
+        if (params['engine'] && !['tgfx', 'skia'].includes(params['engine'].toString().toLowerCase())) {
+            return false;
+        }
+
+        if (params['engine'] && params['version']) {
+            const engineType = params['engine'].toString().toLowerCase();
+            const version = params['version'].toString();
+            if (!engineVersionInfo?.engineVersion?.[engineType]) {
+                return false;
+            }
+            if (!engineVersionInfo.engineVersion[engineType].versions?.[version]) {
+                return false;
+            }
+        }
+        if (params['start'] && (isNaN(Number(params['start'])) || Number(params['start']) <= 0)) {
+            return false;
+        }
+        if (params['step'] && (isNaN(Number(params['step'])) || Number(params['step']) <= 99)) {
+            return false;
+        }
+        if (params['max'] && (isNaN(Number(params['max'])) || Number(params['max']) <= 9999)) {
+            return false;
+        }
+        if (params['min'] && (isNaN(Number(params['min'])) || Number(params['min']) <= 19)) {
+            return false;
+        }
+        if (params['graphic'] && !['rectangle', 'round', 'roundedRectangle', 'oval', 'simpleGraphicBlending', 'complexGraphics'].includes(params['graphic'].toString().toLowerCase())) {
+            return false;
+        }
+
+        return true;
+    }
+
+    static resetUrlToDefault(): void {
+        const url = new URL(window.location.href);
+        url.search = '';
+        window.history.replaceState({}, '', url.toString());
+        UrlParamsManager.setUrlParams(defaultUrlParams);
+    }
+
+    static clearUrlParams(): void {
+        const url = new URL(window.location.href);
+        url.search = '';
+        window.history.replaceState({}, '', url.toString());
+    }
 }
 
 export function setDrawParamFromUrl() {
     let param: ParamsObject = UrlParamsManager.getUrlParams();
-    if (param["startCount"]) {
-        shareData.baseView.updateDrawParam(DataType.startCount, Number(param["startCount"]));
-    } else if (param["stepCount"]) {
-        shareData.baseView.updateDrawParam(DataType.stepCount, Number(param["stepCount"]));
-    } else if (param["maxShapes"]) {
-        shareData.baseView.updateDrawParam(DataType.maxDrawCount, Number(param["maxShapes"]));
-    } else if (param["minFPS"]) {
-        shareData.baseView.updateDrawParam(DataType.minFPS, Number(param["minFPS"]));
+    if (param["start"]) {
+        shareData.baseView.updateDrawParam(DataType.startCount, Number(param["start"]));
+    } else if (param["step"]) {
+        shareData.baseView.updateDrawParam(DataType.stepCount, Number(param["step"]));
+    } else if (param["max"]) {
+        shareData.baseView.updateDrawParam(DataType.maxDrawCount, Number(param["max"]));
+    } else if (param["min"]) {
+        shareData.baseView.updateDrawParam(DataType.minFPS, Number(param["min"]));
     }
-    if (param["graphicType"]) {
-        setGraphicType(param["graphicType"].toString().toLowerCase());
+    if (param["graphic"]) {
+        setGraphicType(param["graphic"].toString().toLowerCase());
     }
 }
