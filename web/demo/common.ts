@@ -213,6 +213,17 @@ export function pageInit() {
             restoreEngineType();
             return;
         }
+        if(queryString!==''){
+            param = UrlParamsManager.getUrlParams();
+
+            if (param['engineType']) {
+                let type = param['engineType'].toString().toLowerCase();
+                if(type==='tgfx'||type==='skia'){
+                    engineTypeSelect.value = type;
+                    return;
+                }
+            }
+        }
         if (engineTypeSelect.options.length > 0) {
             engineTypeSelect.value = engineTypeSelect.options[0].value;
         }
@@ -719,11 +730,51 @@ function handleEngineVersionChange(event: Event) {
     }
 }
 
+
+function showProgress(): void {
+    const container = document.getElementById('progressContainer');
+    if (container) {
+        container.classList.remove('hidden');
+    }
+}
+
+function hideProgress(): void {
+    const container = document.getElementById('progressContainer');
+    if (container) {
+        container.classList.add('fade-out');
+        setTimeout(() => {
+            container.classList.add('hidden');
+            container.classList.remove('fade-out');
+            const progressFill = document.getElementById('progressFill');
+            if (progressFill) {
+                progressFill.style.width = '0%';
+            }
+        }, 500);
+    }
+}
+
+function updateProgress(percentage: number): void {
+    const progressFill = document.getElementById('progressFill');
+    const loadingText = document.getElementById('loadingText');
+
+    if (progressFill) {
+        progressFill.style.width = `${percentage}%`;
+    }
+    if (loadingText) {
+        loadingText.textContent = `${percentage}%`;
+    }
+}
+
+function getRandomInt(min: number, max: number): number {
+    return Math.floor(Math.random() * (max - min)) + min;
+}
+
 export async function loadModule(engineDir: string, type: string = "mt") {
     try {
+        showProgress();
         shareData = new ShareData();
         const Benchmark = await import(`./${engineDir}.js`);
-        console.log('load BenchmarkModule');
+        updateProgress(getRandomInt(10,30));
         if (type === 'mt') {
             if (!crossOriginIsolated) {
                 console.error('当前环境不支持多线程WebAssembly，请检查COOP和COEP设置');
@@ -755,20 +806,22 @@ export async function loadModule(engineDir: string, type: string = "mt") {
             moduleConfig['mainScriptUrlOrBlob'] = `${engineDir}.js`;
         }
         const module = await Benchmark.default(moduleConfig);
+        updateProgress(getRandomInt(31,50));
         if (enumEngineType === EnumEngineType.tgfx) {
             shareData.BenchmarkModule = module;
             console.log(`BenchmarkModule:${shareData.BenchmarkModule}`);
             TGFXBind(shareData.BenchmarkModule);
             let tgfxView: TGFXBaseView = shareData.BenchmarkModule.TGFXThreadsView.MakeFrom('#benchmark');
-
             var imagePath = "static/image/bridge.jpg";
             await tgfxView.setImagePath(imagePath);
 
             var fontPath = "static/font/NotoSansSC-Regular.otf";
             const fontBuffer = await fetch(fontPath).then((response) => response.arrayBuffer());
+            updateProgress(getRandomInt(51,70));
             const fontUIntArray = new Uint8Array(fontBuffer);
             var emojiFontPath = "static/font/NotoColorEmoji.ttf";
             const emojiFontBuffer = await fetch(emojiFontPath).then((response) => response.arrayBuffer());
+            updateProgress(getRandomInt(71,90));
             const emojiFontUIntArray = new Uint8Array(emojiFontBuffer);
             tgfxView.registerFonts(fontUIntArray, emojiFontUIntArray);
             shareData.baseView = tgfxView;
@@ -776,15 +829,18 @@ export async function loadModule(engineDir: string, type: string = "mt") {
             let skiaView: SkiaView = module.SkiaView.MakeFrom('#benchmark');
             var fontPath = "static/font//SFNSRounded.ttf";
             const fontBuffer = await fetch(fontPath).then((response) => response.arrayBuffer());
+            updateProgress(getRandomInt(51,70));
             const fontUIntArray = new Uint8Array(fontBuffer);
             var emojiFontPath = "static/font/NotoColorEmoji.ttf";
             const emojiFontBuffer = await fetch(emojiFontPath).then((response) => response.arrayBuffer());
+            updateProgress(getRandomInt(71,90));
             const emojiFontUIntArray = new Uint8Array(emojiFontBuffer);
             skiaView.registerFonts(fontUIntArray, emojiFontUIntArray);
             shareData.baseView = skiaView;
         }
-
         updateSize(shareData);
+        updateProgress(100);
+        hideProgress();
         startDraw(shareData);
         setDrawParamFromUrl();
     } catch (error) {

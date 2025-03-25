@@ -19,7 +19,7 @@ const LocaleMaps_en_US = {
     'ovalSpan.innerHTML': 'Oval',
     'simpleGraphicBlendingSpan.innerHTML': 'RandomSimple',
     'complexGraphicsSpan.innerHTML': 'RandomComplex',
-    'restartBtn.innerHTML': 'restart',
+    'restartBtn.innerHTML': 'Restart',
     'languageTypeLabel.innerHTML': 'Language:',
     'autoOption.innerHTML': 'Auto',
     'chineseOption.innerHTML': 'Chinese (CN)',

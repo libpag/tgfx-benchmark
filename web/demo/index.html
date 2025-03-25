@@ -9,12 +9,19 @@
     <title>TGFX Benchmark</title>
     <link rel="stylesheet" href="static/css/index.css"/>
     <link rel="stylesheet" href="static/css/browser-alert.css">
+    <link rel="stylesheet" href="static/css/progress-bar.css">
 </head>
 <body>
 <div id="mask-overlay" class="mask-overlay hidden">
     <div id="browser-warning" class="desktop-alert hidden">
         <p data-locale="desktopWarning"></p>
     </div>
+</div>
+<div id="progressContainer" class="hidden">
+    <div id="progressBar">
+        <div id="progressFill"></div>
+    </div>
+    <div id="loadingText"></div>
 </div>
 <div class="page-content">
     <div id="sidebar" class="sidebar">
@@ -29,8 +36,6 @@
                 <div class="select-container">
                     <label for="engine-type-select" data-locale="engineTypeP"></label>
                     <select id="engine-type-select">
-<!--                        <option selected>tgfx</option>-->
-<!--                        <option>skia</option>-->
                     </select>
                 </div>
             </div>

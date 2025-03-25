@@ -3,10 +3,7 @@
     "tgfx": {
       "savePath": "static/tgfx/",
       "versions": {
-        "V4.3.4": [
-          "mt"
-        ],
-        "V4.0.0": [
+        "latest": [
           "mt"
         ]
       }
@@ -14,10 +11,7 @@
     "skia": {
       "savePath": "static/skia/",
       "versions": {
-        "V4.3.4": [
-          "st"
-        ],
-        "V3.1.2": [
+        "m135": [
           "st"
         ]
       }

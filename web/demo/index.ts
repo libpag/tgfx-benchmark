@@ -28,7 +28,7 @@ import {
 } from "./common";
 
 if (typeof window !== 'undefined') {
-    window.onload = () => {
+    window.onload = async () => {
         pageInit();
         const isSupported = JSON.parse(localStorage.getItem('isSupported'));
         if (isSupported) {
@@ -36,7 +36,7 @@ if (typeof window !== 'undefined') {
             if (engineDir === "") {
                 throw "engineDir is None";
             }
-            loadModule(engineDir);
+            await loadModule(engineDir);
             bindEventListeners();
 
         } else {
