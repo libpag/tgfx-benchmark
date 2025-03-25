@@ -1040,7 +1040,8 @@ export class UrlParamsManager {
         if (params['min'] && (isNaN(Number(params['min'])) || Number(params['min']) <= 19)) {
             return false;
         }
-        if (params['graphic'] && !['rectangle', 'round', 'roundedRectangle', 'oval', 'simpleGraphicBlending', 'complexGraphics'].includes(params['graphic'].toString().toLowerCase())) {
+        const graphicTypes = ['rectangle', 'round', 'roundedRectangle', 'oval', 'simpleGraphicBlending', 'complexGraphics'].map(type => type.toLowerCase());
+        if (params['graphic'] && !graphicTypes.includes(params['graphic'].toString().toLowerCase())) {
             return false;
         }
 
