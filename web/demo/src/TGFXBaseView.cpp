@@ -41,7 +41,7 @@ EM_BOOL MouseClickCallback(int, const EmscriptenMouseEvent* e, void* userData) {
   if (baseView) {
     double devicePixelRatio = emscripten_get_device_pixel_ratio();
     double sidebarWidth =
-        EM_ASM_DOUBLE({ return document.getElementById('sidebar').clientWidth; }, "");
+        EM_ASM_DOUBLE({return document.getElementById('sidebar').clientWidth; }, "");
     // Adjust click coordinates by subtracting the sidebar width
     // Since there is a sidebar on the page, the click event coordinates need to be adjusted by subtracting the sidebar width to
     // ensure the coordinates are correct relative to the canvas.
@@ -51,6 +51,7 @@ EM_BOOL MouseClickCallback(int, const EmscriptenMouseEvent* e, void* userData) {
     baseView->appHost->mouseMoved(x, y);
     baseView->appHost->resetFrames();
     baseView->drawIndex++;
+    baseView->notifyWebUpdateGraphicType();
   }
   return EM_TRUE;
 }
@@ -60,7 +61,7 @@ EM_BOOL MouseMoveCallBack(int, const EmscriptenMouseEvent* e, void* userData) {
   if (appHost) {
     double devicePixelRatio = emscripten_get_device_pixel_ratio();
     double sidebarWidth =
-        EM_ASM_DOUBLE({ return document.getElementById('sidebar').clientWidth; }, "");
+        EM_ASM_DOUBLE({return document.getElementById('sidebar').clientWidth; }, "");
     // Adjust click coordinates by subtracting the sidebar width
     // Since there is a sidebar on the page, the click event coordinates need to be adjusted by subtracting the sidebar width to
     // ensure the coordinates are correct relative to the canvas.
@@ -80,9 +81,10 @@ EM_BOOL MouseLeaveCallBack(int, const EmscriptenMouseEvent*, void* userData) {
   return EM_TRUE;
 }
 
-TGFXBaseView::TGFXBaseView(const std::string& canvasID) : canvasID(canvasID) {
+TGFXBaseView::TGFXBaseView(const std::string& canvasID)
+  : canvasID(canvasID) {
   appHost = std::make_shared<benchmark::AppHost>(1024, 720);
-  appHost->setWebFlag(true);
+  ParticleBench::setDrawStatusFlag(false);
   drawIndex = 0;
   emscripten_set_click_callback(canvasID.c_str(), this, EM_TRUE, MouseClickCallback);
   emscripten_set_mousemove_callback(canvasID.c_str(), appHost.get(), EM_TRUE, MouseMoveCallBack);
@@ -139,7 +141,7 @@ void TGFXBaseView::draw() {
   auto index = (drawIndex % numBenches);
   auto bench = benchmark::Bench::GetByIndex(index);
   bench->draw(canvas, appHost.get());
-  updatePerfInfo(appHost->getPerfData());
+  updatePerfInfo(ParticleBench::getPerfData());
   context->flushAndSubmit();
   window->present(context);
   device->unlock();
@@ -159,43 +161,35 @@ void TGFXBaseView::updatePerfInfo(const PerfData& data) {
   if (lastFlushTime == -1) {
     lastFlushTime = currentTime;
   }
-  if (const auto flushInterval = currentTime - lastFlushTime; flushInterval > FLUSH_INTERVAL) {
-    auto window = emscripten::val::global("window");
-    window.call<void>("updatePerfInfo", data.fps, data.drawTime, data.drawCount,
-                      appHost->getMaxDrawCountReached());
-    lastFlushTime = currentTime - (flushInterval % FLUSH_INTERVAL);
+  if (data.fps > 0.0f) {
+    if (const auto flushInterval = currentTime - lastFlushTime; flushInterval > FLUSH_INTERVAL) {
+      auto window = emscripten::val::global("window");
+      window.call<void>("updatePerfInfo", data.fps, data.drawTime, data.drawCount,
+                        ParticleBench::getMaxDrawCountReached());
+      lastFlushTime = currentTime - (flushInterval % FLUSH_INTERVAL);
+      ParticleBench::clearPerfData();
+    }
   }
 }
 
-void TGFXBaseView::updateDrawParam(int type, const float value) const {
-  auto dataType = static_cast<DataType>(type);
-  switch (dataType) {
-    case DataType::startCount:
-      appHost->setStartDrawCount(static_cast<size_t>(value));
-      break;
-    case DataType::stepCount:
-      appHost->setStepCount(static_cast<size_t>(value));
-      break;
-    case DataType::maxDrawCount:
-      appHost->setMaxDrawCount(static_cast<size_t>(value));
-      break;
-    case DataType::minFPS:
-      appHost->setMinFPS(value);
-      break;
-    default:
-      break;
-  }
-  appHost->setUpdateDrawParamFlag(true);
+void TGFXBaseView::updateDrawParam(const int type, const float value) const {
+  ParticleBench::setDrawParam(type, value);
   appHost->resetFrames();
 }
 
-void TGFXBaseView::updateGraphicType(int type) const {
-  const auto graphicType = static_cast<GraphicType>(type);
-  appHost->setGraphicType(graphicType);
+void TGFXBaseView::updateGraphicType(int type) {
+  drawIndex = type;
   appHost->resetFrames();
 }
 
-}  // namespace benchmark
+void TGFXBaseView::notifyWebUpdateGraphicType() {
+  const auto numBenches = benchmark::Bench::Count();
+  auto index = (drawIndex % numBenches);
+  auto window = emscripten::val::global("window");
+  window.call<void>("webUpdateGraphicType", index);
+}
+
+} // namespace benchmark
 
 int main() {
   return 0;

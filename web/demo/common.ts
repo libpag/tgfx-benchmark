@@ -66,12 +66,10 @@ export enum DataType {
 }
 
 export enum GraphicType {
-    rectangle = 0,
-    round = 1,
-    roundedRectangle = 2,
-    oval = 3,
-    simpleGraphicBlending = 4,
-    complexGraphics = 5
+    Rect = 0,
+    Circle = 1,
+    Oval = 2,
+    RRect = 3
 }
 
 export let engineVersionInfo: SideBarConfig;
@@ -87,7 +85,7 @@ export let defaultUrlParams: ParamsObject = {
     step: 600,
     max: 1000000,
     min: 60,
-    graphic: "rectangle",
+    graphic: "Rect",
 };
 
 export function updateSize(shareData: ShareData) {
@@ -252,59 +250,19 @@ export function pageInit() {
         }
     }
 
-    function updateThreadTypeOptions(engineType: string, version: string) {
-        const stRadioItem = document.getElementById('st-radio-item');
-        const mtRadioItem = document.getElementById('mt-radio-item');
-
-        const engineConfig = config.engineVersion[engineType as keyof typeof config.engineVersion];
-        if (!engineConfig || !engineConfig.versions[version]) return;
-
-        const threadTypes = engineConfig.versions[version];
-
-        if (stRadioItem) {
-            stRadioItem.style.display = threadTypes.includes('st') ? '' : 'none';
-        }
-
-        if (mtRadioItem) {
-            mtRadioItem.style.display = threadTypes.includes('mt') ? '' : 'none';
-        }
-
-        if (threadTypes.length === 1) {
-            const radio = document.querySelector(`input[name="thread-type"][value="${threadTypes[0]}"]`) as HTMLInputElement;
-            if (radio) {
-                radio.checked = true;
-            }
-        }
-    }
 
     handleEngineVisibility();
 
     const engineTypeSelect = document.getElementById('engine-type-select') as HTMLSelectElement;
     if (engineTypeSelect) {
         updateVersionSelect(engineTypeSelect.value);
-        if (versionSelect) {
-            updateThreadTypeOptions(engineTypeSelect.value, versionSelect.value);
-        }
     }
 
     if (engineTypeSelect) {
         engineTypeSelect.addEventListener('change', (e) => {
             const target = e.target as HTMLSelectElement;
             updateVersionSelect(target.value);
-            if (versionSelect) {
-                updateThreadTypeOptions(target.value, versionSelect.value);
-            }
         });
-    }
-
-    if (versionSelect) {
-        versionSelect.addEventListener('change', (e) => {
-            const target = e.target as HTMLSelectElement;
-            const engineTypeSelect = document.getElementById('engine-type-select') as HTMLSelectElement;
-            if (engineTypeSelect) {
-                updateThreadTypeOptions(engineTypeSelect.value, target.value);
-            }
-        }, true);
     }
 
     if (localStorage.getItem('needRestore') === 'true') {
@@ -383,10 +341,6 @@ interface PageSettings {
         options: string[];
         selected: string;
     };
-    threadType: {
-        options: string[];
-        selected: string;
-    };
     configParams: {
         startCount: number;
         stepCount: number;
@@ -416,12 +370,6 @@ function getPageSettings(): PageSettings {
         selected: versionSelect.value
     };
 
-    const threadTypeInputs = document.getElementsByName('thread-type') as NodeListOf<HTMLInputElement>;
-    const threadType = {
-        options: Array.from(threadTypeInputs).map(input => input.value),
-        selected: Array.from(threadTypeInputs).find(input => input.checked)?.value || ''
-    };
-
     const configParams = {
         startCount: Number((document.getElementById('startCount') as HTMLInputElement).value),
         stepCount: Number((document.getElementById('stepCount') as HTMLInputElement).value),
@@ -444,7 +392,6 @@ function getPageSettings(): PageSettings {
     return {
         engineType,
         engineVersion,
-        threadType,
         configParams,
         graphicType,
         language
@@ -512,20 +459,6 @@ export function restorePageSettings(): void {
             }
         }
 
-        settings.threadType.options.forEach(threadType => {
-            const radioItem = document.getElementById(`${threadType}-radio-item`);
-            if (radioItem) {
-                radioItem.style.display = '';
-
-                const radio = radioItem.querySelector(`input[value="${threadType}"]`) as HTMLInputElement;
-                if (radio) {
-                    if (threadType === settings.threadType.selected) {
-                        radio.checked = true;
-                    }
-                }
-            }
-        });
-
         const {configParams} = settings;
         const inputs = {
             startCount: document.getElementById('startCount') as HTMLInputElement,
@@ -575,7 +508,7 @@ function setDefaultValues() {
             input.value = value.toString();
         }
     });
-    const rectangleRadio = document.querySelector('input[name="graphic-type"][value="rectangle"]') as HTMLInputElement;
+    const rectangleRadio = document.querySelector('input[name="graphic-type"][value="Rect"]') as HTMLInputElement;
     if (rectangleRadio) {
         rectangleRadio.checked = true;
     }
@@ -644,32 +577,25 @@ function setGraphicType(graphicType: string) {
     graphicType = graphicType.toLowerCase();
     let type: GraphicType;
     switch (graphicType) {
-        case 'rectangle':
-            type = GraphicType.rectangle;
+        case 'rect':
+            type = GraphicType.Rect;
             break;
-        case 'round':
-            type = GraphicType.round;
+        case 'circle':
+            type = GraphicType.Circle;
             break;
-        case 'roundedRectangle'.toLowerCase():
-            type = GraphicType.roundedRectangle;
+        case 'rrect':
+            type = GraphicType.RRect;
             break;
         case 'oval':
-            type = GraphicType.oval;
-            break;
-        case 'simpleGraphicBlending'.toLowerCase():
-            type = GraphicType.simpleGraphicBlending;
-            break;
-        case 'complexGraphics'.toLowerCase():
-            type = GraphicType.complexGraphics;
+            type = GraphicType.Oval;
             break;
         default:
-            type = GraphicType.rectangle;
+            type = GraphicType.Rect;
     }
     if (shareData.baseView) {
         shareData.baseView.updateGraphicType(type);
     }
 }
-
 
 function handleGraphicTypeChange(event: Event) {
     const target = event.target as HTMLInputElement;
@@ -678,9 +604,11 @@ function handleGraphicTypeChange(event: Event) {
     if (target.type === 'radio' && target.name === 'graphic-type' && target.checked) {
 
         let graphicType = target.value;
-        setGraphicType(graphicType);
         param["graphic"] = graphicType;
         UrlParamsManager.setUrlParams(param);
+        if (event.isTrusted) {
+            setGraphicType(graphicType);
+        }
     }
 }
 
@@ -1040,7 +968,7 @@ export class UrlParamsManager {
         if (params['min'] && (isNaN(Number(params['min'])) || Number(params['min']) <= 19)) {
             return false;
         }
-        const graphicTypes = ['rectangle', 'round', 'roundedRectangle', 'oval', 'simpleGraphicBlending', 'complexGraphics'].map(type => type.toLowerCase());
+        const graphicTypes = graphicTypeStr.map(type => type.toLowerCase());
         if (params['graphic'] && !graphicTypes.includes(params['graphic'].toString().toLowerCase())) {
             return false;
         }
@@ -1074,6 +1002,6 @@ export function setDrawParamFromUrl() {
         shareData.baseView.updateDrawParam(DataType.minFPS, Number(param["min"]));
     }
     if (param["graphic"]) {
-        setGraphicType(param["graphic"].toString().toLowerCase());
+        setGraphicType(param["graphic"].toString());
     }
 }

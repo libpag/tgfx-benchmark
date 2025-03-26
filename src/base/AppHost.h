@@ -27,27 +27,6 @@
 namespace benchmark {
 
 /**
-* Record the performance data
-*/
-struct PerfData {
-  float fps;
-  float drawTime;
-  size_t drawCount;
-};
-
-/**
-* Record the type of graphics to be drawn
-*/
-enum class GraphicType {
-  rectangle = 0,
-  round = 1,
-  roundedRectangle = 2,
-  oval = 3,
-  simpleGraphicBlending = 4,
-  complexGraphics = 5,
-};
-
-/**
  * AppHost provides information about the current app context.
  */
 class AppHost {
@@ -164,101 +143,6 @@ class AppHost {
    */
   void resetFrames();
 
-  /**
-   * Set a flag to determine whether it is web.
-   */
-  void setWebFlag(bool webFlag);
-
-  /**
-   * Get a flag to determine whether it is web.
-   */
-  bool isWeb() const;
-
-  /**
-   * Set draw count.
-   */
-  void setDrawCount(size_t drawCount) const;
-
-  /**
-   * Get draw count.
-   */
-  size_t getDrawCount() const;
-
-  /**
-   * Get perf data.
-   */
-  PerfData getPerfData() const;
-
-  /**
-   * Set min fps.
-   */
-  void setMinFPS(float minFPS) const;
-
-  /**
-   * Get min fps.
-   */
-  float getMinFPS() const;
-
-  /**
-   * Set start draw count.
-   */
-  void setStartDrawCount(size_t startDrawCount) const;
-
-  /**
-   * Get start draw count.
-   */
-  size_t getStartDrawCount() const;
-
-  /**
-   * Set step count.
-   */
-  void setStepCount(size_t stepCount) const;
-
-  /**
-   * Get step count.
-   */
-  size_t getStepCount() const;
-
-  /**
-   * Set max draw count.
-   */
-  void setMaxDrawCount(size_t maxDrawCount) const;
-
-  /**
-   * Get max draw count.
-   */
-  size_t getMaxDrawCount() const;
-
-  /**
-   * Set UpdateDrawParamFlag.
-   */
-  void setUpdateDrawParamFlag(bool updateDrawParamFlag) const;
-
-  /**
-   * Get UpdateDrawParamFlag.
-   */
-  bool getUpdateDrawParamFlag() const;
-
-  /**
-   * Set graphic type.
-   */
-  void setGraphicType(GraphicType graphicType) const;
-
-  /**
-   * Get graphic type.
-   */
-  GraphicType getGraphicType() const;
-
-  /**
-   * Set maxDrawCountReached.
-   */
-  void setMaxDrawCountReached(bool maxDrawCountReached) const;
-
-  /**
-   * Get maxDrawCountReached.
-   */
-  bool getMaxDrawCountReached() const;
-
  private:
   int _width = 1024;
   int _height = 720;
@@ -269,14 +153,5 @@ class AppHost {
   std::deque<int64_t> drawTimes = {};
   std::unordered_map<std::string, std::shared_ptr<tgfx::Image> > images = {};
   std::unordered_map<std::string, std::shared_ptr<tgfx::Typeface> > typefaces = {};
-  bool _webFlag = false;
-  mutable size_t _drawCount = 1;
-  mutable float _minFPS = 60.0f;
-  mutable size_t _startDrawCount = 1;
-  mutable size_t _stepCount = 600;
-  mutable size_t _maxDrawCount = 1000000;
-  mutable bool _updateDrawParamFlag = false;
-  mutable GraphicType _graphicType = GraphicType::rectangle;
-  mutable bool _maxDrawCountReached = false;
 };
 }  // namespace benchmark

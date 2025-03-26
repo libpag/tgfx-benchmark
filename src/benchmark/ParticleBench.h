@@ -22,6 +22,19 @@
 
 namespace benchmark {
 
+enum class DataType {
+  StartCount = 0,
+  StepCount = 1,
+  MaxDrawCount = 2,
+  MinFPS = 3,
+};
+
+struct PerfData {
+  float fps = 0.0f;
+  float drawTime = 0.0f;
+  size_t drawCount = 0;
+};
+
 struct RectData {
   tgfx::Rect rect{0, 0, 1, 1};
   float speedX;
@@ -29,14 +42,29 @@ struct RectData {
 };
 
 class ParticleBench : public Bench {
- public:
-  ParticleBench() : Bench("ParticleBench") {
+public:
+  ParticleBench()
+    : Bench("ParticleBench") {
   }
 
- protected:
+  explicit ParticleBench(GraphicType type)
+    : Bench("ParticleBench-" + std::to_string(static_cast<int>(type))), graphicType(type) {
+  }
+
+  static void setDrawStatusFlag(bool status);
+
+  static void setDrawParam(int type, float param);
+
+  static bool getMaxDrawCountReached();
+
+  static PerfData getPerfData();
+
+  static void clearPerfData();
+
+protected:
   void onDraw(tgfx::Canvas* canvas, const AppHost* host) override;
 
- private:
+private:
   void Init(const AppHost* host);
 
   void AnimateRects(const AppHost* host);
@@ -45,32 +73,37 @@ class ParticleBench : public Bench {
 
   void DrawStatus(tgfx::Canvas* canvas, const AppHost* host);
 
-  void DrawRound(tgfx::Canvas* canvas) const;
+  void DrawCircle(tgfx::Canvas* canvas) const;
 
-  void DrawRoundedRectangle(tgfx::Canvas* canvas) const;
+  void DrawRRect(tgfx::Canvas* canvas) const;
 
   void DrawOval(tgfx::Canvas* canvas) const;
 
-  void DrawSimpleGraphicBlending(tgfx::Canvas* canvas) const;
+  void DrawGraphics(tgfx::Canvas* canvas) const;
 
-  void DrawComplexGraphics(tgfx::Canvas* canvas) const;
-
-  void DrawGraphics(tgfx::Canvas* canvas, const AppHost* host);
-
- private:
-  float width = 0;   //appHost width
-  float height = 0;  //appHost height
-  float targetFPS = 60.0f;
-  float currentFPS = 0.f;
+private:
+  float width = 0; //appHost width
+  float height = 0; //appHost height
   size_t drawCount = 1;
-  bool maxDrawCountReached = false;
+  float currentFPS = 0.f;
   std::vector<RectData> rects = {};
   tgfx::Rect startRect = tgfx::Rect::MakeEmpty();
-  tgfx::Paint paints[3];  // red, green, blue solid paints
+  tgfx::Paint paints[3]; // red, green, blue solid paints
   int64_t lastFlushTime = -1;
   tgfx::Font fpsFont = {};
   tgfx::Color fpsColor = tgfx::Color::Green();
   std::vector<std::string> status = {};
+  GraphicType graphicType = GraphicType::Rect;
+
+
+  inline static bool drawStatusFlag = true;
+  inline static size_t updateDrawCount = 0;
+  inline static float targetFPS = 60.0f;
+  inline static size_t maxDrawCount = 1000000;
+  inline static size_t increaseStep = 600;
+  inline static bool maxDrawCountReached = false;
+
+  inline static PerfData perfData = {};
 };
 
-}  // namespace benchmark
+} // namespace benchmark

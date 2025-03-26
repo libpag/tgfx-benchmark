@@ -21,15 +21,8 @@
 #include <emscripten/bind.h>
 #include "base/AppHost.h"
 #include "tgfx/gpu/opengl/webgl/WebGLWindow.h"
-
+#include "benchmark/ParticleBench.h"
 namespace benchmark {
-
-enum class DataType {
-  startCount = 0,
-  stepCount = 1,
-  maxDrawCount = 2,
-  minFPS = 3,
-};
 
 class TGFXBaseView {
  public:
@@ -49,7 +42,9 @@ class TGFXBaseView {
 
   void updateDrawParam(int type, float value) const;
 
-  void updateGraphicType(int type) const;
+  void updateGraphicType(int type);
+
+  void notifyWebUpdateGraphicType();
 
   int drawIndex = 0;
   std::shared_ptr<benchmark::AppHost> appHost = nullptr;
@@ -57,6 +52,7 @@ class TGFXBaseView {
  private:
   std::shared_ptr<tgfx::Window> window = nullptr;
   std::string canvasID = "";
+
 };
 
 }  // namespace benchmark
