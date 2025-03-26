@@ -20,8 +20,8 @@
 
 #include <emscripten/bind.h>
 #include "base/AppHost.h"
-#include "tgfx/gpu/opengl/webgl/WebGLWindow.h"
 #include "benchmark/ParticleBench.h"
+#include "tgfx/gpu/opengl/webgl/WebGLWindow.h"
 namespace benchmark {
 
 class TGFXBaseView {
@@ -52,7 +52,6 @@ class TGFXBaseView {
  private:
   std::shared_ptr<tgfx::Window> window = nullptr;
   std::string canvasID = "";
-
 };
 
 }  // namespace benchmark

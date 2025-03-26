@@ -42,13 +42,12 @@ struct RectData {
 };
 
 class ParticleBench : public Bench {
-public:
-  ParticleBench()
-    : Bench("ParticleBench") {
+ public:
+  ParticleBench() : Bench("ParticleBench") {
   }
 
   explicit ParticleBench(GraphicType type)
-    : Bench("ParticleBench-" + std::to_string(static_cast<int>(type))), graphicType(type) {
+      : Bench("ParticleBench-" + std::to_string(static_cast<int>(type))), graphicType(type) {
   }
 
   static void setDrawStatusFlag(bool status);
@@ -61,10 +60,10 @@ public:
 
   static void clearPerfData();
 
-protected:
+ protected:
   void onDraw(tgfx::Canvas* canvas, const AppHost* host) override;
 
-private:
+ private:
   void Init(const AppHost* host);
 
   void AnimateRects(const AppHost* host);
@@ -81,20 +80,19 @@ private:
 
   void DrawGraphics(tgfx::Canvas* canvas) const;
 
-private:
-  float width = 0; //appHost width
-  float height = 0; //appHost height
+ private:
+  float width = 0;   //appHost width
+  float height = 0;  //appHost height
   size_t drawCount = 1;
   float currentFPS = 0.f;
   std::vector<RectData> rects = {};
   tgfx::Rect startRect = tgfx::Rect::MakeEmpty();
-  tgfx::Paint paints[3]; // red, green, blue solid paints
+  tgfx::Paint paints[3];  // red, green, blue solid paints
   int64_t lastFlushTime = -1;
   tgfx::Font fpsFont = {};
   tgfx::Color fpsColor = tgfx::Color::Green();
   std::vector<std::string> status = {};
   GraphicType graphicType = GraphicType::Rect;
-
 
   inline static bool drawStatusFlag = true;
   inline static size_t updateDrawCount = 0;
@@ -106,4 +104,4 @@ private:
   inline static PerfData perfData = {};
 };
 
-} // namespace benchmark
+}  // namespace benchmark

@@ -22,10 +22,9 @@
 #include "tgfx/platform/Print.h"
 
 namespace benchmark {
-static std::vector<Bench*> drawers = {new ParticleBench(GraphicType::Rect),
-                                      new ParticleBench(GraphicType::Circle),
-                                      new ParticleBench(GraphicType::Oval),
-                                      new ParticleBench(GraphicType::RRect)};
+static std::vector<Bench*> drawers = {
+    new ParticleBench(GraphicType::Rect), new ParticleBench(GraphicType::Circle),
+    new ParticleBench(GraphicType::Oval), new ParticleBench(GraphicType::RRect)};
 
 static std::vector<std::string> GetDrawerNames() {
   std::vector<std::string> names;
@@ -68,8 +67,7 @@ Bench* Bench::GetByName(const std::string& name) {
   return it->second;
 }
 
-Bench::Bench(std::string name)
-  : _name(std::move(name)) {
+Bench::Bench(std::string name) : _name(std::move(name)) {
 }
 
 void Bench::draw(tgfx::Canvas* canvas, const AppHost* host) {
@@ -85,4 +83,4 @@ void Bench::draw(tgfx::Canvas* canvas, const AppHost* host) {
   onDraw(canvas, host);
   canvas->restore();
 }
-} // namespace benchmark
+}  // namespace benchmark

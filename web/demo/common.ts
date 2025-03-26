@@ -72,6 +72,8 @@ export enum GraphicType {
     RRect = 3
 }
 
+const graphicTypeStr: readonly ['Rect', 'Circle', 'Oval', 'RRect'] = ['Rect', 'Circle', 'Oval', 'RRect'];
+
 export let engineVersionInfo: SideBarConfig;
 
 export interface ParamsObject {
@@ -942,11 +944,11 @@ export class UrlParamsManager {
                 return false;
             }
         }
-        if (params['engine'] && !['tgfx', 'skia'].includes(params['engine'].toString().toLowerCase())) {
+        if (params['engine'] !== undefined && !['tgfx', 'skia'].includes(params['engine'].toString().toLowerCase())) {
             return false;
         }
 
-        if (params['engine'] && params['version']) {
+        if (params['engine'] !== undefined && params['version'] !== undefined) {
             const engineType = params['engine'].toString().toLowerCase();
             const version = params['version'].toString();
             if (!engineVersionInfo?.engineVersion?.[engineType]) {
@@ -956,20 +958,20 @@ export class UrlParamsManager {
                 return false;
             }
         }
-        if (params['start'] && (isNaN(Number(params['start'])) || Number(params['start']) <= 0)) {
+        if ((isNaN(Number(params['start'])) || Number(params['start']) <= 0)) {
             return false;
         }
-        if (params['step'] && (isNaN(Number(params['step'])) || Number(params['step']) <= 99)) {
+        if ((isNaN(Number(params['step'])) || Number(params['step']) <= 99)) {
             return false;
         }
-        if (params['max'] && (isNaN(Number(params['max'])) || Number(params['max']) <= 9999)) {
+        if ((isNaN(Number(params['max'])) || Number(params['max']) <= 9999)) {
             return false;
         }
-        if (params['min'] && (isNaN(Number(params['min'])) || Number(params['min']) <= 19)) {
+        if ((isNaN(Number(params['min'])) || Number(params['min']) <= 19)) {
             return false;
         }
         const graphicTypes = graphicTypeStr.map(type => type.toLowerCase());
-        if (params['graphic'] && !graphicTypes.includes(params['graphic'].toString().toLowerCase())) {
+        if (params['graphic'] !== undefined && !graphicTypes.includes(params['graphic'].toString().toLowerCase())) {
             return false;
         }
 
@@ -994,11 +996,14 @@ export function setDrawParamFromUrl() {
     let param: ParamsObject = UrlParamsManager.getUrlParams();
     if (param["start"]) {
         shareData.baseView.updateDrawParam(DataType.startCount, Number(param["start"]));
-    } else if (param["step"]) {
+    }
+    if (param["step"]) {
         shareData.baseView.updateDrawParam(DataType.stepCount, Number(param["step"]));
-    } else if (param["max"]) {
+    }
+    if (param["max"]) {
         shareData.baseView.updateDrawParam(DataType.maxDrawCount, Number(param["max"]));
-    } else if (param["min"]) {
+    }
+    if (param["min"]) {
         shareData.baseView.updateDrawParam(DataType.minFPS, Number(param["min"]));
     }
     if (param["graphic"]) {

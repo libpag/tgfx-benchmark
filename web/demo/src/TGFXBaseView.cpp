@@ -41,7 +41,7 @@ EM_BOOL MouseClickCallback(int, const EmscriptenMouseEvent* e, void* userData) {
   if (baseView) {
     double devicePixelRatio = emscripten_get_device_pixel_ratio();
     double sidebarWidth =
-        EM_ASM_DOUBLE({return document.getElementById('sidebar').clientWidth; }, "");
+        EM_ASM_DOUBLE({ return document.getElementById('sidebar').clientWidth; }, "");
     // Adjust click coordinates by subtracting the sidebar width
     // Since there is a sidebar on the page, the click event coordinates need to be adjusted by subtracting the sidebar width to
     // ensure the coordinates are correct relative to the canvas.
@@ -61,7 +61,7 @@ EM_BOOL MouseMoveCallBack(int, const EmscriptenMouseEvent* e, void* userData) {
   if (appHost) {
     double devicePixelRatio = emscripten_get_device_pixel_ratio();
     double sidebarWidth =
-        EM_ASM_DOUBLE({return document.getElementById('sidebar').clientWidth; }, "");
+        EM_ASM_DOUBLE({ return document.getElementById('sidebar').clientWidth; }, "");
     // Adjust click coordinates by subtracting the sidebar width
     // Since there is a sidebar on the page, the click event coordinates need to be adjusted by subtracting the sidebar width to
     // ensure the coordinates are correct relative to the canvas.
@@ -81,8 +81,7 @@ EM_BOOL MouseLeaveCallBack(int, const EmscriptenMouseEvent*, void* userData) {
   return EM_TRUE;
 }
 
-TGFXBaseView::TGFXBaseView(const std::string& canvasID)
-  : canvasID(canvasID) {
+TGFXBaseView::TGFXBaseView(const std::string& canvasID) : canvasID(canvasID) {
   appHost = std::make_shared<benchmark::AppHost>(1024, 720);
   ParticleBench::setDrawStatusFlag(false);
   drawIndex = 0;
@@ -189,7 +188,7 @@ void TGFXBaseView::notifyWebUpdateGraphicType() {
   window.call<void>("webUpdateGraphicType", index);
 }
 
-} // namespace benchmark
+}  // namespace benchmark
 
 int main() {
   return 0;

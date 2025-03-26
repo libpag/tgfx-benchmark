@@ -266,5 +266,4 @@ void ParticleBench::clearPerfData() {
   perfData = {};
 }
 
-
-} // namespace benchmark
+}  // namespace benchmark

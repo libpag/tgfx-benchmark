@@ -117,7 +117,8 @@ function updatePerfInfo(fps, drawTime, drawCount, maxDrawCountReached) {
     }
 }
 
-const graphicTypeStr = ['Rect', 'Circle', 'Oval', 'RRect'];
+// const graphicTypeStr = ['Rect', 'Circle', 'Oval', 'RRect'];
+// graphicTypeStr defined in index.js
 function webUpdateGraphicType(type) {
     try {
         if (typeof type !== 'number' || type < 0 || type >= graphicTypeStr.length) {

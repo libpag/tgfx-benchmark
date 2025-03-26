@@ -26,15 +26,10 @@ namespace benchmark {
 /**
 * Record the type of graphics to be drawn
 */
-enum class GraphicType {
-  Rect = 0,
-  Circle = 1,
-  Oval = 2,
-  RRect = 3
-};
+enum class GraphicType { Rect = 0, Circle = 1, Oval = 2, RRect = 3 };
 
 class Bench {
-public:
+ public:
   /**
    * Returns the number of drawers.
    */
@@ -68,10 +63,10 @@ public:
    */
   void draw(tgfx::Canvas* canvas, const AppHost* host);
 
-protected:
+ protected:
   virtual void onDraw(tgfx::Canvas* canvas, const AppHost* host) = 0;
 
-private:
+ private:
   std::string _name;
 };
-} // namespace benchmark
+}  // namespace benchmark
