@@ -22,7 +22,7 @@
 
 namespace benchmark {
 
-enum class GraphicType { Rect, Circle, Oval, RRect,ComplexGraphic};
+enum class GraphicType { Rect, Circle, Oval, RRect, ComplexGraphic };
 
 struct DrawParam {
   size_t startCount = 1;

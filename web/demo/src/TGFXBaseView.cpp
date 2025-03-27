@@ -166,7 +166,7 @@ void TGFXBaseView::updatePerfInfo(const PerfData& data) {
       const auto bench = getBenchByIndex();
       auto jsWindow = emscripten::val::global("window");
       jsWindow.call<void>("updatePerfInfo", data.fps, data.drawTime, data.drawCount,
-                        bench->isMaxDrawCountReached());
+                          bench->isMaxDrawCountReached());
       lastFlushTime = currentTime - (flushInterval % FLUSH_INTERVAL);
     }
   }
