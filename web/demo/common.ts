@@ -19,11 +19,20 @@
 import * as types from '../types/types';
 import {TGFXBind} from '../lib/tgfx';
 
+class DrawParam {
+    startCount: number = 1;
+    stepCount: number = 600;
+    minFPS: number = 60.0;
+    maxCount: number = 1000000;
+}
+
+let drawParam: DrawParam = new DrawParam();
+
 class BaseView {
     public updateSize: (devicePixelRatio: number) => void;
     public startDraw: () => void;
     public restartDraw: () => void;
-    public updateDrawParam: (type: number, value: number) => void;
+    public updateDrawParam: (drawParam: DrawParam) => void;
     public updateGraphicType: (type: number) => void;
 }
 
@@ -31,7 +40,7 @@ export class TGFXBaseView extends BaseView {
     public updateSize: (devicePixelRatio: number) => void;
     public startDraw: () => void;
     public restartDraw: () => void;
-    public updateDrawParam: (type: number, value: number) => void;
+    public updateDrawParam: (drawParam: DrawParam) => void;
     public updateGraphicType: (type: number) => void;
 }
 
@@ -39,7 +48,7 @@ export class SkiaView extends BaseView {
     public updateSize: (devicePixelRatio: number) => void;
     public startDraw: () => void;
     public restartDraw: () => void;
-    public updateDrawParam: (type: number, value: number) => void;
+    public updateDrawParam: (drawParam: DrawParam) => void;
     public updateGraphicType: (type: number) => void;
 }
 
@@ -58,26 +67,22 @@ enum EnumEngineType {
 
 export let enumEngineType: EnumEngineType;
 
-export enum DataType {
-    startCount = 0,
-    stepCount = 1,
-    maxDrawCount = 2,
-    minFPS = 3,
-}
 
 export enum GraphicType {
     Rect = 0,
     Circle = 1,
     Oval = 2,
-    RRect = 3
+    RRect = 3,
+    ComplexGraphic = 4
 }
 
-const graphicTypeStr: readonly ['Rect', 'Circle', 'Oval', 'RRect'] = ['Rect', 'Circle', 'Oval', 'RRect'];
+
+const graphicTypeStr: readonly ['Rect', 'Circle', 'Oval', 'RRect', 'ComplexGraphic'] = ['Rect', 'Circle', 'Oval', 'RRect', 'ComplexGraphic'];
 
 export let engineVersionInfo: SideBarConfig;
 
 export interface ParamsObject {
-    [key: string]: string | number | boolean;
+    [key: string]: string | number;
 }
 
 export let defaultUrlParams: ParamsObject = {
@@ -87,7 +92,7 @@ export let defaultUrlParams: ParamsObject = {
     step: 600,
     max: 1000000,
     min: 60,
-    graphic: "Rect",
+    graphic: "rect",
 };
 
 export function updateSize(shareData: ShareData) {
@@ -187,14 +192,14 @@ export function pageInit() {
     const config = parseSideBarParam();
     const versionSelect = document.getElementById('engine-version') as HTMLSelectElement;
     let param: ParamsObject = {};
-    let queryString = window.location.search;
-    if (queryString !== '') {
+    if (window.location.search !== '') {
         const urlParams = UrlParamsManager.getUrlParams();
         if (!UrlParamsManager.validateUrlParams(urlParams)) {
-            queryString = '';
             UrlParamsManager.clearUrlParams();
         }
     }
+
+    let queryString = window.location.search;
 
     function handleEngineVisibility() {
         const engineTypeSelect = document.getElementById('engine-type-select') as HTMLSelectElement;
@@ -270,32 +275,20 @@ export function pageInit() {
     if (localStorage.getItem('needRestore') === 'true') {
         restorePageSettings();
     }
-
-    if (queryString === '') {
-        param['engine'] = engineTypeSelect.value;
-        param['version'] = versionSelect.value;
-
-        const configInputs = document.querySelectorAll('#config-param input[type="number"]');
-        configInputs.forEach(input => {
-            const element = input as HTMLInputElement;
-            if (element.value) {
-                let key: string = htmlParamConvertUrlParam(element.id);
-                param[key] = Number(element.value);
-            }
-        });
-        const selectedInput = document.querySelector('input[name="graphic-type"]:checked') as HTMLInputElement;
-        if (selectedInput) {
-            param["graphic"] = selectedInput.value;
-        }
-        UrlParamsManager.setUrlParams(param);
-    } else {
+    if (queryString !== '') {
         try {
             param = UrlParamsManager.getUrlParams();
             if (param['engine']) {
                 engineTypeSelect.value = param['engine'].toString().toLowerCase();
             }
             if (param['version']) {
-                versionSelect.value = param['version'].toString();
+                const targetVersion = param['version'].toString();
+                const matchingOption = Array.from(versionSelect.options).find(option =>
+                    option.value.toLowerCase() === targetVersion.toLowerCase()
+                );
+                if (matchingOption) {
+                    versionSelect.value = matchingOption.value;
+                }
             }
             const configInputs = document.querySelectorAll('#config-param input[type="number"]');
 
@@ -559,19 +552,19 @@ function handleConfigParamChange(event: Event) {
         target.value = minValue.toString();
     }
     param[htmlParamConvertUrlParam(target.id)] = Number(target.value);
-    let type: DataType = DataType.startCount;
     if (target.id === 'startCount') {
-        type = DataType.startCount;
+        drawParam.startCount = Number(target.value);
     } else if (target.id === 'stepCount') {
-        type = DataType.stepCount;
+        drawParam.stepCount = Number(target.value);
     } else if (target.id === 'maxShapes') {
-        type = DataType.maxDrawCount;
+        drawParam.maxCount = Number(target.value);
     } else if (target.id === 'minFPS') {
-        type = DataType.minFPS;
+        drawParam.minFPS = Number(target.value);
     } else {
         console.error('Unknown parameter type:', target.id);
+        return;
     }
-    shareData.baseView.updateDrawParam(type, Number(target.value));
+    shareData.baseView.updateDrawParam(drawParam);
     UrlParamsManager.setUrlParams(param);
 }
 
@@ -590,6 +583,9 @@ function setGraphicType(graphicType: string) {
             break;
         case 'oval':
             type = GraphicType.Oval;
+            break;
+        case 'complexgraphic':
+            type = GraphicType.ComplexGraphic;
             break;
         default:
             type = GraphicType.Rect;
@@ -615,6 +611,9 @@ function handleGraphicTypeChange(event: Event) {
 }
 
 function handleEngineTypeChange(event: Event) {
+    if (!event.isTrusted) {
+        return;
+    }
     const target = event.target as HTMLSelectElement;
     let engineDir = "";
     const selectedEngine = target.value;
@@ -629,13 +628,16 @@ function handleEngineTypeChange(event: Event) {
         engineVersionSelect.appendChild(option);
     });
 
+    const param: ParamsObject = {};
+    param["engine"] = selectedEngine;
+    UrlParamsManager.setUrlParams(param);
+
     const firstVersion = Object.keys(versions)[0];
     if (firstVersion) {
         engineVersionSelect.value = firstVersion;
+        engineVersionSelect.dispatchEvent(new Event('change'));
         engineDir = `${engineVersionInfo.engineVersion[selectedEngine].savePath}benchmark-${firstVersion}`;
         localStorage.setItem('engineDir', engineDir);
-        const url = window.location.href.split('?')[0];
-        window.history.replaceState({}, '', url);
         pageRestart();
     } else {
         console.warn('Unknown engine type:', selectedEngine);
@@ -658,6 +660,9 @@ function handleEngineVersionChange(event: Event) {
     let param: ParamsObject = {};
     param["version"] = selectedVersion;
     UrlParamsManager.setUrlParams(param);
+    if (!event.isTrusted) {
+        return;
+    }
     const engineConfig = engineVersionInfo.engineVersion[engineTypeSelect.value];
     if (engineConfig) {
         engineDir = `${engineConfig.savePath}benchmark-${selectedVersion}`;
@@ -791,9 +796,9 @@ export async function loadModule(engineDir: string, type: string = "mt") {
             skiaView.registerFonts(fontUIntArray, emojiFontUIntArray);
             shareData.baseView = skiaView;
         }
-        updateSize(shareData);
         updateProgress(100);
         hideProgress();
+        updateSize(shareData);
         startDraw(shareData);
         setDrawParamFromUrl();
     } catch (error) {
@@ -892,7 +897,7 @@ export class UrlParamsManager {
         const url = new URL(window.location.href);
         const searchParams = new URLSearchParams(url.search);
         for (const [key, value] of Object.entries(params)) {
-            searchParams.set(key, value.toString());
+            searchParams.set(key, value.toString().toLowerCase());
         }
         const newUrl = `${window.location.pathname}?${searchParams.toString()}`;
         window.history.pushState({}, '', newUrl);
@@ -903,11 +908,7 @@ export class UrlParamsManager {
         const params: ParamsObject = {};
         searchParams.forEach((value, key) => {
             key = key.toString().toLowerCase();
-            if (value === 'true') {
-                params[key] = true;
-            } else if (value === 'false') {
-                params[key] = false;
-            } else if (!isNaN(Number(value))) {
+            if (!isNaN(Number(value))) {
                 params[key] = Number(value);
             } else {
                 params[key] = value;
@@ -932,20 +933,25 @@ export class UrlParamsManager {
         const url = new URL(window.location.href);
         const searchParams = new URLSearchParams(url.search);
 
-        searchParams.delete(paramKey);
+        Array.from(searchParams.keys()).forEach(key => {
+            if (key.toLowerCase() === paramKey.toLowerCase()) {
+                searchParams.delete(key);
+            }
+        });
 
         const newUrl = `${window.location.pathname}?${searchParams.toString()}`;
         window.history.pushState({}, '', newUrl);
     }
 
     static validateUrlParams(params: ParamsObject): boolean {
-        for (const key of Object.keys(defaultUrlParams)) {
-            if (!(key in params)) {
+        if (params['engine'] !== undefined) {
+            const engineValue = params['engine'].toString().toLowerCase();
+            if (!['tgfx', 'skia'].includes(engineValue)) {
                 return false;
             }
-        }
-        if (params['engine'] !== undefined && !['tgfx', 'skia'].includes(params['engine'].toString().toLowerCase())) {
-            return false;
+            if (engineValue === defaultUrlParams['engine']) {
+                UrlParamsManager.removeUrlParam('engine');
+            }
         }
 
         if (params['engine'] !== undefined && params['version'] !== undefined) {
@@ -954,26 +960,77 @@ export class UrlParamsManager {
             if (!engineVersionInfo?.engineVersion?.[engineType]) {
                 return false;
             }
-            if (!engineVersionInfo.engineVersion[engineType].versions?.[version]) {
+            const versions = engineVersionInfo.engineVersion[engineType].versions;
+            const hasMatchingVersion = Object.keys(versions).some(v =>
+                v.toLowerCase() === version.toLowerCase()
+            );
+            if (!hasMatchingVersion) {
+                return false;
+            }
+        } else if (params['version'] !== undefined) {
+            const version = params['version'].toString();
+            const versions = engineVersionInfo.engineVersion[defaultUrlParams['engine']].versions;
+            const hasMatchingVersion = Object.keys(versions).some(v =>
+                v.toLowerCase() === version.toLowerCase()
+            );
+            if (!hasMatchingVersion) {
                 return false;
             }
         }
-        if ((isNaN(Number(params['start'])) || Number(params['start']) <= 0)) {
-            return false;
+
+        if (params['start'] !== undefined) {
+            const value = Number(params['start']);
+            if (isNaN(value) || value <= 0) {
+                return false;
+            }
+            if (value === Number(defaultUrlParams['start'])) {
+                UrlParamsManager.removeUrlParam('start');
+            }
         }
-        if ((isNaN(Number(params['step'])) || Number(params['step']) <= 99)) {
-            return false;
+
+
+        if (params['step'] !== undefined) {
+            const value = Number(params['step']);
+            if (isNaN(value) || value <= 0) {
+                return false;
+            }
+            if (value === Number(defaultUrlParams['step'])) {
+                UrlParamsManager.removeUrlParam('step');
+            }
         }
-        if ((isNaN(Number(params['max'])) || Number(params['max']) <= 9999)) {
-            return false;
+
+        if (params['max'] !== undefined) {
+            const value = Number(params['max']);
+            if (isNaN(value) || value <= 0) {
+                return false;
+            }
+            if (value === Number(defaultUrlParams['max'])) {
+                UrlParamsManager.removeUrlParam('max');
+            }
         }
-        if ((isNaN(Number(params['min'])) || Number(params['min']) <= 19)) {
-            return false;
+
+        if (params['min'] !== undefined) {
+            const value = Number(params['min']);
+            if (isNaN(value) || value <= 0) {
+                return false;
+            }
+            if (value === Number(defaultUrlParams['min'])) {
+                UrlParamsManager.removeUrlParam('min');
+            }
         }
-        const graphicTypes = graphicTypeStr.map(type => type.toLowerCase());
-        if (params['graphic'] !== undefined && !graphicTypes.includes(params['graphic'].toString().toLowerCase())) {
-            return false;
+
+        if (params['graphic'] !== undefined) {
+            const graphicValue = params['graphic'].toString().toLowerCase();
+            const graphicTypes = graphicTypeStr.map(type => type.toLowerCase());
+
+            if (!graphicTypes.includes(graphicValue)) {
+                return false;
+            }
+            if (graphicValue === defaultUrlParams['graphic'].toString().toLowerCase()) {
+                UrlParamsManager.removeUrlParam('graphic');
+            }
         }
+
 
         return true;
     }
@@ -995,17 +1052,18 @@ export class UrlParamsManager {
 export function setDrawParamFromUrl() {
     let param: ParamsObject = UrlParamsManager.getUrlParams();
     if (param["start"]) {
-        shareData.baseView.updateDrawParam(DataType.startCount, Number(param["start"]));
+        drawParam.startCount = Number(param["start"]);
     }
     if (param["step"]) {
-        shareData.baseView.updateDrawParam(DataType.stepCount, Number(param["step"]));
+        drawParam.stepCount = Number(param["step"]);
     }
     if (param["max"]) {
-        shareData.baseView.updateDrawParam(DataType.maxDrawCount, Number(param["max"]));
+        drawParam.maxCount = Number(param["max"]);
     }
     if (param["min"]) {
-        shareData.baseView.updateDrawParam(DataType.minFPS, Number(param["min"]));
+        drawParam.minFPS = Number(param["min"]);
     }
+    shareData.baseView.updateDrawParam(drawParam);
     if (param["graphic"]) {
         setGraphicType(param["graphic"].toString());
     }

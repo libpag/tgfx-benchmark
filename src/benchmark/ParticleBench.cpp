@@ -21,12 +21,42 @@
 #include <random>
 #include <sstream>
 #include "tgfx/core/Clock.h"
+#include <cmath>
 
 namespace benchmark {
 static constexpr int64_t FLUSH_INTERVAL = 300000;
 static constexpr float FPS_BACKGROUND_HEIGHT = 50.f;
 static constexpr float STATUS_WIDTH = 250.f;
 static constexpr float FONT_SIZE = 40.f;
+
+static bool DrawStatusFlag = true;
+static size_t UpdateDrawCount = 0;
+static float TargetFPS = 60.0f;
+static size_t MaxDrawCount = 1000000;
+static size_t IncreaseStep = 6000;
+
+
+static std::string GraphicTypeEnumToString(const GraphicType type) {
+  switch (type) {
+    case GraphicType::Rect:
+      return "Rect";
+    case GraphicType::Circle:
+      return "Circle";
+    case GraphicType::RRect:
+      return "RRect";
+    case GraphicType::Oval:
+      return "Oval";
+    case GraphicType::ComplexGraphic:
+      return "ComplexGraphic";
+    default:
+      return "Unknown";
+  }
+}
+
+ParticleBench::ParticleBench(const GraphicType type)
+  : Bench("ParticleBench-"+GraphicTypeEnumToString(type)), graphicType(type) {
+}
+
 
 void ParticleBench::onDraw(tgfx::Canvas* canvas, const AppHost* host) {
   Init(host);
@@ -44,8 +74,9 @@ void ParticleBench::Init(const AppHost* host) {
   width = hostWidth;
   height = hostHeight;
   status = {};
-  drawCount = updateDrawCount == 0 ? 1 : updateDrawCount;
+  drawCount = UpdateDrawCount == 0 ? 1 : UpdateDrawCount;
   maxDrawCountReached = false;
+  perfData= {};
   fpsFont = tgfx::Font(host->getTypeface("default"), FONT_SIZE * host->density());
   for (auto i = 0; i < 3; i++) {
     tgfx::Color color = tgfx::Color::Black();
@@ -55,16 +86,17 @@ void ParticleBench::Init(const AppHost* host) {
   }
 
   startRect = tgfx::Rect::MakeWH(25.f * host->density(), 25.f * host->density());
-  rects.resize(maxDrawCount);
+  rects.resize(MaxDrawCount);
   std::mt19937 rectRng(18);
   std::mt19937 speedRng(36);
   std::uniform_real_distribution<float> rectDistribution(0, 1);
   std::uniform_real_distribution<float> speedDistribution(-1, 1);
-  for (size_t i = 0; i < maxDrawCount; i++) {
+  for (size_t i = 0; i < MaxDrawCount; i++) {
     const auto size = (5.f + rectDistribution(rectRng) * 20.f) * host->density();
     auto& item = rects[i];
     if (graphicType == GraphicType::Oval) {
-      item.rect.setXYWH(-size, -size, size, 0.8f * size);
+      const float ratio = 0.5f + rectDistribution(rectRng);
+      item.rect.setXYWH(-size, -size, size, ratio * size);
     } else {
       item.rect.setXYWH(-size, -size, size, size);
     }
@@ -75,7 +107,7 @@ void ParticleBench::Init(const AppHost* host) {
 
 void ParticleBench::AnimateRects(const AppHost* host) {
   if (!maxDrawCountReached) {
-    auto halfDrawInterval = static_cast<int64_t>(500000 / targetFPS);
+    auto halfDrawInterval = static_cast<int64_t>(500000 / TargetFPS);
     auto drawTime = host->lastDrawTime();
     auto idleTime = halfDrawInterval * 2 - drawTime;
     if (idleTime > 0) {
@@ -84,8 +116,8 @@ void ParticleBench::AnimateRects(const AppHost* host) {
       if (idleTime < halfDrawInterval) {
         factor *= factor;
       }
-      auto step = static_cast<int64_t>(increaseStep * factor);
-      drawCount = std::min(drawCount + static_cast<size_t>(step), maxDrawCount);
+      auto step = static_cast<int64_t>(IncreaseStep * factor);
+      drawCount = std::min(drawCount + static_cast<size_t>(step), MaxDrawCount);
     }
   }
   auto startX = host->mouseX();
@@ -129,9 +161,9 @@ void ParticleBench::DrawStatus(tgfx::Canvas* canvas, const AppHost* host) {
       currentFPS = fps;
       auto drawTime = host->averageDrawTime();
       if (!maxDrawCountReached) {
-        if ((currentFPS < targetFPS - 0.5f &&
-             drawTime > static_cast<int64_t>(1000000 / targetFPS) - 2000) ||
-            drawCount >= maxDrawCount) {
+        if ((currentFPS < TargetFPS - 0.5f &&
+             drawTime > static_cast<int64_t>(1000000 / TargetFPS) - 2000) ||
+            drawCount >= MaxDrawCount) {
           maxDrawCountReached = true;
         }
       }
@@ -162,7 +194,7 @@ void ParticleBench::DrawStatus(tgfx::Canvas* canvas, const AppHost* host) {
   perfData.fps = currentFPS;
   perfData.drawTime = static_cast<float>(host->averageDrawTime()) / 1000.f;
   perfData.drawCount = drawCount;
-  if (!drawStatusFlag) {
+  if (!DrawStatusFlag) {
     return;
   }
   tgfx::Paint paint = {};
@@ -210,6 +242,36 @@ void ParticleBench::DrawOval(tgfx::Canvas* canvas) const {
   canvas->drawRect(startRect, {});
 }
 
+void ParticleBench::DrawComplexGraphic(tgfx::Canvas* canvas) const {
+  for (size_t i = 0; i < drawCount; i++) {
+    auto& item = rects[i];
+    auto& rect = item.rect;
+    tgfx::Paint paint = paints[i % 3];
+    const int points = 5;
+    const float outerRadius = rect.width() * 0.5f;
+    const float innerRadius = outerRadius * 0.382f;
+    tgfx::Path path;
+    const float angleStep = static_cast<float>(M_PI) / points;
+    const float centerX = rect.centerX();
+    const float centerY = rect.centerY();
+    for (int j = 0; j < points * 2; j++) {
+      const float radius = (j % 2 == 0) ? outerRadius : innerRadius;
+      const float angle = static_cast<float>(j) * angleStep;
+      const float x = centerX + radius * std::sin(angle);
+      const float y = centerY - radius * std::cos(angle);
+      if (j == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    path.close();
+    canvas->drawPath(path, paint);
+  }
+  canvas->drawRect(startRect, {});
+}
+
+
 void ParticleBench::DrawGraphics(tgfx::Canvas* canvas) const {
   switch (graphicType) {
     case GraphicType::Rect:
@@ -224,46 +286,32 @@ void ParticleBench::DrawGraphics(tgfx::Canvas* canvas) const {
     case GraphicType::Oval:
       DrawOval(canvas);
       break;
+    case GraphicType::ComplexGraphic:
+      DrawComplexGraphic(canvas);
+      break;
     default:
       DrawRects(canvas);
       break;
   }
 }
 
-void ParticleBench::setDrawStatusFlag(const bool status) {
-  drawStatusFlag = status;
+void ParticleBench::ShowPerfData(const bool status) {
+  DrawStatusFlag = status;
 }
 
-void ParticleBench::setDrawParam(int type, const float param) {
-  auto dataType = static_cast<DataType>(type);
-  switch (dataType) {
-    case DataType::StartCount:
-      updateDrawCount = static_cast<size_t>(param);
-      break;
-    case DataType::StepCount:
-      increaseStep = static_cast<size_t>(param);
-      break;
-    case DataType::MaxDrawCount:
-      maxDrawCount = static_cast<size_t>(param);
-      break;
-    case DataType::MinFPS:
-      targetFPS = param;
-      break;
-    default:
-      break;
-  }
+void ParticleBench::UpdateDrawParam(const DrawParam& drawParam){
+  UpdateDrawCount = drawParam.startCount;
+  IncreaseStep = drawParam.stepCount;
+  TargetFPS = drawParam.minFPS;
+  MaxDrawCount = drawParam.maxCount;
 }
 
-bool ParticleBench::getMaxDrawCountReached() {
+bool ParticleBench::isMaxDrawCountReached() const {
   return maxDrawCountReached;
 }
 
-PerfData ParticleBench::getPerfData() {
+PerfData ParticleBench::getPerfData() const {
   return perfData;
-}
-
-void ParticleBench::clearPerfData() {
-  perfData = {};
 }
 
 }  // namespace benchmark

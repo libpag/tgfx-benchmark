@@ -24,7 +24,8 @@
 namespace benchmark {
 static std::vector<Bench*> drawers = {
     new ParticleBench(GraphicType::Rect), new ParticleBench(GraphicType::Circle),
-    new ParticleBench(GraphicType::Oval), new ParticleBench(GraphicType::RRect)};
+    new ParticleBench(GraphicType::Oval), new ParticleBench(GraphicType::RRect),
+    new ParticleBench(GraphicType::ComplexGraphic)};
 
 static std::vector<std::string> GetDrawerNames() {
   std::vector<std::string> names;

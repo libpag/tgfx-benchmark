@@ -40,11 +40,13 @@ class TGFXBaseView {
 
   void updatePerfInfo(const PerfData& data);
 
-  void updateDrawParam(int type, float value) const;
+  void updateDrawParam(const DrawParam& drawParam) const;
 
   void updateGraphicType(int type);
 
   void notifyWebUpdateGraphicType();
+
+  ParticleBench* getBenchByIndex() const;
 
   int drawIndex = 0;
   std::shared_ptr<benchmark::AppHost> appHost = nullptr;

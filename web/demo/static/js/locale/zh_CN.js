@@ -14,11 +14,12 @@ const LocaleMaps_zh_CN = {
     'circleSpan.innerHTML':'圆形',
     'rrectSpan.innerHTML':'圆角矩形',
     'ovalSpan.innerHTML':'椭圆',
+    'complexGraphicSpan.innerHTML': '复杂图形',
     'restartBtn.innerHTML':'重新启动',
     'languageTypeLabel.innerHTML': '语言:',
     'autoOption.innerHTML': '自动',
     'chineseOption.innerHTML': '中文 (简体)',
     'englishOption.innerHTML': 'English (US)',
     'desktopWarning.innerHTML': '当前页面仅支持桌面端Chromium内核浏览器(Chrome或Edge),请切换浏览器访问.',
-    'progressBarDescP.innerHTML': '正在加载引擎:',
+    'progressBarDescP.innerHTML': '正在加载:',
 }

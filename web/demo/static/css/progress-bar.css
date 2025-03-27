@@ -32,15 +32,6 @@
     transition: width 0.3s;
 }
 
-#loadingText {
-    font-size: 14px;
-    color: #000;
-    white-space: nowrap;
-    margin-left: 5px;
-    line-height: 1.2;
-}
-
-
 .hidden {
     display: none;
 }

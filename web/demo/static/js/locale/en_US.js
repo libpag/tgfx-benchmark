@@ -14,11 +14,12 @@ const LocaleMaps_en_US = {
     'circleSpan.innerHTML': 'Circle',
     'rrectSpan.innerHTML': 'RoundRect',
     'ovalSpan.innerHTML': 'Oval',
+    'complexGraphicSpan.innerHTML': 'RandomComplex',
     'restartBtn.innerHTML': 'Restart',
     'languageTypeLabel.innerHTML': 'Language:',
     'autoOption.innerHTML': 'Auto',
     'chineseOption.innerHTML': 'Chinese (CN)',
     'englishOption.innerHTML': 'English (US)',
     'desktopWarning.innerHTML': 'This website only supports desktop browsers based on Chromium (like Chrome or Edge). Please switch to one of these browsers to access it.',
-    'progressBarDescP.innerHTML': 'Loading engine:',
+    'progressBarDescP.innerHTML': 'Loading:',
 }

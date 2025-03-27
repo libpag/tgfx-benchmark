@@ -19,6 +19,7 @@
 #include <emscripten/bind.h>
 #include "TGFXThreadsView.h"
 #include "TGFXView.h"
+#include "benchmark/ParticleBench.h"
 
 using namespace benchmark;
 using namespace emscripten;
@@ -33,22 +34,28 @@ EMSCRIPTEN_BINDINGS(TGFXDemo) {
       .function("updateDrawParam", &TGFXBaseView::updateDrawParam)
       .function("updateGraphicType", &TGFXBaseView::updateGraphicType);
 
+  value_object<DrawParam>("DrawParam")
+      .field("startCount", &DrawParam::startCount)
+      .field("stepCount", &DrawParam::stepCount)
+      .field("minFPS", &DrawParam::minFPS)
+      .field("maxCount", &DrawParam::maxCount);
+
   class_<TGFXView, base<TGFXBaseView> >("TGFXView")
       .smart_ptr<std::shared_ptr<TGFXView> >("TGFXView")
       .class_function("MakeFrom", optional_override([](const std::string& canvasID) {
-                        if (canvasID.empty()) {
-                          return std::shared_ptr<TGFXView>(nullptr);
-                        }
-                        return std::make_shared<TGFXView>(canvasID);
-                      }));
+        if (canvasID.empty()) {
+          return std::shared_ptr<TGFXView>(nullptr);
+        }
+        return std::make_shared<TGFXView>(canvasID);
+      }));
 
   class_<TGFXThreadsView, base<TGFXBaseView> >("TGFXThreadsView")
       .smart_ptr<std::shared_ptr<TGFXThreadsView> >("TGFXThreadsView")
       .class_function("MakeFrom", optional_override([](const std::string& canvasID) {
-                        if (canvasID.empty()) {
-                          return std::shared_ptr<TGFXThreadsView>(nullptr);
-                        }
-                        return std::make_shared<TGFXThreadsView>(canvasID);
-                      }))
+        if (canvasID.empty()) {
+          return std::shared_ptr<TGFXThreadsView>(nullptr);
+        }
+        return std::make_shared<TGFXThreadsView>(canvasID);
+      }))
       .function("registerFonts", &TGFXThreadsView::registerFonts);
 }
