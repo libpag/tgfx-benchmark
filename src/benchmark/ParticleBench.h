@@ -22,6 +22,21 @@
 
 namespace benchmark {
 
+enum class GraphicType { Rect, Circle, Oval, RRect, Star };
+
+struct DrawParam {
+  size_t startCount = 1;
+  size_t stepCount = 600;
+  float minFPS = 60.0f;
+  size_t maxCount = 1000000;
+};
+
+struct PerfData {
+  float fps = 0.0f;
+  float drawTime = 0.0f;
+  size_t drawCount = 0;
+};
+
 struct RectData {
   tgfx::Rect rect{0, 0, 1, 1};
   float speedX;
@@ -32,6 +47,22 @@ class ParticleBench : public Bench {
  public:
   ParticleBench() : Bench("ParticleBench") {
   }
+
+  explicit ParticleBench(GraphicType type);
+
+  static void ShowPerfData(bool status);
+
+  static void SetInitDrawCount(size_t count);
+
+  static void SetMaxDrawCount(size_t count);
+
+  static void SetStepDrawCount(size_t count);
+
+  static void SetTargetFPS(float fps);
+
+  bool isMaxDrawCountReached() const;
+
+  PerfData getPerfData() const;
 
  protected:
   void onDraw(tgfx::Canvas* canvas, const AppHost* host) override;
@@ -45,13 +76,21 @@ class ParticleBench : public Bench {
 
   void DrawStatus(tgfx::Canvas* canvas, const AppHost* host);
 
+  void DrawCircle(tgfx::Canvas* canvas) const;
+
+  void DrawRRect(tgfx::Canvas* canvas) const;
+
+  void DrawOval(tgfx::Canvas* canvas) const;
+
+  void DrawStar(tgfx::Canvas* canvas) const;
+
+  void DrawGraphics(tgfx::Canvas* canvas) const;
+
  private:
   float width = 0;   //appHost width
   float height = 0;  //appHost height
-  float targetFPS = 60.0f;
-  float currentFPS = 0.f;
   size_t drawCount = 1;
-  bool maxDrawCountReached = false;
+  float currentFPS = 0.f;
   std::vector<RectData> rects = {};
   tgfx::Rect startRect = tgfx::Rect::MakeEmpty();
   tgfx::Paint paints[3];  // red, green, blue solid paints
@@ -59,6 +98,9 @@ class ParticleBench : public Bench {
   tgfx::Font fpsFont = {};
   tgfx::Color fpsColor = tgfx::Color::Green();
   std::vector<std::string> status = {};
+  GraphicType graphicType = GraphicType::Rect;
+  bool maxDrawCountReached = false;
+  PerfData perfData = {};
 };
 
 }  // namespace benchmark

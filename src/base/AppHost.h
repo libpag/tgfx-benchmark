@@ -25,6 +25,7 @@
 #include "tgfx/core/Typeface.h"
 
 namespace benchmark {
+
 /**
  * AppHost provides information about the current app context.
  */
@@ -150,7 +151,7 @@ class AppHost {
   float _mouseY = -1.0f;
   std::deque<int64_t> fpsTimeStamps = {};
   std::deque<int64_t> drawTimes = {};
-  std::unordered_map<std::string, std::shared_ptr<tgfx::Image>> images = {};
-  std::unordered_map<std::string, std::shared_ptr<tgfx::Typeface>> typefaces = {};
+  std::unordered_map<std::string, std::shared_ptr<tgfx::Image> > images = {};
+  std::unordered_map<std::string, std::shared_ptr<tgfx::Typeface> > typefaces = {};
 };
 }  // namespace benchmark

@@ -20,8 +20,8 @@
 
 #include <emscripten/bind.h>
 #include "base/AppHost.h"
+#include "benchmark/ParticleBench.h"
 #include "tgfx/gpu/opengl/webgl/WebGLWindow.h"
-
 namespace benchmark {
 
 class TGFXBaseView {
@@ -35,6 +35,18 @@ class TGFXBaseView {
   void startDraw();
 
   void draw();
+
+  void restartDraw() const;
+
+  void updatePerfInfo(const PerfData& data);
+
+  void updateDrawParam(const DrawParam& drawParam) const;
+
+  void updateGraphicType(int type);
+
+  void notifyWebUpdateGraphicType();
+
+  ParticleBench* getBenchByIndex() const;
 
   int drawIndex = 0;
   std::shared_ptr<benchmark::AppHost> appHost = nullptr;
