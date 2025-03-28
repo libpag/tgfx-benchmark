@@ -22,7 +22,7 @@
 
 namespace benchmark {
 
-enum class GraphicType { Rect, Circle, Oval, RRect, ComplexGraphic };
+enum class GraphicType { Rect, Circle, Oval, RRect, Star };
 
 struct DrawParam {
   size_t startCount = 1;
@@ -52,7 +52,13 @@ class ParticleBench : public Bench {
 
   static void ShowPerfData(bool status);
 
-  static void UpdateDrawParam(const DrawParam& drawParam);
+  static void SetInitDrawCount(size_t count);
+
+  static void SetMaxDrawCount(size_t count);
+
+  static void SetStepDrawCount(size_t count);
+
+  static void SetTargetFPS(float fps);
 
   bool isMaxDrawCountReached() const;
 
@@ -76,7 +82,7 @@ class ParticleBench : public Bench {
 
   void DrawOval(tgfx::Canvas* canvas) const;
 
-  void DrawComplexGraphic(tgfx::Canvas* canvas) const;
+  void DrawStar(tgfx::Canvas* canvas) const;
 
   void DrawGraphics(tgfx::Canvas* canvas) const;
 

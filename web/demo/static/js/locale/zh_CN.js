@@ -14,7 +14,7 @@ const LocaleMaps_zh_CN = {
     'circleSpan.innerHTML':'圆形',
     'rrectSpan.innerHTML':'圆角矩形',
     'ovalSpan.innerHTML':'椭圆',
-    'complexGraphicSpan.innerHTML': '复杂图形',
+    'starSpan.innerHTML': '星形',
     'restartBtn.innerHTML':'重新启动',
     'languageTypeLabel.innerHTML': '语言:',
     'autoOption.innerHTML': '自动',

@@ -30,12 +30,12 @@ static constexpr float STATUS_WIDTH = 250.f;
 static constexpr float FONT_SIZE = 40.f;
 
 static bool DrawStatusFlag = true;
-static size_t UpdateDrawCount = 0;
+static size_t InitDrawCount = 0;
 static float TargetFPS = 60.0f;
 static size_t MaxDrawCount = 1000000;
 static size_t IncreaseStep = 6000;
 
-static std::string GraphicTypeEnumToString(const GraphicType type) {
+static std::string ToString(const GraphicType type) {
   switch (type) {
     case GraphicType::Rect:
       return "Rect";
@@ -45,15 +45,15 @@ static std::string GraphicTypeEnumToString(const GraphicType type) {
       return "RRect";
     case GraphicType::Oval:
       return "Oval";
-    case GraphicType::ComplexGraphic:
-      return "ComplexGraphic";
+    case GraphicType::Star:
+      return "Star";
     default:
       return "Unknown";
   }
 }
 
 ParticleBench::ParticleBench(const GraphicType type)
-    : Bench("ParticleBench-" + GraphicTypeEnumToString(type)), graphicType(type) {
+    : Bench("ParticleBench-" + ToString(type)), graphicType(type) {
 }
 
 void ParticleBench::onDraw(tgfx::Canvas* canvas, const AppHost* host) {
@@ -72,7 +72,7 @@ void ParticleBench::Init(const AppHost* host) {
   width = hostWidth;
   height = hostHeight;
   status = {};
-  drawCount = UpdateDrawCount == 0 ? 1 : UpdateDrawCount;
+  drawCount = std::max(static_cast<size_t>(1), InitDrawCount);
   maxDrawCountReached = false;
   perfData = {};
   fpsFont = tgfx::Font(host->getTypeface("default"), FONT_SIZE * host->density());
@@ -240,7 +240,7 @@ void ParticleBench::DrawOval(tgfx::Canvas* canvas) const {
   canvas->drawRect(startRect, {});
 }
 
-void ParticleBench::DrawComplexGraphic(tgfx::Canvas* canvas) const {
+void ParticleBench::DrawStar(tgfx::Canvas* canvas) const {
   for (size_t i = 0; i < drawCount; i++) {
     auto& item = rects[i];
     auto& rect = item.rect;
@@ -283,8 +283,8 @@ void ParticleBench::DrawGraphics(tgfx::Canvas* canvas) const {
     case GraphicType::Oval:
       DrawOval(canvas);
       break;
-    case GraphicType::ComplexGraphic:
-      DrawComplexGraphic(canvas);
+    case GraphicType::Star:
+      DrawStar(canvas);
       break;
     default:
       DrawRects(canvas);
@@ -296,11 +296,20 @@ void ParticleBench::ShowPerfData(const bool status) {
   DrawStatusFlag = status;
 }
 
-void ParticleBench::UpdateDrawParam(const DrawParam& drawParam) {
-  UpdateDrawCount = drawParam.startCount;
-  IncreaseStep = drawParam.stepCount;
-  TargetFPS = drawParam.minFPS;
-  MaxDrawCount = drawParam.maxCount;
+void ParticleBench::SetInitDrawCount(const size_t count) {
+  InitDrawCount = count;
+}
+
+void ParticleBench::SetMaxDrawCount(const size_t count) {
+  MaxDrawCount = count;
+}
+
+void ParticleBench::SetStepDrawCount(const size_t count) {
+  IncreaseStep = count;
+}
+
+void ParticleBench::SetTargetFPS(const float fps) {
+  TargetFPS = fps;
 }
 
 bool ParticleBench::isMaxDrawCountReached() const {

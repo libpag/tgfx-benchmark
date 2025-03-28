@@ -73,11 +73,11 @@ export enum GraphicType {
     Circle = 1,
     Oval = 2,
     RRect = 3,
-    ComplexGraphic = 4
+    Star = 4
 }
 
 
-const graphicTypeStr: readonly ['Rect', 'Circle', 'Oval', 'RRect', 'ComplexGraphic'] = ['Rect', 'Circle', 'Oval', 'RRect', 'ComplexGraphic'];
+const graphicTypeStr: readonly ['Rect', 'Circle', 'Oval', 'RRect', 'Star'] = ['Rect', 'Circle', 'Oval', 'RRect', 'Star'];
 
 export let engineVersionInfo: SideBarConfig;
 
@@ -584,8 +584,8 @@ function setGraphicType(graphicType: string) {
         case 'oval':
             type = GraphicType.Oval;
             break;
-        case 'complexgraphic':
-            type = GraphicType.ComplexGraphic;
+        case 'star':
+            type = GraphicType.Star;
             break;
         default:
             type = GraphicType.Rect;

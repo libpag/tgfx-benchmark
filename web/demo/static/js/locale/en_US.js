@@ -14,7 +14,7 @@ const LocaleMaps_en_US = {
     'circleSpan.innerHTML': 'Circle',
     'rrectSpan.innerHTML': 'RoundRect',
     'ovalSpan.innerHTML': 'Oval',
-    'complexGraphicSpan.innerHTML': 'RandomComplex',
+    'starSpan.innerHTML': 'Star',
     'restartBtn.innerHTML': 'Restart',
     'languageTypeLabel.innerHTML': 'Language:',
     'autoOption.innerHTML': 'Auto',

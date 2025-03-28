@@ -173,7 +173,10 @@ void TGFXBaseView::updatePerfInfo(const PerfData& data) {
 }
 
 void TGFXBaseView::updateDrawParam(const DrawParam& drawParam) const {
-  ParticleBench::UpdateDrawParam(drawParam);
+  ParticleBench::SetInitDrawCount(drawParam.startCount);
+  ParticleBench::SetStepDrawCount(drawParam.stepCount);
+  ParticleBench::SetMaxDrawCount(drawParam.maxCount);
+  ParticleBench::SetTargetFPS(drawParam.minFPS);
   appHost->resetFrames();
 }
 
