@@ -21,7 +21,7 @@ import {TGFXBind} from '../lib/tgfx';
 
 class DrawParam {
     startCount: number = 1;
-    stepCount: number = 600;
+    stepCount: number = 1000;
     minFPS: number = 60.0;
     maxCount: number = 1000000;
 }
@@ -142,10 +142,17 @@ interface SideBarConfig {
     };
 }
 
+function getResourceUrl(): string {
+    const isLocalhost = window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1';
+
+    return isLocalhost ? '' : 'https://pag.qq.com/tgfx/benchmark';
+}
+
 export function parseSideBarParam(): SideBarConfig {
     try {
         const xhr = new XMLHttpRequest();
-        xhr.open('GET', 'static/sideBarConfigParam.json', false);
+        xhr.open('GET',`${getResourceUrl()}/static/sideBarConfigParam.json`, false);
         xhr.send();
         const config = JSON.parse(xhr.responseText) as SideBarConfig;
         if (!config.engineVersion) {
@@ -492,7 +499,7 @@ function setDefaultValues() {
     }
     const defaultParams = {
         startCount: 1,
-        stepCount: 600,
+        stepCount: 1000,
         maxShapes: 1000000,
         minFPS: 60.0
     };
@@ -730,9 +737,10 @@ function sleep(ms: number): Promise<void> {
 
 export async function loadModule(engineDir: string, type: string = "mt") {
     try {
+        const baseUrl = getResourceUrl();
         showProgress();
         shareData = new ShareData();
-        const Benchmark = await import(`./${engineDir}.js`);
+        const Benchmark = await import(`${baseUrl}/${engineDir}.js`);
         updateProgress(getRandomInt(10, 30));
         if (type === 'mt') {
             if (!crossOriginIsolated) {
@@ -745,7 +753,7 @@ export async function loadModule(engineDir: string, type: string = "mt") {
         }
         const moduleConfig = {
             locateFile: (file: string) => {
-                const path = `${engineDir}.wasm`;
+                const path = `${baseUrl}/${engineDir}.wasm`;
                 console.log('Loading WebAssembly file:', path);
                 return path;
             },
@@ -761,38 +769,70 @@ export async function loadModule(engineDir: string, type: string = "mt") {
         };
 
         if (type === 'mt') {
-            moduleConfig['mainScriptUrlOrBlob'] = `${engineDir}.js`;
+            moduleConfig['mainScriptUrlOrBlob'] = `${baseUrl}/${engineDir}.js`;
         }
         const module = await Benchmark.default(moduleConfig);
         updateProgress(getRandomInt(31, 50));
         if (enumEngineType === EnumEngineType.tgfx) {
             shareData.BenchmarkModule = module;
-            console.log(`BenchmarkModule:${shareData.BenchmarkModule}`);
             TGFXBind(shareData.BenchmarkModule);
             let tgfxView: TGFXBaseView = shareData.BenchmarkModule.TGFXThreadsView.MakeFrom('#benchmark');
-            var imagePath = "static/image/bridge.jpg";
+            var imagePath = `${baseUrl}/static/image/bridge.jpg`;
             await tgfxView.setImagePath(imagePath);
-
-            var fontPath = "static/font/NotoSansSC-Regular.otf";
-            const fontBuffer = await fetch(fontPath).then((response) => response.arrayBuffer());
+            var fontPath = `${baseUrl}/static/font/NotoSansSC-Regular.otf`;
+            const fontBuffer = await fetch(fontPath, {
+                headers: {
+                    'Accept-Encoding': 'gzip, deflate, br'
+                },
+                cache: 'force-cache'
+            }).then(response => {
+                if (!response.ok) throw new Error(`load font failed:${fontPath}`);
+                return response.arrayBuffer();
+            });
             updateProgress(getRandomInt(51, 70));
             const fontUIntArray = new Uint8Array(fontBuffer);
-            var emojiFontPath = "static/font/NotoColorEmoji.ttf";
-            const emojiFontBuffer = await fetch(emojiFontPath).then((response) => response.arrayBuffer());
-            updateProgress(getRandomInt(71, 90));
+
+            var emojiFontPath = `${baseUrl}/static/font/NotoColorEmoji.ttf`;
+            const emojiFontBuffer = await fetch(emojiFontPath, {
+                headers: {
+                    'Accept-Encoding': 'gzip, deflate, br'
+                },
+                cache: 'force-cache'
+            }).then(response => {
+                if (!response.ok) throw new Error(`load emojiFont failed: ${emojiFontPath}`);
+                return response.arrayBuffer();
+            });
             const emojiFontUIntArray = new Uint8Array(emojiFontBuffer);
+            updateProgress(getRandomInt(71, 90));
             tgfxView.registerFonts(fontUIntArray, emojiFontUIntArray);
             shareData.baseView = tgfxView;
         } else if (enumEngineType === EnumEngineType.skia) {
             let skiaView: SkiaView = module.SkiaView.MakeFrom('#benchmark');
-            var fontPath = "static/font//SFNSRounded.ttf";
-            const fontBuffer = await fetch(fontPath).then((response) => response.arrayBuffer());
+            var fontPath = `${baseUrl}/static/font/SFNSRounded.ttf`;
+            const fontBuffer = await fetch(fontPath, {
+                headers: {
+                    'Accept-Encoding': 'gzip, deflate, br'
+                },
+                cache: 'force-cache'
+            }).then(response => {
+                if (!response.ok) throw new Error(`load font failed:${fontPath}`);
+                return response.arrayBuffer();
+            });
             updateProgress(getRandomInt(51, 70));
             const fontUIntArray = new Uint8Array(fontBuffer);
-            var emojiFontPath = "static/font/NotoColorEmoji.ttf";
-            const emojiFontBuffer = await fetch(emojiFontPath).then((response) => response.arrayBuffer());
-            updateProgress(getRandomInt(71, 90));
+            var emojiFontPath = `${baseUrl}/static/font/NotoColorEmoji.ttf`;
+            const emojiFontBuffer = await fetch(emojiFontPath, {
+                headers: {
+                    'Accept-Encoding': 'gzip, deflate, br'
+                },
+                cache: 'force-cache'
+            }).then(response => {
+                if (!response.ok) throw new Error(`load emojiFont failed: ${emojiFontPath}`);
+                return response.arrayBuffer();
+            });
             const emojiFontUIntArray = new Uint8Array(emojiFontBuffer);
+            updateProgress(getRandomInt(71, 90));
+
             skiaView.registerFonts(fontUIntArray, emojiFontUIntArray);
             shareData.baseView = skiaView;
         }

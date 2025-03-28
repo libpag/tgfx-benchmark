@@ -33,7 +33,7 @@ static bool DrawStatusFlag = true;
 static size_t InitDrawCount = 0;
 static float TargetFPS = 60.0f;
 static size_t MaxDrawCount = 1000000;
-static size_t IncreaseStep = 6000;
+static size_t IncreaseStep = 1000;
 
 static std::string ToString(const GraphicType type) {
   switch (type) {
