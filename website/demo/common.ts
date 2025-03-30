@@ -158,7 +158,7 @@ function getResourceUrl(): string {
 export function parseSideBarParam(): SideBarConfig {
     try {
         const xhr = new XMLHttpRequest();
-        xhr.open('GET', "static/sideBarConfigParam.json", false);
+        xhr.open('GET', `${getResourceUrl()}/static/sideBarConfigParam.json`, false);
         xhr.send();
         const config = JSON.parse(xhr.responseText) as SideBarConfig;
         if (!config.engineVersion) {
@@ -1074,8 +1074,6 @@ export class UrlParamsManager {
             url.search = '';
             window.history.replaceState({}, '', url.toString());
         }
-
-
         return true;
     }
 
