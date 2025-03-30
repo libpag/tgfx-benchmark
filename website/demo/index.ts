@@ -15,35 +15,37 @@
 //  and limitations under the license.
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
-
-import {TGFXBind} from '../lib/tgfx';
-import Benchmark from './wasm/benchmark';
-import {ShareData, updateSize, onresizeEvent, startDraw} from "./common";
-
-let shareData: ShareData = new ShareData();
+import {
+    shareData,
+    updateSize,
+    onresizeEvent,
+    pageInit,
+    getEngineDir,
+    loadModule,
+    bindEventListeners
+} from "./common";
 
 if (typeof window !== 'undefined') {
     window.onload = async () => {
-        try {
-            shareData.BenchmarkModule = await Benchmark({ locateFile: (file: string) => './wasm/' + file });
-            TGFXBind(shareData.BenchmarkModule);
-            let tgfxView = shareData.BenchmarkModule.TGFXView.MakeFrom('#benchmark');
-            tgfxView.init();
-            shareData.tgfxBaseView = tgfxView;
-            var imagePath = "../../resources/assets/bridge.jpg";
-            await tgfxView.setImagePath(imagePath);
-            updateSize(shareData);
-            startDraw(shareData);
+        pageInit();
+        const isSupported = JSON.parse(localStorage.getItem('isSupported'));
+        if (isSupported) {
+            const engineDir = getEngineDir();
+            if (engineDir === "") {
+                throw "engineDir is None";
+            }
+            await loadModule(engineDir);
+            bindEventListeners();
 
-        } catch (error) {
-            console.error(error);
-            throw new Error("Benchmark init failed. Please check the .wasm file path!.");
+        } else {
+            throw "This website only supports desktop browsers based on Chromium (like Chrome or Edge). Please switch to one of these browsers to access it.";
         }
     };
-
     window.onresize = () => {
-        onresizeEvent(shareData);
-        window.setTimeout(() => updateSize(shareData), 300);
+        const isSupported = JSON.parse(localStorage.getItem('isSupported'));
+        if (isSupported) {
+            onresizeEvent(shareData);
+            window.setTimeout(() => updateSize(shareData), 300);
+        }
     };
 }
-

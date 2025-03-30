@@ -15,37 +15,42 @@
 //  and limitations under the license.
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
-import {
-    shareData,
-    updateSize,
-    onresizeEvent,
-    pageInit,
-    getEngineDir,
-    loadModule,
-    bindEventListeners
-} from "./common";
+
+import {TGFXBind} from '../lib/tgfx';
+import Benchmark from './wasm-mt/benchmark';
+import {ShareData, updateSize, onresizeEvent, startDraw} from "./common";
+
+let shareData: ShareData = new ShareData();
 
 if (typeof window !== 'undefined') {
     window.onload = async () => {
-        pageInit();
-        const isSupported = JSON.parse(localStorage.getItem('isSupported'));
-        if (isSupported) {
-            const engineDir = getEngineDir();
-            if (engineDir === "") {
-                throw "engineDir is None";
-            }
-            await loadModule(engineDir);
-            bindEventListeners();
+        try {
+            shareData.BenchmarkModule = await Benchmark({ locateFile: (file: string) => './wasm-mt/' + file });
+            TGFXBind(shareData.BenchmarkModule);
 
-        } else {
-            throw "This website only supports desktop browsers based on Chromium (like Chrome or Edge). Please switch to one of these browsers to access it.";
+            let tgfxView = shareData.BenchmarkModule.TGFXThreadsView.MakeFrom('#benchmark');
+            tgfxView.init();
+            shareData.tgfxBaseView = tgfxView;
+            var imagePath = "../../resources/assets/bridge.jpg";
+            await tgfxView.setImagePath(imagePath);
+
+            var fontPath = "../../resources/font/NotoSansSC-Regular.otf";
+            const fontBuffer = await fetch(fontPath).then((response) => response.arrayBuffer());
+            const fontUIntArray = new Uint8Array(fontBuffer);
+            var emojiFontPath = "../../resources/font/NotoColorEmoji.ttf";
+            const emojiFontBuffer = await fetch(emojiFontPath).then((response) => response.arrayBuffer());
+            const emojiFontUIntArray = new Uint8Array(emojiFontBuffer);
+            tgfxView.registerFonts(fontUIntArray, emojiFontUIntArray);
+            updateSize(shareData);
+            startDraw(shareData);
+        } catch (error) {
+            console.error(error);
+            throw new Error("Benchmark init failed. Please check the .wasm file path!.");
         }
     };
+
     window.onresize = () => {
-        const isSupported = JSON.parse(localStorage.getItem('isSupported'));
-        if (isSupported) {
-            onresizeEvent(shareData);
-            window.setTimeout(() => updateSize(shareData), 300);
-        }
+        onresizeEvent(shareData);
+        window.setTimeout(() => updateSize(shareData), 300);
     };
 }

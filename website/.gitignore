@@ -1,0 +1,7 @@
+package-lock.json
+lib
+types
+*.js.map
+demo/*.js
+demo/static/tgfx
+demo/static/skia

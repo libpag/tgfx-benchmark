@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "lib": ["ES5", "ES6", "DOM", "DOM.Iterable", "WebWorker"],
+    "target": "ES2020",
+    "declaration": true,
+    "declarationDir": "./types",
+    "emitDeclarationOnly": true,
+    "removeComments": false,
+    "skipLibCheck": true,
+    "experimentalDecorators": true,
+    "moduleResolution": "Node",
+    "baseUrl": ".", 
+    "paths": {
+      "@tgfx/*": ["../third_party/tgfx/web/src/*"]
+    },
+    "resolveJsonModule": true
+  },
+  "include": ["../third_party/tgfx/web/src/tgfx.ts"]
+}

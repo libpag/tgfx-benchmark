@@ -35,7 +35,7 @@ static float TargetFPS = 60.0f;
 static size_t MaxDrawCount = 1000000;
 static size_t IncreaseStep = 1000;
 
-static std::string ToString(const GraphicType type) {
+static std::string ToString(GraphicType type) {
   switch (type) {
     case GraphicType::Rect:
       return "Rect";
@@ -52,7 +52,7 @@ static std::string ToString(const GraphicType type) {
   }
 }
 
-ParticleBench::ParticleBench(const GraphicType type)
+ParticleBench::ParticleBench(GraphicType type)
     : Bench("ParticleBench-" + ToString(type)), graphicType(type) {
 }
 
@@ -292,23 +292,23 @@ void ParticleBench::DrawGraphics(tgfx::Canvas* canvas) const {
   }
 }
 
-void ParticleBench::ShowPerfData(const bool status) {
+void ParticleBench::ShowPerfData(bool status) {
   DrawStatusFlag = status;
 }
 
-void ParticleBench::SetInitDrawCount(const size_t count) {
+void ParticleBench::SetInitDrawCount(size_t count) {
   InitDrawCount = count;
 }
 
-void ParticleBench::SetMaxDrawCount(const size_t count) {
+void ParticleBench::SetMaxDrawCount(size_t count) {
   MaxDrawCount = count;
 }
 
-void ParticleBench::SetStepDrawCount(const size_t count) {
+void ParticleBench::SetStepDrawCount(size_t count) {
   IncreaseStep = count;
 }
 
-void ParticleBench::SetTargetFPS(const float fps) {
+void ParticleBench::SetTargetFPS(float fps) {
   TargetFPS = fps;
 }
 
