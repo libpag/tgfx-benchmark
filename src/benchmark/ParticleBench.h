@@ -24,6 +24,12 @@ namespace benchmark {
 
 enum class GraphicType { Rect, Circle, Oval, RRect, Star };
 
+struct GraphicData {
+  tgfx::Rect rect{0, 0, 1, 1};
+  float speedX;
+  float speedY;
+};
+
 struct DrawParam {
   size_t startCount = 1;
   size_t stepCount = 600;
@@ -35,12 +41,6 @@ struct PerfData {
   float fps = 0.0f;
   float drawTime = 0.0f;
   size_t drawCount = 0;
-};
-
-struct RectData {
-  tgfx::Rect rect{0, 0, 1, 1};
-  float speedX;
-  float speedY;
 };
 
 class ParticleBench : public Bench {
@@ -91,7 +91,8 @@ class ParticleBench : public Bench {
   float height = 0;  //appHost height
   size_t drawCount = 1;
   float currentFPS = 0.f;
-  std::vector<RectData> rects = {};
+  std::vector<GraphicData> graphics = {};
+  std::vector<tgfx::Path> paths = {};
   tgfx::Rect startRect = tgfx::Rect::MakeEmpty();
   tgfx::Paint paints[3];  // red, green, blue solid paints
   int64_t lastFlushTime = -1;
