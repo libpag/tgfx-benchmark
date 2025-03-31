@@ -111,9 +111,6 @@ void ParticleBench::AnimateRects(const AppHost* host) {
     if (idleTime > 0) {
       auto factor = static_cast<double>(idleTime > halfDrawInterval ? drawTime : idleTime) /
                     static_cast<double>(halfDrawInterval);
-      if (idleTime < halfDrawInterval) {
-        factor *= factor;
-      }
       auto step = static_cast<int64_t>(IncreaseStep * factor);
       drawCount = std::min(drawCount + static_cast<size_t>(step), MaxDrawCount);
     }
