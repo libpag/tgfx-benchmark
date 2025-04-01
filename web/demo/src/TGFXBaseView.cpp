@@ -50,12 +50,12 @@ EM_BOOL MouseClickCallback(int, const EmscriptenMouseEvent* e, void* userData) {
 }
 
 EM_BOOL MouseMoveCallBack(int, const EmscriptenMouseEvent* e, void* userData) {
-  auto baseView = static_cast<benchmark::TGFXBaseView*>(userData);
-  if (baseView) {
+  auto appHost = static_cast<benchmark::AppHost*>(userData);
+  if (appHost) {
     double devicePixelRatio = emscripten_get_device_pixel_ratio();
     float x = static_cast<float>(devicePixelRatio) * static_cast<float>(e->clientX);
     float y = static_cast<float>(devicePixelRatio) * static_cast<float>(e->clientY);
-    baseView->appHost->mouseMoved(x, y);
+    appHost->mouseMoved(x, y);
   }
   return EM_TRUE;
 }
@@ -72,7 +72,7 @@ TGFXBaseView::TGFXBaseView(const std::string& canvasID) : canvasID(canvasID) {
   appHost = std::make_shared<benchmark::AppHost>(1024, 720);
   drawIndex = 0;
   emscripten_set_click_callback(canvasID.c_str(), this, EM_TRUE, MouseClickCallback);
-  emscripten_set_mousemove_callback(canvasID.c_str(), this, EM_TRUE, MouseMoveCallBack);
+  emscripten_set_mousemove_callback(canvasID.c_str(), appHost.get(), EM_TRUE, MouseMoveCallBack);
   emscripten_set_mouseleave_callback(canvasID.c_str(), appHost.get(), EM_TRUE, MouseLeaveCallBack);
 }
 
@@ -89,9 +89,7 @@ void TGFXBaseView::updateSize(float devicePixelRatio) {
 }
 
 void TGFXBaseView::startDraw() {
-  if (showSideBarFlag) {
-    ParticleBench::ShowPerfData(false);
-  }
+  ParticleBench::ShowPerfData(!showPerfDataFlag);
   emscripten_request_animation_frame_loop(RequestFrameCallback, this);
 }
 
@@ -131,7 +129,7 @@ void TGFXBaseView::draw() {
   bench->draw(canvas, appHost.get());
   const auto particleBench = static_cast<benchmark::ParticleBench*>(bench);
 
-  if (showSideBarFlag) {
+  if (showPerfDataFlag) {
     updatePerfInfo(particleBench->getPerfData());
   }
   context->flushAndSubmit();
@@ -184,8 +182,8 @@ ParticleBench* TGFXBaseView::getBenchByIndex() const {
   return static_cast<ParticleBench*>(bench);
 }
 
-void TGFXBaseView::showSideBar(bool show) {
-  showSideBarFlag = show;
+void TGFXBaseView::showPerfData(bool show) {
+  showPerfDataFlag = show;
 }
 
 }  // namespace benchmark

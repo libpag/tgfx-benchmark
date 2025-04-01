@@ -34,7 +34,7 @@ class BaseView {
     public restartDraw: () => void;
     public updateDrawParam: (drawParam: DrawParam) => void;
     public updateGraphicType: (type: number) => void;
-    public showSideBar: (status: boolean) => void;
+    public showPerfData: (status: boolean) => void;
     public init: () => void;
 }
 
@@ -44,7 +44,7 @@ export class TGFXBaseView extends BaseView {
     public restartDraw: () => void;
     public updateDrawParam: (drawParam: DrawParam) => void;
     public updateGraphicType: (type: number) => void;
-    public showSideBar: (status: boolean) => void;
+    public showPerfData: (status: boolean) => void;
     public init: () => void;
 }
 
@@ -54,7 +54,7 @@ export class SkiaView extends BaseView {
     public restartDraw: () => void;
     public updateDrawParam: (drawParam: DrawParam) => void;
     public updateGraphicType: (type: number) => void;
-    public showSideBar: (status: boolean) => void;
+    public showPerfData: (status: boolean) => void;
     public init: () => void;
 }
 
@@ -833,7 +833,7 @@ export async function loadModule(engineDir: string, type: string = "mt") {
             skiaView.registerFonts(fontUIntArray, emojiFontUIntArray);
             shareData.baseView = skiaView;
         }
-        shareData.baseView.showSideBar(true);
+        shareData.baseView.showPerfData(true);
         updateProgress(100);
         hideProgress();
         updateSize(shareData);

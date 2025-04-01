@@ -46,11 +46,11 @@ class TGFXBaseView {
 
   ParticleBench* getBenchByIndex() const;
 
-  void showSideBar(bool show);
+  void showPerfData(bool show);
 
   int drawIndex = 0;
   std::shared_ptr<benchmark::AppHost> appHost = nullptr;
-  bool showSideBarFlag = false;
+  bool showPerfDataFlag = false;
 
  private:
   std::shared_ptr<tgfx::Window> window = nullptr;
