@@ -29,7 +29,6 @@ if (typeof window !== 'undefined') {
             TGFXBind(shareData.BenchmarkModule);
 
             let tgfxView = shareData.BenchmarkModule.TGFXThreadsView.MakeFrom('#benchmark');
-            tgfxView.init();
             shareData.tgfxBaseView = tgfxView;
             var imagePath = "../../resources/assets/bridge.jpg";
             await tgfxView.setImagePath(imagePath);

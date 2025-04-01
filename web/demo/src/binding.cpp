@@ -33,8 +33,7 @@ EMSCRIPTEN_BINDINGS(TGFXDemo) {
       .function("restartDraw", &TGFXBaseView::restartDraw)
       .function("updateDrawParam", &TGFXBaseView::updateDrawParam)
       .function("updateGraphicType", &TGFXBaseView::updateGraphicType)
-      .function("init", &TGFXBaseView::init)
-      .function("showSideBar", &TGFXBaseView::showSideBar);
+      .function("showPerfData", &TGFXBaseView::showPerfData);
 
   value_object<DrawParam>("DrawParam")
       .field("startCount", &DrawParam::startCount)

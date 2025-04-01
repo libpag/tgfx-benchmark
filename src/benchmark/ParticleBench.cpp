@@ -30,7 +30,7 @@ static constexpr float STATUS_WIDTH = 250.f;
 static constexpr float FONT_SIZE = 40.f;
 
 static bool DrawStatusFlag = true;
-static size_t InitDrawCount = 0;
+static size_t InitDrawCount = 1;
 static float TargetFPS = 60.0f;
 static size_t MaxDrawCount = 1000000;
 static size_t IncreaseStep = 1000;
@@ -63,6 +63,29 @@ void ParticleBench::onDraw(tgfx::Canvas* canvas, const AppHost* host) {
   DrawStatus(canvas, host);
 }
 
+static tgfx::Path CreateStar(const tgfx::Rect& rect) {
+  const int points = 5;
+  const float outerRadius = rect.width() * 0.5f;
+  const float innerRadius = outerRadius * 0.382f;
+  tgfx::Path path;
+  const float angleStep = static_cast<float>(M_PI) / points;
+  const float centerX = rect.centerX();
+  const float centerY = rect.centerY();
+  for (int j = 0; j < points * 2; j++) {
+    const float radius = (j % 2 == 0) ? outerRadius : innerRadius;
+    const float angle = static_cast<float>(j) * angleStep;
+    const float x = centerX + radius * std::sin(angle);
+    const float y = centerY - radius * std::cos(angle);
+    if (j == 0) {
+      path.moveTo(x, y);
+    } else {
+      path.lineTo(x, y);
+    }
+  }
+  path.close();
+  return path;
+}
+
 void ParticleBench::Init(const AppHost* host) {
   auto hostWidth = static_cast<float>(host->width());
   auto hostHeight = static_cast<float>(host->height());
@@ -72,7 +95,7 @@ void ParticleBench::Init(const AppHost* host) {
   width = hostWidth;
   height = hostHeight;
   status = {};
-  drawCount = std::max(static_cast<size_t>(1), InitDrawCount);
+  drawCount = InitDrawCount;
   maxDrawCountReached = false;
   perfData = {};
   fpsFont = tgfx::Font(host->getTypeface("default"), FONT_SIZE * host->density());
@@ -80,26 +103,32 @@ void ParticleBench::Init(const AppHost* host) {
     tgfx::Color color = tgfx::Color::Black();
     color[i] = 1.f;
     paints[i].setColor(color);
-    paints[i].setAntiAlias(false);
+    paints[i].setAntiAlias(true);
   }
 
-  startRect = tgfx::Rect::MakeWH(25.f * host->density(), 25.f * host->density());
-  rects.resize(MaxDrawCount);
+  startRect = tgfx::Rect::MakeWH(20.f * host->density(), 20.f * host->density());
+  graphics.resize(MaxDrawCount);
   std::mt19937 rectRng(18);
   std::mt19937 speedRng(36);
   std::uniform_real_distribution<float> rectDistribution(0, 1);
   std::uniform_real_distribution<float> speedDistribution(-1, 1);
   for (size_t i = 0; i < MaxDrawCount; i++) {
-    const auto size = (5.f + rectDistribution(rectRng) * 20.f) * host->density();
-    auto& item = rects[i];
+    const auto size = (4.f + rectDistribution(rectRng) * 10.f) * host->density();
+    auto& graphic = graphics[i];
     if (graphicType == GraphicType::Oval) {
       const float ratio = 0.5f + rectDistribution(rectRng);
-      item.rect.setXYWH(-size, -size, size, ratio * size);
+      graphic.rect.setXYWH(-size, -size, size, ratio * size);
     } else {
-      item.rect.setXYWH(-size, -size, size, size);
+      graphic.rect.setXYWH(-size, -size, size, size);
     }
-    item.speedX = speedDistribution(speedRng) * 5.0f;
-    item.speedY = speedDistribution(speedRng) * 5.0f;
+    graphic.speedX = speedDistribution(speedRng) * 5.0f;
+    graphic.speedY = speedDistribution(speedRng) * 5.0f;
+  }
+  if (graphicType == GraphicType::Star) {
+    paths.resize(MaxDrawCount);
+    for (size_t i = 0; i < MaxDrawCount; i++) {
+      paths[i] = CreateStar(graphics[i].rect);
+    }
   }
 }
 
@@ -112,6 +141,9 @@ void ParticleBench::AnimateRects(const AppHost* host) {
       auto factor = static_cast<double>(idleTime > halfDrawInterval ? drawTime : idleTime) /
                     static_cast<double>(halfDrawInterval);
       auto step = static_cast<int64_t>(IncreaseStep * factor);
+      if (step < 1) {
+        step = 1;
+      }
       drawCount = std::min(drawCount + static_cast<size_t>(step), MaxDrawCount);
     }
   }
@@ -124,22 +156,22 @@ void ParticleBench::AnimateRects(const AppHost* host) {
   }
   startRect.offsetTo(startX - startRect.width() * 0.5f, startY - startRect.height() * 0.5f);
   for (size_t i = 0; i < drawCount; i++) {
-    auto& item = rects[i];
-    auto& rect = item.rect;
+    auto& graphic = graphics[i];
+    auto& rect = graphic.rect;
     if (rect.right <= 0 || rect.left >= width || rect.bottom <= 0 || rect.top >= height) {
       auto offsetX = rect.width() * 0.5f;
       auto offsetY = rect.height() * 0.5f;
       rect.offsetTo(startX - offsetX, startY - offsetY);
     } else {
-      rect.offset(item.speedX, item.speedY);
+      rect.offset(graphic.speedX, graphic.speedY);
     }
   }
 }
 
 void ParticleBench::DrawRects(tgfx::Canvas* canvas) const {
   for (size_t i = 0; i < drawCount; i++) {
-    auto& item = rects[i];
-    canvas->drawRect(item.rect, paints[i % 3]);
+    auto& graphic = graphics[i];
+    canvas->drawRect(graphic.rect, paints[i % 3]);
   }
   canvas->drawRect(startRect, {});
 }
@@ -192,6 +224,7 @@ void ParticleBench::DrawStatus(tgfx::Canvas* canvas, const AppHost* host) {
   if (!DrawStatusFlag) {
     return;
   }
+  canvas->resetMatrix();
   tgfx::Paint paint = {};
   paint.setColor(tgfx::Color{0.32f, 0.42f, 0.62f, 0.9f});
   auto backgroundRect =
@@ -208,9 +241,9 @@ void ParticleBench::DrawStatus(tgfx::Canvas* canvas, const AppHost* host) {
 
 void ParticleBench::DrawCircle(tgfx::Canvas* canvas) const {
   for (size_t i = 0; i < drawCount; i++) {
-    auto& item = rects[i];
-    auto& rect = item.rect;
-    tgfx::Paint paint = paints[i % 3];
+    auto& graphic = graphics[i];
+    auto& rect = graphic.rect;
+    auto& paint = paints[i % 3];
     canvas->drawCircle(rect.centerX(), rect.centerY(), rect.width() * 0.5f, paint);
   }
   canvas->drawRect(startRect, {});
@@ -218,10 +251,10 @@ void ParticleBench::DrawCircle(tgfx::Canvas* canvas) const {
 
 void ParticleBench::DrawRRect(tgfx::Canvas* canvas) const {
   for (size_t i = 0; i < drawCount; i++) {
-    auto& item = rects[i];
-    auto& rect = item.rect;
-    tgfx::Paint paint = paints[i % 3];
-    const float radius = rect.width() * 0.2f;
+    auto& graphic = graphics[i];
+    auto& rect = graphic.rect;
+    auto& paint = paints[i % 3];
+    const float radius = rect.width() * 0.25f;
     canvas->drawRoundRect(rect, radius, radius, paint);
   }
   canvas->drawRect(startRect, {});
@@ -229,9 +262,9 @@ void ParticleBench::DrawRRect(tgfx::Canvas* canvas) const {
 
 void ParticleBench::DrawOval(tgfx::Canvas* canvas) const {
   for (size_t i = 0; i < drawCount; i++) {
-    auto& item = rects[i];
+    auto& item = graphics[i];
     auto& rect = item.rect;
-    tgfx::Paint paint = paints[i % 3];
+    auto& paint = paints[i % 3];
     canvas->drawOval(rect, paint);
   }
   canvas->drawRect(startRect, {});
@@ -239,30 +272,12 @@ void ParticleBench::DrawOval(tgfx::Canvas* canvas) const {
 
 void ParticleBench::DrawStar(tgfx::Canvas* canvas) const {
   for (size_t i = 0; i < drawCount; i++) {
-    auto& item = rects[i];
-    auto& rect = item.rect;
-    tgfx::Paint paint = paints[i % 3];
-    const int points = 5;
-    const float outerRadius = rect.width() * 0.5f;
-    const float innerRadius = outerRadius * 0.382f;
-    tgfx::Path path;
-    const float angleStep = static_cast<float>(M_PI) / points;
-    const float centerX = rect.centerX();
-    const float centerY = rect.centerY();
-    for (int j = 0; j < points * 2; j++) {
-      const float radius = (j % 2 == 0) ? outerRadius : innerRadius;
-      const float angle = static_cast<float>(j) * angleStep;
-      const float x = centerX + radius * std::sin(angle);
-      const float y = centerY - radius * std::cos(angle);
-      if (j == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
-    }
-    path.close();
-    canvas->drawPath(path, paint);
+    auto& graphic = graphics[i];
+    canvas->setMatrix(tgfx::Matrix::MakeTrans(graphic.rect.centerX(), graphic.rect.centerY()));
+    auto& paint = paints[i % 3];
+    canvas->drawPath(paths[i], paint);
   }
+  canvas->resetMatrix();
   canvas->drawRect(startRect, {});
 }
 
@@ -294,7 +309,7 @@ void ParticleBench::ShowPerfData(bool status) {
 }
 
 void ParticleBench::SetInitDrawCount(size_t count) {
-  InitDrawCount = count;
+  InitDrawCount = std::max(static_cast<size_t>(1), count);
 }
 
 void ParticleBench::SetMaxDrawCount(size_t count) {

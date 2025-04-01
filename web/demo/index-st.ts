@@ -28,7 +28,6 @@ if (typeof window !== 'undefined') {
             shareData.BenchmarkModule = await Benchmark({ locateFile: (file: string) => './wasm/' + file });
             TGFXBind(shareData.BenchmarkModule);
             let tgfxView = shareData.BenchmarkModule.TGFXView.MakeFrom('#benchmark');
-            tgfxView.init();
             shareData.tgfxBaseView = tgfxView;
             var imagePath = "../../resources/assets/bridge.jpg";
             await tgfxView.setImagePath(imagePath);
