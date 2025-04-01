@@ -89,7 +89,7 @@ void TGFXBaseView::updateSize(float devicePixelRatio) {
 }
 
 void TGFXBaseView::startDraw() {
-  ParticleBench::ShowPerfData(!showPerfDataFlag);
+  ParticleBench::ShowPerfData(showPerfDataFlag);
   emscripten_request_animation_frame_loop(RequestFrameCallback, this);
 }
 
@@ -129,7 +129,7 @@ void TGFXBaseView::draw() {
   bench->draw(canvas, appHost.get());
   const auto particleBench = static_cast<benchmark::ParticleBench*>(bench);
 
-  if (showPerfDataFlag) {
+  if (!showPerfDataFlag) {
     updatePerfInfo(particleBench->getPerfData());
   }
   context->flushAndSubmit();
@@ -146,6 +146,10 @@ void TGFXBaseView::restartDraw() const {
 }
 
 void TGFXBaseView::updatePerfInfo(const PerfData& data) {
+  auto jsWindow = emscripten::val::global("window");
+  if (!jsWindow.hasOwnProperty("updatePerfInfo")) {
+    return;
+  }
   static int64_t lastFlushTime = -1;
   const auto currentTime = tgfx::Clock::Now();
   if (lastFlushTime == -1) {
@@ -154,7 +158,6 @@ void TGFXBaseView::updatePerfInfo(const PerfData& data) {
   if (data.fps > 0.0f) {
     if (const auto flushInterval = currentTime - lastFlushTime; flushInterval > FLUSH_INTERVAL) {
       const auto bench = getBenchByIndex();
-      auto jsWindow = emscripten::val::global("window");
       jsWindow.call<void>("updatePerfInfo", data.fps, data.drawTime, data.drawCount,
                           bench->isMaxDrawCountReached());
       lastFlushTime = currentTime - (flushInterval % FLUSH_INTERVAL);

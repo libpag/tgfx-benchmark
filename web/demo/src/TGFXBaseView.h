@@ -50,7 +50,7 @@ class TGFXBaseView {
 
   int drawIndex = 0;
   std::shared_ptr<benchmark::AppHost> appHost = nullptr;
-  bool showPerfDataFlag = false;
+  bool showPerfDataFlag = true;
 
  private:
   std::shared_ptr<tgfx::Window> window = nullptr;

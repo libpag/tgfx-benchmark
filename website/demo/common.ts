@@ -833,7 +833,7 @@ export async function loadModule(engineDir: string, type: string = "mt") {
             skiaView.registerFonts(fontUIntArray, emojiFontUIntArray);
             shareData.baseView = skiaView;
         }
-        shareData.baseView.showPerfData(true);
+        shareData.baseView.showPerfData(false);
         updateProgress(100);
         hideProgress();
         updateSize(shareData);
