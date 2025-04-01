@@ -44,8 +44,6 @@ class TGFXBaseView {
 
   void updateGraphicType(int type);
 
-  void notifyWebUpdateGraphicType();
-
   ParticleBench* getBenchByIndex() const;
 
   void showSideBar(bool show);

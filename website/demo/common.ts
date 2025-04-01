@@ -26,6 +26,7 @@ class DrawParam {
 }
 
 let drawParam: DrawParam = new DrawParam();
+let drawIndex: number = 0;
 
 class BaseView {
     public updateSize: (devicePixelRatio: number) => void;
@@ -83,7 +84,7 @@ export enum GraphicType {
 }
 
 
-const graphicTypeStr: readonly ['Rect', 'Circle', 'Oval', 'RRect', 'Star'] = ['Rect', 'Circle', 'Oval', 'RRect', 'Star'];
+export const graphicTypeStr: readonly ['Rect', 'Circle', 'Oval', 'RRect', 'Star'] = ['Rect', 'Circle', 'Oval', 'RRect', 'Star'];
 
 export let engineVersionInfo: SideBarConfig;
 
@@ -604,6 +605,7 @@ function setGraphicType(graphicType: string) {
             type = GraphicType.Rect;
     }
     if (shareData.baseView) {
+        drawIndex = type;
         shareData.baseView.updateGraphicType(type);
     }
 }
@@ -1108,4 +1110,132 @@ export function setDrawParamFromUrl() {
     if (param["graphic"]) {
         setGraphicType(param["graphic"].toString());
     }
+}
+
+function webUpdateGraphicType(type:number) {
+    try {
+        if (typeof type !== 'number' || type < 0 || type >= graphicTypeStr.length) {
+            console.warn('Invalid graphic type: ' + type);
+            return;
+        }
+
+        const typeStr = graphicTypeStr[Number(type)];
+        if (!typeStr) {
+            console.warn('No string mapping for graphic type: ' + type);
+            return;
+        }
+
+        const radioGroup = document.getElementById('radio-group-graphic-type');
+        if (!radioGroup) {
+            console.error('Radio group not found');
+            return;
+        }
+        const targetRadio = radioGroup.querySelector('input[value="' + typeStr + '"]');
+        if (!(targetRadio instanceof HTMLInputElement)) {
+            console.error('Radio button for ' + typeStr + ' not found');
+            return;
+        }
+        targetRadio.checked = true;
+        console.log('Updated graphic type to: ' + typeStr);
+        const event = new Event('change', { bubbles: true });
+        targetRadio.dispatchEvent(event);
+    } catch (error) {
+        console.error('Error updating graphic type:', error);
+    }
+}
+
+export function setupCoordinateConversion(canvasId: string, showSideBar: boolean) {
+    console.log("setupCoordinateConversion");
+    const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
+
+    let isProcessingMouseEvent = false;
+    let lastClickTime = 0;
+    const CLICK_DEBOUNCE_TIME = 100;
+    canvas.addEventListener('click', (e: MouseEvent) => {
+        const now = Date.now();
+        if (now - lastClickTime < CLICK_DEBOUNCE_TIME) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            return;
+        }
+        lastClickTime = now;
+        if (isProcessingMouseEvent) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            return;
+        }
+
+        isProcessingMouseEvent = true;
+        try {
+            const convertedEvent = convertCoordinates(e, showSideBar);
+
+            Object.defineProperty(e, 'clientX', {
+                value: convertedEvent.clientX,
+                writable: true
+            });
+            Object.defineProperty(e, 'clientY', {
+                value: convertedEvent.clientY,
+                writable: true
+            });
+            drawIndex++;
+            webUpdateGraphicType(drawIndex % graphicTypeStr.length);
+        } finally {
+            isProcessingMouseEvent = false;
+        }
+    }, {capture: true});
+
+    let isProcessingMouseMove = false;
+    canvas.addEventListener('mousemove', (e: MouseEvent) => {
+        if (isProcessingMouseMove) {
+            return;
+        }
+        isProcessingMouseMove = true;
+        try {
+            const convertedEvent = convertCoordinates(e, showSideBar);
+            Object.defineProperty(e, 'clientX', {
+                value: convertedEvent.clientX,
+                writable: true
+            });
+            Object.defineProperty(e, 'clientY', {
+                value: convertedEvent.clientY,
+                writable: true
+            });
+
+        } finally {
+            isProcessingMouseMove = false;
+        }
+    }, {capture: true});
+}
+
+
+function convertCoordinates(e: MouseEvent, showSideBar: boolean) {
+    let sidebarWidth = 0;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    if (showSideBar) {
+        const sidebar = document.getElementById('sidebar');
+        sidebarWidth = sidebar ? sidebar.clientWidth : 0;
+        offsetX = sidebarWidth;
+    }
+
+    const benchmark = document.getElementById('benchmark');
+    const container = document.getElementById('container');
+
+    if (benchmark && container) {
+        const benchmarkWidth = benchmark.clientWidth;
+        const benchmarkHeight = benchmark.clientHeight;
+        const containerWidth = container.clientWidth;
+        const containerHeight = container.clientHeight;
+
+        if (benchmarkWidth !== containerWidth && benchmarkHeight !== containerHeight) {
+            offsetX = (containerWidth - benchmarkWidth) / 2 + sidebarWidth;
+            offsetY = (containerHeight - benchmarkHeight) / 2;
+        }
+    }
+
+    return {
+        clientX: (e.clientX - offsetX),
+        clientY: (e.clientY - offsetY)
+    };
 }

@@ -45,10 +45,6 @@ EM_BOOL MouseClickCallback(int, const EmscriptenMouseEvent* e, void* userData) {
     baseView->appHost->mouseMoved(x, y);
     baseView->appHost->resetFrames();
     baseView->drawIndex++;
-
-    if (baseView->showSideBarFlag) {
-      baseView->notifyWebUpdateGraphicType();
-    }
   }
   return EM_TRUE;
 }
@@ -179,13 +175,6 @@ void TGFXBaseView::updateDrawParam(const DrawParam& drawParam) const {
 void TGFXBaseView::updateGraphicType(int type) {
   drawIndex = type;
   appHost->resetFrames();
-}
-
-void TGFXBaseView::notifyWebUpdateGraphicType() {
-  const auto numBenches = benchmark::Bench::Count();
-  auto index = (drawIndex % numBenches);
-  auto jsWindow = emscripten::val::global("window");
-  jsWindow.call<void>("webUpdateGraphicType", index);
 }
 
 ParticleBench* TGFXBaseView::getBenchByIndex() const {

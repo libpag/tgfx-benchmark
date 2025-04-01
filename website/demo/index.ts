@@ -22,12 +22,9 @@ import {
     pageInit,
     getEngineDir,
     loadModule,
-    bindEventListeners
-} from "./common";
-
-import {
+    bindEventListeners,
     setupCoordinateConversion
-}from "./mouseEvent";
+} from "./common";
 
 
 if (typeof window !== 'undefined') {

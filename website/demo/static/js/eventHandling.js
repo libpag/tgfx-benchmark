@@ -117,41 +117,6 @@ function updatePerfInfo(fps, drawTime, drawCount, maxDrawCountReached) {
     }
 }
 
-// const graphicTypeStr = ['Rect', 'Circle', 'Oval', 'RRect'];
-// graphicTypeStr defined in index.js
-function webUpdateGraphicType(type) {
-    try {
-        if (typeof type !== 'number' || type < 0 || type >= graphicTypeStr.length) {
-            console.warn('Invalid graphic type: ' + type);
-            return;
-        }
-
-        const typeStr = graphicTypeStr[Number(type)];
-        if (!typeStr) {
-            console.warn('No string mapping for graphic type: ' + type);
-            return;
-        }
-
-        const radioGroup = document.getElementById('radio-group-graphic-type');
-        if (!radioGroup) {
-            console.error('Radio group not found');
-            return;
-        }
-        const targetRadio = radioGroup.querySelector('input[value="' + typeStr + '"]');
-        if (!(targetRadio instanceof HTMLInputElement)) {
-            console.error('Radio button for ' + typeStr + ' not found');
-            return;
-        }
-        targetRadio.checked = true;
-        console.log('Updated graphic type to: ' + typeStr);
-        const event = new Event('change', { bubbles: true });
-        targetRadio.dispatchEvent(event);
-    } catch (error) {
-        console.error('Error updating graphic type:', error);
-    }
-}
-
-window.webUpdateGraphicType = webUpdateGraphicType;
 window.updatePerfInfo = updatePerfInfo;
 document.addEventListener('DOMContentLoaded', checkBrowser);
 document.addEventListener('DOMContentLoaded', initLanguage);
