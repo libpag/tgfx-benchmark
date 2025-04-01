@@ -28,8 +28,6 @@ class TGFXBaseView {
  public:
   TGFXBaseView(const std::string& canvasID);
 
-  void init();
-
   void setImagePath(const std::string& imagePath);
 
   void updateSize(float devicePixelRatio);
@@ -54,7 +52,7 @@ class TGFXBaseView {
 
   int drawIndex = 0;
   std::shared_ptr<benchmark::AppHost> appHost = nullptr;
-  bool showSideBarFlag=false;
+  bool showSideBarFlag = false;
 
  private:
   std::shared_ptr<tgfx::Window> window = nullptr;

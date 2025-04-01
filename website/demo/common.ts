@@ -832,7 +832,6 @@ export async function loadModule(engineDir: string, type: string = "mt") {
             shareData.baseView = skiaView;
         }
         shareData.baseView.showSideBar(true);
-        shareData.baseView.init();
         updateProgress(100);
         hideProgress();
         updateSize(shareData);

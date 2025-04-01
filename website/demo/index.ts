@@ -25,11 +25,17 @@ import {
     bindEventListeners
 } from "./common";
 
+import {
+    setupCoordinateConversion
+}from "./mouseEvent";
+
+
 if (typeof window !== 'undefined') {
     window.onload = async () => {
         pageInit();
         const isSupported = JSON.parse(localStorage.getItem('isSupported'));
         if (isSupported) {
+            setupCoordinateConversion('benchmark',true);
             const engineDir = getEngineDir();
             if (engineDir === "") {
                 throw "engineDir is None";
