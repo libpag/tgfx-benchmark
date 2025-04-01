@@ -5,6 +5,9 @@ const LocaleMaps_en_US = {
     'resolutionP.innerHTML': 'Resolution:',
     'engineTypeP.innerHTML': 'Engine:',
     'engineVersionLabel.innerHTML': "Version:",
+    'canvasSizeLabel.innerHTML': 'Canvas:',
+    'fixedSizeOption.innerHTML':'Fixed Size',
+    'adaptiveSizeOption.innerHTML':'Adapt Size',
     'startCountLabel.innerHTML': 'Init Count:',
     'stepCountLabel.innerHTML': 'Step Count:',
     'maxShapesLabel.innerHTML': 'Max Count:',
@@ -20,6 +23,7 @@ const LocaleMaps_en_US = {
     'autoOption.innerHTML': 'Auto',
     'chineseOption.innerHTML': 'Chinese (CN)',
     'englishOption.innerHTML': 'English (US)',
+    'sourceCodeP.innerHTML': 'Source Code:',
     'desktopWarning.innerHTML': 'This website only supports desktop browsers based on Chromium (like Chrome or Edge). Please switch to one of these browsers to access it.',
     'progressBarDescP.innerHTML': 'Loading:',
 }

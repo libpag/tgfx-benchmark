@@ -5,6 +5,9 @@ const LocaleMaps_zh_CN = {
     'resolutionP.innerHTML':'渲染尺寸:',
     'engineTypeP.innerHTML':'引擎:',
     'engineVersionLabel.innerHTML':"版本:",
+    'canvasSizeLabel.innerHTML':'画布:',
+    'fixedSizeOption.innerHTML':'固定尺寸',
+    'adaptiveSizeOption.innerHTML':'适应窗口',
     'startCountLabel.innerHTML':'起始数量:',
     'stepCountLabel.innerHTML':'步进数量:',
     'maxShapesLabel.innerHTML':'最大数量:',
@@ -20,6 +23,7 @@ const LocaleMaps_zh_CN = {
     'autoOption.innerHTML': '自动',
     'chineseOption.innerHTML': '中文 (简体)',
     'englishOption.innerHTML': 'English (US)',
+    'sourceCodeP.innerHTML': '源码:',
     'desktopWarning.innerHTML': '当前页面仅支持桌面端Chromium内核浏览器(Chrome或Edge),请切换浏览器访问.',
     'progressBarDescP.innerHTML': '正在加载:',
 }

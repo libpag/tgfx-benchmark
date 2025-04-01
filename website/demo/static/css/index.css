@@ -74,7 +74,7 @@ html, body {
     padding: 0;
 }
 
-.info-row span{
+.info-row span {
     margin-left: 5px;
     padding: 0;
 }
@@ -88,10 +88,6 @@ html, body {
     padding-left: 30px;
     color: #ffffff;
     border-top: 2px solid #2c2c2c;
-}
-
-.version-info {
-    margin-bottom: 10px;
 }
 
 .input-group {
@@ -112,6 +108,11 @@ html, body {
     align-items: center;
 }
 
+.canvas-size{
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
+}
 
 .input-group label {
     width: 105px;
@@ -323,4 +324,29 @@ select option:hover {
     margin: 10px 0 10px 0;
     display: inline-block;
     line-height: 1.2;
+}
+
+.github-links {
+    padding: 10px 0;
+    color: #ffffff;
+}
+
+.github-links p {
+    margin: 0 0 5px 0;
+    font-size: 15px;
+    line-height: 1.2;
+}
+
+.github-links a {
+    display: block;
+    color: #ffffff;
+    text-decoration: none;
+    padding: 2px 0;
+    margin-left: 20px;
+    font-size: 14px;
+    line-height: 1.2;
+}
+
+.github-links a:hover {
+    text-decoration: underline;
 }
