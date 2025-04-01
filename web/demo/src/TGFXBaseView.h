@@ -44,12 +44,13 @@ class TGFXBaseView {
 
   void updateGraphicType(int type);
 
-  void notifyWebUpdateGraphicType();
-
   ParticleBench* getBenchByIndex() const;
+
+  void showPerfData(bool show);
 
   int drawIndex = 0;
   std::shared_ptr<benchmark::AppHost> appHost = nullptr;
+  bool showPerfDataFlag = true;
 
  private:
   std::shared_ptr<tgfx::Window> window = nullptr;

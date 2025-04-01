@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport"
+          content="width=device-width,initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no"/>
+    <meta name="full-screen" content="true"/>
+    <title>TGFX Benchmark</title>
+    <link rel="stylesheet" href="static/css/index.css"/>
+    <link rel="stylesheet" href="static/css/browser-alert.css">
+    <link rel="stylesheet" href="static/css/progress-bar.css">
+</head>
+<body>
+<div id="mask-overlay" class="mask-overlay hidden">
+    <div id="browser-warning" class="desktop-alert hidden">
+        <p data-locale="desktopWarning"></p>
+    </div>
+</div>
+
+<div class="page-content">
+    <div id="sidebar" class="sidebar">
+        <div class="perf-info">
+            <div class="info-row"><p data-locale="fpsP" class="fpsP"></p><span class="fps"></span></div>
+            <div class="info-row"><p data-locale="timeP" class="timeP"></p><span class="time"></span></div>
+            <div class="info-row"><p data-locale="countP"></p><span class="count"></span></div>
+            <div class="info-row"><p data-locale="resolutionP"></p><span class="resolution"></span></div>
+        </div>
+        <div id="engine-info" class="engine-info common-style">
+            <div id="engine-type" class="engine-type">
+                <div class="select-container">
+                    <label for="engine-type-select" data-locale="engineTypeP"></label>
+                    <select id="engine-type-select">
+                    </select>
+                </div>
+            </div>
+            <div id="version-info" class="version-info">
+                <div class="select-container">
+                    <label for="engine-version" data-locale="engineVersionLabel"></label>
+                    <select id="engine-version">
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div id="config-param" class="config-param common-style">
+            <div class="input-group">
+                <label for="startCount" data-locale="startCountLabel"></label>
+                <input type="number" id="startCount" min="1">
+            </div>
+
+            <div class="input-group">
+                <label for="stepCount" data-locale="stepCountLabel"></label>
+                <input type="number" id="stepCount" min="100">
+            </div>
+
+            <div class="input-group">
+                <label for="maxShapes" data-locale="maxShapesLabel"></label>
+                <input type="number" id="maxShapes" min="10000">
+            </div>
+
+            <div class="input-group">
+                <label for="minFPS" data-locale="minFPSLabel"></label>
+                <input type="number" id="minFPS" min="20" step="0.1">
+            </div>
+        </div>
+        <div id="" class="common-style">
+            <div id="radio-group-graphic-type" class="radio-group">
+                <p data-locale="graphicTypeP"></p>
+                <div class="radio-options">
+                    <label class="radio-item">
+                        <input type="radio" name="graphic-type" value="Rect">
+                        <span data-locale="rectSpan"></span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="graphic-type" value="Circle">
+                        <span data-locale="circleSpan"></span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="graphic-type" value="Oval">
+                        <span data-locale="ovalSpan"></span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="graphic-type" value="RRect">
+                        <span data-locale="rrectSpan"></span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="graphic-type" value="Star">
+                        <span data-locale="starSpan"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div id="language" class="language common-style">
+            <div class="select-container language-select-container">
+                <label for="language-type" data-locale="languageTypeLabel"></label>
+                <select id="language-type">
+                    <option value="auto" data-locale="autoOption"></option>
+                    <option value="zh" data-locale="chineseOption"></option>
+                    <option value="en" data-locale="englishOption"></option>
+                </select>
+            </div>
+        </div>
+        <div class="restart-wrapper">
+            <div class="restart-container">
+                <button id="restartBtn" data-locale="restartBtn"></button>
+            </div>
+        </div>
+    </div>
+    <div id="container" class="container">
+        <canvas class="canvas" id="benchmark"></canvas>
+        <div id="progressContainer" class="hidden">
+            <div class="progress-wrapper">
+                <div id="progressBar">
+                    <div id="progressFill"></div>
+                </div>
+            </div>
+            <div id="descriptionText">
+                <p data-locale="progressBarDescP"></p>
+                <span id="versionDesc" class="versionDesc"></span>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="static/js/locale/zh_CN.js"></script>
+<script src="static/js/locale/en_US.js"></script>
+<script src="static/js/eventHandling.js"></script>
+<script src="./index.js"></script>
+</body>
+</html>

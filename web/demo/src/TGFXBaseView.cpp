@@ -40,18 +40,11 @@ EM_BOOL MouseClickCallback(int, const EmscriptenMouseEvent* e, void* userData) {
   auto baseView = static_cast<TGFXBaseView*>(userData);
   if (baseView) {
     double devicePixelRatio = emscripten_get_device_pixel_ratio();
-    double sidebarWidth =
-        EM_ASM_DOUBLE({ return document.getElementById('sidebar').clientWidth; }, "");
-    // Adjust click coordinates by subtracting the sidebar width
-    // Since there is a sidebar on the page, the click event coordinates need to be adjusted by subtracting the sidebar width to
-    // ensure the coordinates are correct relative to the canvas.
-    float x = static_cast<float>(devicePixelRatio) *
-              (static_cast<float>(e->clientX) - static_cast<float>(sidebarWidth));
+    float x = static_cast<float>(devicePixelRatio) * static_cast<float>(e->clientX);
     float y = static_cast<float>(devicePixelRatio) * static_cast<float>(e->clientY);
     baseView->appHost->mouseMoved(x, y);
     baseView->appHost->resetFrames();
     baseView->drawIndex++;
-    baseView->notifyWebUpdateGraphicType();
   }
   return EM_TRUE;
 }
@@ -60,13 +53,7 @@ EM_BOOL MouseMoveCallBack(int, const EmscriptenMouseEvent* e, void* userData) {
   auto appHost = static_cast<benchmark::AppHost*>(userData);
   if (appHost) {
     double devicePixelRatio = emscripten_get_device_pixel_ratio();
-    double sidebarWidth =
-        EM_ASM_DOUBLE({ return document.getElementById('sidebar').clientWidth; }, "");
-    // Adjust click coordinates by subtracting the sidebar width
-    // Since there is a sidebar on the page, the click event coordinates need to be adjusted by subtracting the sidebar width to
-    // ensure the coordinates are correct relative to the canvas.
-    float x = static_cast<float>(devicePixelRatio) *
-              (static_cast<float>(e->clientX) - static_cast<float>(sidebarWidth));
+    float x = static_cast<float>(devicePixelRatio) * static_cast<float>(e->clientX);
     float y = static_cast<float>(devicePixelRatio) * static_cast<float>(e->clientY);
     appHost->mouseMoved(x, y);
   }
@@ -83,7 +70,6 @@ EM_BOOL MouseLeaveCallBack(int, const EmscriptenMouseEvent*, void* userData) {
 
 TGFXBaseView::TGFXBaseView(const std::string& canvasID) : canvasID(canvasID) {
   appHost = std::make_shared<benchmark::AppHost>(1024, 720);
-  ParticleBench::ShowPerfData(false);
   drawIndex = 0;
   emscripten_set_click_callback(canvasID.c_str(), this, EM_TRUE, MouseClickCallback);
   emscripten_set_mousemove_callback(canvasID.c_str(), appHost.get(), EM_TRUE, MouseMoveCallBack);
@@ -103,6 +89,7 @@ void TGFXBaseView::updateSize(float devicePixelRatio) {
 }
 
 void TGFXBaseView::startDraw() {
+  ParticleBench::ShowPerfData(showPerfDataFlag);
   emscripten_request_animation_frame_loop(RequestFrameCallback, this);
 }
 
@@ -141,7 +128,10 @@ void TGFXBaseView::draw() {
   auto bench = benchmark::Bench::GetByIndex(index);
   bench->draw(canvas, appHost.get());
   const auto particleBench = static_cast<benchmark::ParticleBench*>(bench);
-  updatePerfInfo(particleBench->getPerfData());
+
+  if (!showPerfDataFlag) {
+    updatePerfInfo(particleBench->getPerfData());
+  }
   context->flushAndSubmit();
   window->present(context);
   device->unlock();
@@ -156,6 +146,10 @@ void TGFXBaseView::restartDraw() const {
 }
 
 void TGFXBaseView::updatePerfInfo(const PerfData& data) {
+  auto jsWindow = emscripten::val::global("window");
+  if (!jsWindow.hasOwnProperty("updatePerfInfo")) {
+    return;
+  }
   static int64_t lastFlushTime = -1;
   const auto currentTime = tgfx::Clock::Now();
   if (lastFlushTime == -1) {
@@ -164,7 +158,6 @@ void TGFXBaseView::updatePerfInfo(const PerfData& data) {
   if (data.fps > 0.0f) {
     if (const auto flushInterval = currentTime - lastFlushTime; flushInterval > FLUSH_INTERVAL) {
       const auto bench = getBenchByIndex();
-      auto jsWindow = emscripten::val::global("window");
       jsWindow.call<void>("updatePerfInfo", data.fps, data.drawTime, data.drawCount,
                           bench->isMaxDrawCountReached());
       lastFlushTime = currentTime - (flushInterval % FLUSH_INTERVAL);
@@ -185,18 +178,15 @@ void TGFXBaseView::updateGraphicType(int type) {
   appHost->resetFrames();
 }
 
-void TGFXBaseView::notifyWebUpdateGraphicType() {
-  const auto numBenches = benchmark::Bench::Count();
-  auto index = (drawIndex % numBenches);
-  auto jsWindow = emscripten::val::global("window");
-  jsWindow.call<void>("webUpdateGraphicType", index);
-}
-
 ParticleBench* TGFXBaseView::getBenchByIndex() const {
   const auto numBenches = benchmark::Bench::Count();
   const auto index = (drawIndex % numBenches);
   const auto bench = benchmark::Bench::GetByIndex(index);
   return static_cast<ParticleBench*>(bench);
+}
+
+void TGFXBaseView::showPerfData(bool show) {
+  showPerfDataFlag = show;
 }
 
 }  // namespace benchmark
