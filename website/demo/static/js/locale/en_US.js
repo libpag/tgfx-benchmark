@@ -7,7 +7,7 @@ const LocaleMaps_en_US = {
     'engineVersionLabel.innerHTML': "Version:",
     'canvasSizeLabel.innerHTML': 'Canvas:',
     'fixedSizeOption.innerHTML':'Fixed Size',
-    'adaptiveSizeOption.innerHTML':'Adapt Size',
+    'windowSizeOption.innerHTML':'Window Size',
     'startCountLabel.innerHTML': 'Init Count:',
     'stepCountLabel.innerHTML': 'Step Count:',
     'maxShapesLabel.innerHTML': 'Max Count:',

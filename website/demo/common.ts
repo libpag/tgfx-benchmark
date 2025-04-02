@@ -705,7 +705,7 @@ function handleCanvasSizeChange(event: Event) {
         container.style.backgroundColor = '#2c2c2c';
         canvas.style.border = '10px solid #ffffff';
         canvas.style.boxSizing = 'content-box';
-        canvas.style.backgroundColor='#ffffff';
+        canvas.style.backgroundColor = '#ffffff';
         const scaleFactor = window.devicePixelRatio;
         canvas.width = 2048;
         canvas.height = 1440;
@@ -720,6 +720,8 @@ function handleCanvasSizeChange(event: Event) {
         container.style.alignItems = 'center';
         shareData.baseView.updateSize(scaleFactor);
     }
+
+    localStorage.setItem('canvasSize', target.value);
 
     const resolutionSpan = document.querySelector('.resolution');
     resolutionSpan.textContent = `${canvas.width}x${canvas.height}`;
@@ -876,7 +878,7 @@ export async function loadModule(engineDir: string, type: string = "mt") {
         shareData.baseView.showPerfData(false);
         updateProgress(100);
         hideProgress();
-        updateSize(shareData);
+        loadCanvasSizeAndTriggerChange(shareData);
         startDraw(shareData);
         setDrawParamFromUrl();
     } catch (error) {
@@ -1157,7 +1159,7 @@ export function setDrawParamFromUrl() {
     }
 }
 
-function webUpdateGraphicType(type:number) {
+function webUpdateGraphicType(type: number) {
     try {
         if (typeof type !== 'number' || type < 0 || type >= graphicTypeStr.length) {
             console.warn('Invalid graphic type: ' + type);
@@ -1182,7 +1184,7 @@ function webUpdateGraphicType(type:number) {
         }
         targetRadio.checked = true;
         console.log('Updated graphic type to: ' + typeStr);
-        const event = new Event('change', { bubbles: true });
+        const event = new Event('change', {bubbles: true});
         targetRadio.dispatchEvent(event);
     } catch (error) {
         console.error('Error updating graphic type:', error);
@@ -1283,4 +1285,23 @@ function convertCoordinates(e: MouseEvent, showSideBar: boolean) {
         clientX: (e.clientX - offsetX),
         clientY: (e.clientY - offsetY)
     };
+}
+
+
+function loadCanvasSizeAndTriggerChange(shareData: ShareData): void {
+    try {
+        const savedSize = localStorage.getItem('canvasSize');
+        const sizeSelect = document.getElementById('canvas-size-select') as HTMLSelectElement;
+        if (savedSize && sizeSelect) {
+            sizeSelect.value = savedSize;
+            handleCanvasSizeChange({
+                target: sizeSelect,
+                isTrusted: true
+            } as unknown as Event);
+        } else {
+            updateSize(shareData);
+        }
+    } catch (error) {
+        console.error('loadCanvasSizeAndTriggerChange:', error);
+    }
 }

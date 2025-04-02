@@ -7,7 +7,7 @@ const LocaleMaps_zh_CN = {
     'engineVersionLabel.innerHTML':"版本:",
     'canvasSizeLabel.innerHTML':'画布:',
     'fixedSizeOption.innerHTML':'固定尺寸',
-    'adaptiveSizeOption.innerHTML':'适应窗口',
+    'windowSizeOption.innerHTML':'适应窗口',
     'startCountLabel.innerHTML':'起始数量:',
     'stepCountLabel.innerHTML':'步进数量:',
     'maxShapesLabel.innerHTML':'最大数量:',

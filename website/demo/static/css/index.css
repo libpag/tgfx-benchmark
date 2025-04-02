@@ -332,11 +332,11 @@ select option:hover {
     color: #ffffff;
     text-align: center;
     background: linear-gradient(to right,
-    transparent 65px,
-    #2c2c2c 65px,
-    #2c2c2c calc(100% - 65px),
-    transparent calc(100% - 65px)
-    ) no-repeat top / 100% 1px;
+    transparent 50px,
+    #2c2c2c 50px,
+    #2c2c2c calc(100% - 50px),
+    transparent calc(100% - 50px)
+    ) no-repeat top / 100% 2px;
     margin-top: auto;
 }
 
