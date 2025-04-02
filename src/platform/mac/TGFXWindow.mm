@@ -182,7 +182,7 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
     return;
   }
   auto canvas = surface->getCanvas();
-  canvas->clear();
+  canvas->clear({0.87f, 0.87f, 0.87f, 1.0f});
   auto numBenches = benchmark::Bench::Count();
   auto index = (drawIndex % numBenches);
   auto bench = benchmark::Bench::GetByIndex(index);

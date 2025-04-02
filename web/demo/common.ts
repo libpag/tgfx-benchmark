@@ -68,7 +68,7 @@ export function setCanvasDefaultSize(shareData: ShareData) {
     const canvas = document.getElementById('benchmark') as HTMLCanvasElement;
 
     container.style.backgroundColor = '#2c2c2c';
-    canvas.style.border = '10px solid #d2d2d2';
+    canvas.style.border = '10px solid #ffffff';
     canvas.style.boxSizing = 'content-box';
     canvas.style.backgroundColor = '#ffffff';
     const scaleFactor = window.devicePixelRatio;
