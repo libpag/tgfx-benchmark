@@ -128,3 +128,9 @@ document.addEventListener('DOMContentLoaded', function () {
         handleLanguageChange(selectedLanguage);
     });
 });
+
+document.addEventListener('wheel', function(e) {
+if (e.ctrlKey) {
+    e.preventDefault();
+}
+}, { passive: false });
