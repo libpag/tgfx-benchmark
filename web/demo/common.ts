@@ -59,3 +59,118 @@ export function onresizeEvent(shareData: ShareData) {
     }
     shareData.resized = true;
 }
+
+const canvasDefaultWidth:number = 2048;
+const canvasDefaultHeight:number = 1440;
+
+export function setCanvasDefaultSize(shareData: ShareData) {
+    const container = document.getElementById('container') as HTMLDivElement;
+    const canvas = document.getElementById('benchmark') as HTMLCanvasElement;
+
+    container.style.backgroundColor = '#2c2c2c';
+    canvas.style.border = '10px solid #d2d2d2';
+    canvas.style.boxSizing = 'border-box';
+    canvas.style.boxSizing = 'content-box';
+    canvas.style.backgroundColor = '#ffffff';
+    const scaleFactor = window.devicePixelRatio;
+    canvas.width = canvasDefaultWidth;
+    canvas.height = canvasDefaultHeight;
+
+    const scaleWidth = canvas.width / scaleFactor;
+    const scaleHeight = canvas.height / scaleFactor;
+
+    canvas.style.width = scaleWidth + 'px';
+    canvas.style.height = scaleHeight + 'px';
+    container.style.display = 'flex';
+    container.style.justifyContent = 'center';
+    container.style.alignItems = 'center';
+    shareData.tgfxBaseView.updateSize(scaleFactor);
+}
+
+
+export function setupCoordinateConversion(canvasId: string) {
+    console.log("setupCoordinateConversion");
+    const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
+
+    let isProcessingMouseEvent = false;
+    let lastClickTime = 0;
+    const CLICK_DEBOUNCE_TIME = 100;
+    canvas.addEventListener('click', (e: MouseEvent) => {
+        const now = Date.now();
+        if (now - lastClickTime < CLICK_DEBOUNCE_TIME) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            return;
+        }
+        lastClickTime = now;
+        if (isProcessingMouseEvent) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            return;
+        }
+
+        isProcessingMouseEvent = true;
+        try {
+            const convertedEvent = convertCoordinates(e);
+            console.log("convertedEvent click: " + convertedEvent.clientX + ", " + convertedEvent.clientY);
+            console.log("e click: " + e.clientX + ", " + e.clientY);
+
+            Object.defineProperty(e, 'clientX', {
+                value: convertedEvent.clientX,
+                writable: true
+            });
+            Object.defineProperty(e, 'clientY', {
+                value: convertedEvent.clientY,
+                writable: true
+            });
+        } finally {
+            isProcessingMouseEvent = false;
+        }
+    }, {capture: true});
+
+    let isProcessingMouseMove = false;
+    canvas.addEventListener('mousemove', (e: MouseEvent) => {
+        if (isProcessingMouseMove) {
+            return;
+        }
+        isProcessingMouseMove = true;
+        try {
+            const convertedEvent = convertCoordinates(e);
+            Object.defineProperty(e, 'clientX', {
+                value: convertedEvent.clientX,
+                writable: true
+            });
+            Object.defineProperty(e, 'clientY', {
+                value: convertedEvent.clientY,
+                writable: true
+            });
+
+        } finally {
+            isProcessingMouseMove = false;
+        }
+    }, {capture: true});
+}
+
+
+function convertCoordinates(e: MouseEvent) {
+    let offsetX = 0;
+    let offsetY = 0;
+    const benchmark = document.getElementById('benchmark');
+    const container = document.getElementById('container');
+
+    if (benchmark && container) {
+        const benchmarkWidth = benchmark.clientWidth;
+        const benchmarkHeight = benchmark.clientHeight;
+        const containerWidth = container.clientWidth;
+        const containerHeight = container.clientHeight;
+
+        if (benchmarkWidth !== containerWidth && benchmarkHeight !== containerHeight) {
+            offsetX = (containerWidth - benchmarkWidth) / 2;
+            offsetY = (containerHeight - benchmarkHeight) / 2;
+        }
+    }
+    return {
+        clientX: (e.clientX - offsetX),
+        clientY: (e.clientY - offsetY)
+    };
+}

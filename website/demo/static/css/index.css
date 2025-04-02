@@ -108,7 +108,7 @@ html, body {
     align-items: center;
 }
 
-.canvas-size{
+.canvas-size {
     margin: 10px 0;
     display: flex;
     align-items: center;
@@ -327,7 +327,8 @@ select option:hover {
 }
 
 .github-links {
-    padding: 15px 0;
+    padding-top: 7px;
+    padding-bottom: 15px;
     color: #ffffff;
     text-align: center;
     background: linear-gradient(to right,
@@ -343,7 +344,7 @@ select option:hover {
     display: inline-block;
     color: #ffffff;
     text-decoration: none;
-    padding: 5px 10px;
+    padding: 3px 10px 5px 10px;
     font-size: 15px;
     line-height: 1.2;
     margin: 0;

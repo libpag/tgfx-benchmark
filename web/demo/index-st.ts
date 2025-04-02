@@ -18,20 +18,21 @@
 
 import {TGFXBind} from '../lib/tgfx';
 import Benchmark from './wasm/benchmark';
-import {ShareData, updateSize, onresizeEvent, startDraw} from "./common";
+import {ShareData, updateSize, onresizeEvent, startDraw, setCanvasDefaultSize, setupCoordinateConversion} from "./common";
 
 let shareData: ShareData = new ShareData();
 
 if (typeof window !== 'undefined') {
     window.onload = async () => {
         try {
+            setupCoordinateConversion('benchmark');
             shareData.BenchmarkModule = await Benchmark({ locateFile: (file: string) => './wasm/' + file });
             TGFXBind(shareData.BenchmarkModule);
             let tgfxView = shareData.BenchmarkModule.TGFXView.MakeFrom('#benchmark');
             shareData.tgfxBaseView = tgfxView;
             var imagePath = "../../resources/assets/bridge.jpg";
             await tgfxView.setImagePath(imagePath);
-            updateSize(shareData);
+            setCanvasDefaultSize(shareData);
             startDraw(shareData);
 
         } catch (error) {
