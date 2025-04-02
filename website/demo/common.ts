@@ -704,7 +704,6 @@ function handleCanvasSizeChange(event: Event) {
     } else if (target.value === '2048x1440') {
         container.style.backgroundColor = '#2c2c2c';
         canvas.style.border = '10px solid #d2d2d2';
-        canvas.style.boxSizing = 'border-box';
         canvas.style.boxSizing = 'content-box';
         canvas.style.backgroundColor='#ffffff';
         const scaleFactor = window.devicePixelRatio;
