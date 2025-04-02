@@ -12,8 +12,13 @@
       },
       {
         "url": "${PAG_GROUP}/tgfx.git",
-        "commit": "9a75f7baa01383ce5e99a4383a7731825f9c87bb",
+        "commit": "b91b8dd7cb54f9956feea7b0e9a0b3afb260960e",
         "dir": "third_party/tgfx"
+      },
+      {
+        "url": "https://skia.googlesource.com/external/github.com/emscripten-core/emsdk.git",
+        "commit": "9dbdc4b3437750b85d16931c7c801bb71a782122",
+        "dir": "third_party/emsdk"
       }
     ]
   },

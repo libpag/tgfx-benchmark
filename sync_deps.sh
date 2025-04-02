@@ -3,13 +3,6 @@ cd $(dirname $0)
 
 ./install_tools.sh
 
-if [[ `uname` == 'Darwin' ]]; then
-  if [ ! $(which emcc) ]; then
-      echo "emscripten not found. Trying to install..."
-      brew install emscripten
-  fi
-fi
-
 if [ ! $(which depsync) ]; then
   echo "depsync not found. Trying to install..."
   npm install -g depsync > /dev/null
@@ -18,3 +11,8 @@ else
 fi
 
 depsync || exit 1
+
+# install emscripten
+cd third_party/emsdk
+./emsdk install latest
+./emsdk activate latest
