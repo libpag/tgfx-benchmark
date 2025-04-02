@@ -7,14 +7,14 @@
   "browser": "lib/tgfx.umd.js",
   "typings": "types/tgfx.d.ts",
   "scripts": {
-    "clean:tgfx": "rimraf lib/ types/",
-    "clean": "npm run clean:tgfx && rimraf demo/build demo/wasm demo/wasm-mt demo/.*.md5 demo/*.js demo/*.map demo/cmake-build-*",
-    "build:tgfx": "npm run clean:tgfx && tsc -p ./tsconfig.type.json && rollup -c ./script/rollup.tgfx.js",
-    "build": "source ../third_party/emsdk/emsdk_env.sh && node script/cmake.demo.js -a wasm-mt && npm run build:tgfx && rollup -c ./script/rollup.demo.js --environment ARCH:wasm-mt",
-    "build:debug": "source ../third_party/emsdk/emsdk_env.sh && node script/cmake.demo.js -a wasm-mt --debug && npm run build:tgfx && rollup -c ./script/rollup.demo.js --environment ARCH:wasm-mt",
+    "clean:tgfx": "./build_web.sh clean:tgfx",
+    "clean": "./build_web.sh clean",
+    "build:tgfx": "./build_web.sh build:tgfx",
+    "build": "./build_web.sh wasm-mt",
+    "build:debug": "./build_web.sh wasm-mt debug",
     "server": "node server.js wasm-mt",
-    "build:st": "source ../third_party/emsdk/emsdk_env.sh && node script/cmake.demo.js -a wasm && npm run build:tgfx && rollup -c ./script/rollup.demo.js",
-    "build:st:debug": "source ../third_party/emsdk/emsdk_env.sh && node script/cmake.demo.js -a wasm --debug && npm run build:tgfx && rollup -c ./script/rollup.demo.js",
+    "build:st": "./build_web.sh wasm",
+    "build:st:debug": "./build_web.sh wasm debug",
     "server:st": "node server.js"
   },
   "repository": {
