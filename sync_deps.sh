@@ -11,8 +11,3 @@ else
 fi
 
 depsync || exit 1
-
-# install emscripten
-cd third_party/emsdk
-./emsdk install latest
-./emsdk activate latest

@@ -27,6 +27,10 @@
       {
         "command": "depsync --clean",
         "dir": "third_party"
+      },
+      {
+        "command": "node ../../install_emsdk.js",
+        "dir": "third_party/emsdk"
       }
     ]
   }
