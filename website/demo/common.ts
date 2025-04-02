@@ -84,7 +84,7 @@ export enum GraphicType {
 }
 
 
-export const graphicTypeStr: readonly ['Rect', 'Circle', 'Oval', 'RRect', 'Star'] = ['Rect', 'Circle', 'Oval', 'RRect', 'Star'];
+export const graphicTypeStr: readonly ['Rect', 'Circle', 'Oval', 'RRect'] = ['Rect', 'Circle', 'Oval', 'RRect'];
 
 export let engineVersionInfo: SideBarConfig;
 
