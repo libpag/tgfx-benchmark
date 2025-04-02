@@ -23,7 +23,6 @@ const LocaleMaps_zh_CN = {
     'autoOption.innerHTML': '自动',
     'chineseOption.innerHTML': '中文 (简体)',
     'englishOption.innerHTML': 'English (US)',
-    'sourceCodeP.innerHTML': '源码:',
     'desktopWarning.innerHTML': '当前页面仅支持桌面端Chromium内核浏览器(Chrome或Edge),请切换浏览器访问.',
     'progressBarDescP.innerHTML': '正在加载:',
 }
