@@ -84,7 +84,7 @@ export enum GraphicType {
 }
 
 
-export const graphicTypeStr: readonly ['Rect', 'Circle', 'Oval', 'RRect', 'Star'] = ['Rect', 'Circle', 'Oval', 'RRect', 'Star'];
+export const graphicTypeStr: readonly ['Rect', 'Circle', 'Oval', 'RRect'] = ['Rect', 'Circle', 'Oval', 'RRect'];
 
 export let engineVersionInfo: SideBarConfig;
 
@@ -688,6 +688,46 @@ function handleEngineVersionChange(event: Event) {
     }
 }
 
+function handleCanvasSizeChange(event: Event) {
+    const target = event.target as HTMLSelectElement;
+    const container = document.getElementById('container') as HTMLDivElement;
+    const canvas = document.getElementById('benchmark') as HTMLCanvasElement;
+    const sidebar = document.getElementById('sidebar') as HTMLDivElement;
+
+    if (target.value === 'full-screen') {
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+        container.style.backgroundColor = '';
+        canvas.style.border = '';
+        canvas.style.boxSizing = '';
+        updateSize(shareData);
+    } else if (target.value === '2048x1440') {
+        container.style.backgroundColor = '#2c2c2c';
+        canvas.style.border = '10px solid #d2d2d2';
+        canvas.style.boxSizing = 'content-box';
+        canvas.style.backgroundColor='#ffffff';
+        const scaleFactor = window.devicePixelRatio;
+        canvas.width = 2048;
+        canvas.height = 1440;
+
+        const scaleWidth = canvas.width / scaleFactor;
+        const scaleHeight = canvas.height / scaleFactor;
+
+        canvas.style.width = scaleWidth + 'px';
+        canvas.style.height = scaleHeight + 'px';
+        container.style.display = 'flex';
+        container.style.justifyContent = 'center';
+        container.style.alignItems = 'center';
+        shareData.baseView.updateSize(scaleFactor);
+    }
+
+    const resolutionSpan = document.querySelector('.resolution');
+    resolutionSpan.textContent = `${canvas.width}x${canvas.height}`;
+
+    if (shareData.baseView) {
+        shareData.baseView.restartDraw();
+    }
+}
 
 function showProgress(): void {
     const container = document.getElementById('progressContainer');
@@ -764,7 +804,7 @@ export async function loadModule(engineDir: string, type: string = "mt") {
         const baseUrl = getResourceUrl();
         showProgress();
         shareData = new ShareData();
-        const Benchmark = await import(`${baseUrl}/${engineDir}.js`);
+        const Benchmark = await import(`./${engineDir}.js`);
         updateProgress(getRandomInt(10, 30));
         if (type === 'mt') {
             if (!crossOriginIsolated) {
@@ -777,7 +817,7 @@ export async function loadModule(engineDir: string, type: string = "mt") {
         }
         const moduleConfig = {
             locateFile: (file: string) => {
-                const path = `${baseUrl}/${engineDir}.wasm`;
+                const path = `${engineDir}.wasm`;
                 console.log('Loading WebAssembly file:', path);
                 return path;
             },
@@ -793,7 +833,7 @@ export async function loadModule(engineDir: string, type: string = "mt") {
         };
 
         if (type === 'mt') {
-            moduleConfig['mainScriptUrlOrBlob'] = `${baseUrl}/${engineDir}.js`;
+            moduleConfig['mainScriptUrlOrBlob'] = `${engineDir}.js`;
         }
         const module = await Benchmark.default(moduleConfig);
         updateProgress(getRandomInt(31, 50));
@@ -888,6 +928,11 @@ export function bindEventListeners() {
 
     const engineVersionSelect = document.getElementById('engine-version');
     engineVersionSelect.addEventListener('change', handleEngineVersionChange);
+
+    const canvasSizeSelect = document.getElementById('canvas-size-select');
+    if (canvasSizeSelect) {
+        canvasSizeSelect.addEventListener('change', handleCanvasSizeChange);
+    }
 
 }
 

@@ -18,13 +18,14 @@
 
 import {TGFXBind} from '../lib/tgfx';
 import Benchmark from './wasm-mt/benchmark';
-import {ShareData, updateSize, onresizeEvent, startDraw} from "./common";
+import {ShareData, updateSize, onresizeEvent, startDraw, setCanvasDefaultSize, setupCoordinateConversion} from "./common";
 
 let shareData: ShareData = new ShareData();
 
 if (typeof window !== 'undefined') {
     window.onload = async () => {
         try {
+            setupCoordinateConversion('benchmark');
             shareData.BenchmarkModule = await Benchmark({ locateFile: (file: string) => './wasm-mt/' + file });
             TGFXBind(shareData.BenchmarkModule);
 
@@ -40,7 +41,7 @@ if (typeof window !== 'undefined') {
             const emojiFontBuffer = await fetch(emojiFontPath).then((response) => response.arrayBuffer());
             const emojiFontUIntArray = new Uint8Array(emojiFontBuffer);
             tgfxView.registerFonts(fontUIntArray, emojiFontUIntArray);
-            updateSize(shareData);
+            setCanvasDefaultSize(shareData);
             startDraw(shareData);
         } catch (error) {
             console.error(error);
