@@ -817,64 +817,32 @@ export async function loadModule(engineDir: string, type: string = "mt") {
                 throw new Error('SharedArrayBuffer is not supported in this environment');
             }
         }
+
         const moduleConfig = {
             locateFile: (file: string) => {
                 const path = `${engineDir}.wasm`;
-                console.log('Loading WebAssembly file:', path);
+                updateProgress(getRandomInt(50, 70));
                 return path;
             },
-            onRuntimeError: (error) => {
-                console.error('Runtime error:', error);
-            },
             onRuntimeInitialized: () => {
-                console.log('WebAssembly runtime initialized successfully');
-            },
-            onWorkerError: (error) => {
-                console.error('Worker error:', error);
+                updateProgress(getRandomInt(71, 90));
             }
         };
-
         if (type === 'mt') {
             moduleConfig['mainScriptUrlOrBlob'] = `${engineDir}.js`;
         }
         const module = await Benchmark.default(moduleConfig);
-        updateProgress(getRandomInt(31, 50));
+
         if (enumEngineType === EnumEngineType.tgfx) {
             shareData.BenchmarkModule = module;
             TGFXBind(shareData.BenchmarkModule);
             let tgfxView: TGFXBaseView = shareData.BenchmarkModule.TGFXThreadsView.MakeFrom('#benchmark');
-            var imagePath = `${baseUrl}/static/image/bridge.jpg`;
-            await tgfxView.setImagePath(imagePath);
-
-            var fontPath = `${baseUrl}/static/font/NotoSansSC-Regular.otf`;
-            const fontBuffer = await loadFontBuffer(fontPath);
-            updateProgress(getRandomInt(51, 70));
-            const fontUIntArray = new Uint8Array(fontBuffer);
-
-            var emojiFontPath = `${baseUrl}/static/font/NotoColorEmoji.ttf`;
-            const emojiFontBuffer = await loadFontBuffer(emojiFontPath);
-            updateProgress(getRandomInt(71, 90));
-            const emojiFontUIntArray = new Uint8Array(emojiFontBuffer);
-
-
-            tgfxView.registerFonts(fontUIntArray, emojiFontUIntArray);
             shareData.baseView = tgfxView;
         } else if (enumEngineType === EnumEngineType.skia) {
             let skiaView: SkiaView = module.SkiaView.MakeFrom('#benchmark');
-
-            var fontPath = `${baseUrl}/static/font/SFNSRounded.ttf`;
-            const fontBuffer = await loadFontBuffer(fontPath);
-            updateProgress(getRandomInt(51, 70));
-            const fontUIntArray = new Uint8Array(fontBuffer);
-
-            var emojiFontPath = `${baseUrl}/static/font/NotoColorEmoji.ttf`;
-            const emojiFontBuffer = await loadFontBuffer(emojiFontPath);
-            updateProgress(getRandomInt(71, 90));
-            const emojiFontUIntArray = new Uint8Array(emojiFontBuffer);
-
-            skiaView.registerFonts(fontUIntArray, emojiFontUIntArray);
             shareData.baseView = skiaView;
         }
+        updateProgress(getRandomInt(91, 99));
         shareData.baseView.showPerfData(false);
         updateProgress(100);
         hideProgress();
@@ -1192,7 +1160,6 @@ function webUpdateGraphicType(type: number) {
 }
 
 export function setupCoordinateConversion(canvasId: string, showSideBar: boolean) {
-    console.log("setupCoordinateConversion");
     const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
 
     let isProcessingMouseEvent = false;
