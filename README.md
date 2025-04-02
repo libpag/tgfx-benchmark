@@ -5,8 +5,8 @@
 There is also a related project, [skia-benchmark](https://github.com/libpag/skia-benchmark), which
 tests the performance of the [Skia](https://skia.org/) graphics library using the same benchmark cases.
 
-You can also run the benchmark online at [tgfx.org](https://tgfx.org) to 
-compare the performance of TGFX and Skia on the web platform.
+You can also run the benchmark online at [tgfx.org](https://tgfx.org/benchmark) to compare the 
+performance of TGFX and Skia on the web platform.
 
 
 ## Getting Started
