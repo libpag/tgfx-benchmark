@@ -66,14 +66,6 @@ set the `Benchmark` project as the startup project. You are all set!
 
 ### Web
 
-To run the web demo, you need the **Emscripten SDK**. You can download and install it from the
-[official website](https://emscripten.org/). We recommend using the latest version. If you’re on
-macOS, you can also install it using the following script:
-
-```
-brew install emscripten
-```
-
 To get started, go to the `web/` directory and run the following command to install the necessary
 node modules:
 
