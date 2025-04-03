@@ -1,5 +1,6 @@
 const { spawn } = require('child_process');
 const path = require('path');
+const fs = require('fs');
 
 const isWindows = process.platform === 'win32';
 const isMacOS = process.platform === 'darwin';
@@ -10,13 +11,19 @@ function setupEnvironment() {
     process.env.PATH = isWindows
         ? `${emsdkPath};${emscriptenPath};${process.env.PATH}`
         : `${emsdkPath}:${emscriptenPath}:${process.env.PATH}`;
-    console.log('Updated PATH:', process.env.PATH);
+}
+
+const rollupPath = path.resolve(__dirname, `../node_modules/.bin/rollup${isWindows ? '.cmd' : ''}`);
+
+if (!fs.existsSync(rollupPath)) {
+    console.error('Rollup is not installed. Please run `npm install rollup --save-dev`.');
+    process.exit(1);
 }
 
 const commandSets = (arch, debug) => [
     ['node', ['script/cmake.demo.js', '-a', arch, ...(debug ? ['--debug'] : [])]],
-    ['npm', ['run', 'build:tgfx']],
-    ['rollup', ['-c', './script/rollup.demo.js', '--environment', `ARCH:${arch}`]]
+    [isWindows ? 'npm.cmd' : 'npm', ['run', 'build:tgfx']],
+    [rollupPath, ['-c', './script/rollup.demo.js', '--environment', `ARCH:${arch}`]]
 ];
 
 function runCommands(commands, index = 0) {
@@ -28,7 +35,10 @@ function runCommands(commands, index = 0) {
     const [command, args] = commands[index];
     console.log(`Executing: ${command} ${args.join(' ')}`);
 
-    const child = spawn(command, args, { stdio: 'inherit' });
+    const child = spawn(command, args, {
+        stdio: 'inherit',
+        env: { ...process.env, PATH: process.env.PATH }
+    });
 
     child.on('close', (code) => {
         if (code !== 0) {
