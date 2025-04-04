@@ -16,7 +16,7 @@
         "dir": "third_party/tgfx"
       },
       {
-        "url": "https://skia.googlesource.com/external/github.com/emscripten-core/emsdk.git",
+        "url": "https://github.com/emscripten-core/emsdk.git",
         "commit": "9dbdc4b3437750b85d16931c7c801bb71a782122",
         "dir": "third_party/emsdk"
       }
@@ -27,10 +27,6 @@
       {
         "command": "depsync --clean",
         "dir": "third_party"
-      },
-      {
-        "command": "node ../../install_emsdk.js",
-        "dir": "third_party/emsdk"
       }
     ]
   }

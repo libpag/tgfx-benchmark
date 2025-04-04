@@ -1,12 +1,18 @@
-const { spawn } = require('child_process');
+const { spawnSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
 const isWindows = process.platform === 'win32';
 const isMacOS = process.platform === 'darwin';
 
+const emsdkPath = path.resolve(__dirname, '../../third_party/emsdk');
+const emsdkCommandPath = path.resolve(emsdkPath, isWindows ? 'emsdk.bat' : 'emsdk');
+const emsdkCommandSets = [
+    [emsdkCommandPath, ['install', 'latest']],
+    [emsdkCommandPath, ['activate', 'latest']]
+];
+
 function setupEnvironment() {
-    const emsdkPath = path.resolve(__dirname, '../../third_party/emsdk');
     const emscriptenPath = path.resolve(__dirname, '../../third_party/emsdk/upstream/emscripten');
     process.env.PATH = isWindows
         ? `${emsdkPath};${emscriptenPath};${process.env.PATH}`
@@ -26,27 +32,25 @@ const commandSets = (arch, debug) => [
     [rollupPath, ['-c', './script/rollup.demo.js', '--environment', `ARCH:${arch}`]]
 ];
 
-function runCommands(commands, index = 0) {
-    if (index >= commands.length) {
-        console.log('All commands executed successfully.');
-        return;
-    }
+function runCommands(commands, verbose = true) {
+    for (const [command, args] of commands) {
+        console.log(`Executing: ${command} ${args.join(' ')}`);
+        const result = spawnSync(command, args, {
+            stdio: verbose ? 'inherit' : 'ignore',
+            env: { ...process.env, PATH: process.env.PATH }
+        });
 
-    const [command, args] = commands[index];
-    console.log(`Executing: ${command} ${args.join(' ')}`);
-
-    const child = spawn(command, args, {
-        stdio: 'inherit',
-        env: { ...process.env, PATH: process.env.PATH }
-    });
-
-    child.on('close', (code) => {
-        if (code !== 0) {
-            console.error(`Command failed with code ${code}: ${command} ${args.join(' ')}`);
+        if (result.error) {
+            console.error(`Command failed with error: ${result.error.message}`);
             return;
         }
-        runCommands(commands, index + 1);
-    });
+
+        if (result.status !== 0) {
+            console.error(`Command failed with code ${result.status}: ${command} ${args.join(' ')}`);
+            return;
+        }
+    }
+    console.log('All commands executed successfully.');
 }
 
 function build() {
@@ -54,6 +58,8 @@ function build() {
         console.error(`Unsupported OS: ${process.platform}`);
         return;
     }
+    runCommands(emsdkCommandSets, false);
+
     setupEnvironment();
 
     const args = process.argv.slice(2);
