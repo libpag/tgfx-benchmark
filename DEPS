@@ -7,13 +7,18 @@
     "common": [
       {
         "url": "${PAG_GROUP}/vendor_tools.git",
-        "commit": "b0af769cf0d29593e4d9d6d5872a87cfa8f9fa93",
+        "commit": "c50d8e896200fab375919842c1b2e0395645b2c9",
         "dir": "third_party/vendor_tools"
       },
       {
         "url": "${PAG_GROUP}/tgfx.git",
         "commit": "b91b8dd7cb54f9956feea7b0e9a0b3afb260960e",
         "dir": "third_party/tgfx"
+      },
+      {
+        "url": "https://github.com/emscripten-core/emsdk.git",
+        "commit": "9dbdc4b3437750b85d16931c7c801bb71a782122",
+        "dir": "third_party/emsdk"
       }
     ]
   },
