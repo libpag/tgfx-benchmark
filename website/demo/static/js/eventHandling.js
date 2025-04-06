@@ -124,7 +124,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const languageSelect = document.getElementById('language-type');
     languageSelect.addEventListener('change', function () {
         const selectedLanguage = this.value;
-        console.log(`selectedLanguage:${selectedLanguage}`);
         handleLanguageChange(selectedLanguage);
     });
 });

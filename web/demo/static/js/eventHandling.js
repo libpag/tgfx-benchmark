@@ -143,7 +143,6 @@ function webUpdateGraphicType(type) {
             return;
         }
         targetRadio.checked = true;
-        console.log('Updated graphic type to: ' + typeStr);
         const event = new Event('change', { bubbles: true });
         targetRadio.dispatchEvent(event);
     } catch (error) {
@@ -159,7 +158,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const languageSelect = document.getElementById('language-type');
     languageSelect.addEventListener('change', function () {
         const selectedLanguage = this.value;
-        console.log(`selectedLanguage:${selectedLanguage}`);
         handleLanguageChange(selectedLanguage);
     });
 });

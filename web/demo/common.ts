@@ -88,7 +88,6 @@ export function setCanvasDefaultSize(shareData: ShareData) {
 
 
 export function setupCoordinateConversion(canvasId: string) {
-    console.log("setupCoordinateConversion");
     const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
 
     let isProcessingMouseEvent = false;
@@ -111,8 +110,6 @@ export function setupCoordinateConversion(canvasId: string) {
         isProcessingMouseEvent = true;
         try {
             const convertedEvent = convertCoordinates(e);
-            console.log("convertedEvent click: " + convertedEvent.clientX + ", " + convertedEvent.clientY);
-            console.log("e click: " + e.clientX + ", " + e.clientY);
 
             Object.defineProperty(e, 'clientX', {
                 value: convertedEvent.clientX,
