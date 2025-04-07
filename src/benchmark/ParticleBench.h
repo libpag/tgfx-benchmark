@@ -60,6 +60,8 @@ class ParticleBench : public Bench {
 
   static void SetTargetFPS(float fps);
 
+  static void SetAntiAlias(bool aa);
+
   bool isMaxDrawCountReached() const;
 
   PerfData getPerfData() const;

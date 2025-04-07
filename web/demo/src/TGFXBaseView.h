@@ -48,6 +48,8 @@ class TGFXBaseView {
 
   void showPerfData(bool show);
 
+  void setAntiAlias(bool aa);
+
   int drawIndex = 0;
   std::shared_ptr<benchmark::AppHost> appHost = nullptr;
   bool showPerfDataFlag = true;

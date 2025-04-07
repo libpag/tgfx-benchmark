@@ -36,6 +36,7 @@ class BaseView {
     public updateGraphicType: (type: number) => void;
     public showPerfData: (status: boolean) => void;
     public init: () => void;
+    public setAntiAlias: (antiAlia: boolean) => void;
 }
 
 export class TGFXBaseView extends BaseView {
@@ -46,6 +47,7 @@ export class TGFXBaseView extends BaseView {
     public updateGraphicType: (type: number) => void;
     public showPerfData: (status: boolean) => void;
     public init: () => void;
+    public setAntiAlias: (antiAlia: boolean) => void;
 }
 
 export class SkiaView extends BaseView {
@@ -56,6 +58,7 @@ export class SkiaView extends BaseView {
     public updateGraphicType: (type: number) => void;
     public showPerfData: (status: boolean) => void;
     public init: () => void;
+    public setAntiAlias: (antiAlia: boolean) => void;
 }
 
 export class ShareData {
@@ -238,6 +241,11 @@ function updatePageSetting() {
             }
         }
 
+        if (!shouldRemoveSettings) {
+            if (jsonSettings.antiAlias === undefined || jsonSettings.antiAlias.option === undefined) {
+                shouldRemoveSettings = true;
+            }
+        }
         if (shouldRemoveSettings) {
             localStorage.removeItem('pageSettings');
             localStorage.removeItem('needRestore');
@@ -245,7 +253,6 @@ function updatePageSetting() {
         }
         localStorage.setItem('pageSettings', JSON.stringify(jsonSettings));
     } catch (error) {
-        console.error('Failed to update page settings:', error);
         localStorage.removeItem('pageSettings');
         localStorage.removeItem('needRestore');
     }
@@ -257,6 +264,11 @@ export function pageInit() {
     canvasSizeSelect.innerHTML = '';
     addCanvasSizeOption('full-screen', 'windowSizeOption');
     addCanvasSizeOption('2048x1440', 'fixedSizeOption');
+    const antiAliasSwitchSelect = document.getElementById('antialias-switch-select') as HTMLSelectElement;
+    antiAliasSwitchSelect.innerHTML = '';
+    addAntiAliasOption('On', "antialiasOnOption");
+    addAntiAliasOption('Off', "antialiasOffOption");
+
     const needRestore = localStorage.getItem('needRestore') === 'true';
 
     if (!needRestore) {
@@ -423,10 +435,11 @@ export function pageInit() {
     }
 
     triggerLanguageChange();
+    savePageSettings();
 }
 
 
-interface PageSettings {
+class PageSettings {
     engineType: {
         options: string[];
         selected: string;
@@ -453,6 +466,11 @@ interface PageSettings {
     language: {
         options: string[];
         selected: string;
+    };
+    antiAlias: {
+        option: boolean;
+    } = {
+        option: true
     };
 }
 
@@ -496,13 +514,23 @@ function savePageSettings() {
         selected: languageSelect.value
     };
 
-    const settings = {
+    const antiAliasSwitch = document.getElementById('antialias-switch-select') as HTMLInputElement;
+    const value = antiAliasSwitch.value;
+
+    const antiAliasValue = value === 'On';
+    const antiAlias = {
+        option: antiAliasValue
+    }
+
+
+    const settings: PageSettings = {
         engineType,
         engineVersion,
         threadType,
         configParams,
         graphicType,
-        language
+        language,
+        antiAlias
     };
 
     localStorage.setItem('pageSettings', JSON.stringify(settings));
@@ -612,6 +640,11 @@ export function restorePageSettings(): void {
             languageSelect.value = settings.language.selected;
         }
 
+        const antiAliasSwitchSelect = document.getElementById('antialias-switch-select') as HTMLSelectElement;
+        if (antiAliasSwitchSelect && settings.antiAlias.option) {
+            antiAliasSwitchSelect.value = settings.antiAlias.option ? 'On' : 'Off';
+        }
+
     } catch (error) {
         console.error('Failed to restore page configuration:', error);
     }
@@ -636,6 +669,9 @@ function setDefaultValues() {
     if (rectangleRadio) {
         rectangleRadio.checked = true;
     }
+
+    const antiAliasSwitchSelect = document.getElementById('antialias-switch-select') as HTMLSelectElement;
+    antiAliasSwitchSelect.value = 'On';
 }
 
 
@@ -854,6 +890,15 @@ function handleCanvasSizeChange(event: Event) {
     }
 }
 
+function handleAntiAliasChange(event: Event) {
+    const target = event.target as HTMLInputElement;
+    if (shareData.baseView) {
+        const antiAlia: boolean = target.value == 'On';
+        shareData.baseView.setAntiAlias(antiAlia);
+    }
+    savePageSettings();
+}
+
 function showProgress(): void {
     const container = document.getElementById('progressContainer');
     if (container) {
@@ -969,9 +1014,9 @@ export async function loadModule(engineDir: string, type: string = "mt") {
         shareData.baseView.showPerfData(false);
         updateProgress(100);
         hideProgress();
+        setDrawParamFromPageSettings();
         loadCanvasSizeAndTriggerChange(shareData);
         startDraw(shareData);
-        setDrawParamFromPageSettings();
     } catch (error) {
         console.error(error);
         throw new Error(`Failed to load ${type} version. Please check the wasm file path!`);
@@ -1012,6 +1057,11 @@ export function bindEventListeners() {
     const canvasSizeSelect = document.getElementById('canvas-size-select');
     if (canvasSizeSelect) {
         canvasSizeSelect.addEventListener('change', handleCanvasSizeChange);
+    }
+
+    const antiAliasSelect = document.getElementById('antialias-switch-select');
+    if (antiAliasSelect) {
+        antiAliasSelect.addEventListener('change', handleAntiAliasChange);
     }
 
 }
@@ -1188,6 +1238,8 @@ export function setDrawParamFromPageSettings() {
     drawParam.minFPS = Number(drawingParam.minFPS);
     shareData.baseView.updateDrawParam(drawParam);
     setGraphicType(jsonSettings.graphicType.selected);
+    console.log("jsonSettings.antiAlias.option:", jsonSettings.antiAlias.option);
+    shareData.baseView.setAntiAlias(jsonSettings.antiAlias.option);
 }
 
 function webUpdateGraphicType(type: number) {
@@ -1363,6 +1415,19 @@ function addCanvasSizeOption(value: string, localeKey: string): void {
     if (savedSize === value) {
         option.selected = true;
     }
+
+    select.appendChild(option);
+}
+
+function addAntiAliasOption(value: string, localeKey: string): void {
+    const select = document.getElementById('antialias-switch-select') as HTMLSelectElement;
+    if (!select) {
+        console.error('find antialias-switch-select failed');
+        return;
+    }
+    const option = document.createElement('option');
+    option.value = value;
+    option.setAttribute('data-locale', localeKey);
 
     select.appendChild(option);
 }

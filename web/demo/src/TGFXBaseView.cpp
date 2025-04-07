@@ -189,6 +189,11 @@ void TGFXBaseView::showPerfData(bool show) {
   showPerfDataFlag = show;
 }
 
+void TGFXBaseView::setAntiAlias(bool aa) {
+  ParticleBench::SetAntiAlias(aa);
+  appHost->resetFrames();
+}
+
 }  // namespace benchmark
 
 int main() {
