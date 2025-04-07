@@ -204,50 +204,50 @@ export function parseSideBarParam(): SideBarConfig {
 
 
 function updatePageSetting() {
-    const config = parseSideBarParam();
-    const savedSettings = localStorage.getItem('pageSettings');
-    if (savedSettings === null) return;
-
-    let jsonSettings: PageSettings;
     try {
+        const config = parseSideBarParam();
+        const savedSettings = localStorage.getItem('pageSettings');
+        if (savedSettings === null) return;
+
+        let jsonSettings: PageSettings;
         jsonSettings = JSON.parse(savedSettings);
-    } catch (error) {
-        console.error('Page parameter parsing failed:', error);
-        return;
-    }
 
-    let shouldRemoveSettings = false;
-    const engineOptions = Object.keys(config.engineVersion);
-    jsonSettings.engineType.options = engineOptions;
-    if (!engineOptions.includes(jsonSettings.engineType.selected)) {
-        shouldRemoveSettings = true;
-    }
+        let shouldRemoveSettings = false;
+        const engineOptions = Object.keys(config.engineVersion);
+        jsonSettings.engineType.options = engineOptions;
+        if (!engineOptions.includes(jsonSettings.engineType.selected)) {
+            shouldRemoveSettings = true;
+        }
 
-    if (!shouldRemoveSettings) {
-        const engineConfig = config.engineVersion[jsonSettings.engineType.selected as keyof typeof config.engineVersion];
-        if (engineConfig) {
-            jsonSettings.engineVersion.options = Object.keys(engineConfig.versions);
-            if (!jsonSettings.engineVersion.options.includes(jsonSettings.engineVersion.selected)) {
-                shouldRemoveSettings = true;
-            }
-            if (!shouldRemoveSettings) {
-                const threadTypes = engineConfig.versions[jsonSettings.engineVersion.selected];
-                if (threadTypes) {
-                    jsonSettings.threadType.options = threadTypes;
-                    if (!jsonSettings.threadType.options.includes(jsonSettings.threadType.selected)) {
-                        shouldRemoveSettings = true;
+        if (!shouldRemoveSettings) {
+            const engineConfig = config.engineVersion[jsonSettings.engineType.selected as keyof typeof config.engineVersion];
+            if (engineConfig) {
+                jsonSettings.engineVersion.options = Object.keys(engineConfig.versions);
+                if (!jsonSettings.engineVersion.options.includes(jsonSettings.engineVersion.selected)) {
+                    shouldRemoveSettings = true;
+                }
+                if (!shouldRemoveSettings) {
+                    const threadTypes = engineConfig.versions[jsonSettings.engineVersion.selected];
+                    if (threadTypes) {
+                        jsonSettings.threadType.options = threadTypes;
+                        if (!jsonSettings.threadType.options.includes(jsonSettings.threadType.selected)) {
+                            shouldRemoveSettings = true;
+                        }
                     }
                 }
             }
         }
-    }
 
-    if (shouldRemoveSettings) {
+        if (shouldRemoveSettings) {
+            localStorage.removeItem('pageSettings');
+            localStorage.removeItem('needRestore');
+            return;
+        }
+        localStorage.setItem('pageSettings', JSON.stringify(jsonSettings));
+    } catch (error) {
+        console.error('Failed to update page settings:', error);
         localStorage.removeItem('pageSettings');
         localStorage.removeItem('needRestore');
-    }
-    {
-        localStorage.setItem('pageSettings', JSON.stringify(jsonSettings));
     }
 }
 
@@ -507,8 +507,8 @@ function savePageSettings() {
 
     localStorage.setItem('pageSettings', JSON.stringify(settings));
     localStorage.setItem('needRestore', 'true');
-    let engineDir =`${engineVersionInfo['engineVersion'][engineType.selected].savePath}${engineType.selected}-${engineVersion.selected}-${threadType.selected}`
-        localStorage.setItem('engineDir', engineDir);
+    let engineDir = `${engineVersionInfo['engineVersion'][engineType.selected].savePath}${engineType.selected}-${engineVersion.selected}-${threadType.selected}`
+    localStorage.setItem('engineDir', engineDir);
 }
 
 
