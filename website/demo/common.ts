@@ -899,6 +899,10 @@ function handleAntiAliasChange(event: Event) {
     savePageSettings();
 }
 
+function handleLanguageTypeChange(event: Event) {
+    savePageSettings();
+}
+
 function showProgress(): void {
     const container = document.getElementById('progressContainer');
     if (container) {
@@ -1062,6 +1066,11 @@ export function bindEventListeners() {
     const antiAliasSelect = document.getElementById('antialias-switch-select');
     if (antiAliasSelect) {
         antiAliasSelect.addEventListener('change', handleAntiAliasChange);
+    }
+
+    const languageTypeSelect = document.getElementById('language-type');
+    if (languageTypeSelect) {
+        languageTypeSelect.addEventListener('change', handleLanguageTypeChange);
     }
 
 }

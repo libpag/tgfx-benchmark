@@ -37,7 +37,9 @@ if (typeof window !== 'undefined') {
             if (engineDir === "") {
                 throw "engineDir is None";
             }
-            await loadModule(engineDir);
+            const threadTypeSelect = document.getElementById('thread-type-select') as HTMLSelectElement;
+
+            await loadModule(engineDir,threadTypeSelect.value.toString());
             bindEventListeners();
 
         } else {
