@@ -641,7 +641,7 @@ export function restorePageSettings(): void {
         }
 
         const antiAliasSwitchSelect = document.getElementById('antialias-switch-select') as HTMLSelectElement;
-        if (antiAliasSwitchSelect && settings.antiAlias.option) {
+        if (antiAliasSwitchSelect && settings.antiAlias.option !== undefined) {
             antiAliasSwitchSelect.value = settings.antiAlias.option ? 'On' : 'Off';
         }
 
@@ -818,11 +818,7 @@ function handleEngineVersionChange(event: Event) {
     });
 
     let defaultThreadType = '';
-    if (engineType === 'tgfx') {
-        defaultThreadType = threads.includes('mt') ? 'mt' : threads[0];
-    } else if (engineType === 'skia') {
-        defaultThreadType = threads.includes('st') ? 'st' : threads[0];
-    }
+    defaultThreadType = threads.includes('mt') ? 'mt' : threads[0];
     threadTypeSelect.value = defaultThreadType;
     const changeEvent = new Event('change', {
         bubbles: true,
