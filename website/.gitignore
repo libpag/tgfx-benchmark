@@ -5,3 +5,4 @@ types
 demo/*.js
 demo/static/tgfx
 demo/static/skia
+demo/static/sideBarConfigParam.json

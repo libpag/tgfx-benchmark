@@ -3,8 +3,9 @@
     "tgfx": {
       "savePath": "static/tgfx/",
       "versions": {
-        "latest": [
-          "mt"
+        "v2.0": [
+          "mt",
+          "st"
         ]
       }
     },
@@ -12,6 +13,7 @@
       "savePath": "static/skia/",
       "versions": {
         "m135": [
+          "mt",
           "st"
         ]
       }
