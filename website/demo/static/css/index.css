@@ -96,19 +96,7 @@ html, body {
     align-items: center;
 }
 
-.engine-type {
-    margin: 10px 0;
-    display: flex;
-    align-items: center;
-}
-
-.version-info {
-    margin: 10px 0;
-    display: flex;
-    align-items: center;
-}
-
-.canvas-size {
+.select-common-style {
     margin: 10px 0;
     display: flex;
     align-items: center;
@@ -251,7 +239,7 @@ select {
     background-repeat: no-repeat;
     background-position: right 5px center;
     background-size: 15px;
-    padding-right: 30px;
+    padding-right: 20px;
 }
 
 select:hover {
@@ -313,15 +301,9 @@ select option:hover {
     background-color: #3d8b40;
 }
 
-.language-select-container {
-    display: flex;
-    align-items: center;
-}
-
 .language-select-container label {
     font-size: 15px;
     width: 110px;
-    margin: 10px 0 10px 0;
     display: inline-block;
     line-height: 1.2;
 }
@@ -332,11 +314,11 @@ select option:hover {
     color: #ffffff;
     text-align: center;
     background: linear-gradient(to right,
-    transparent 65px,
-    #2c2c2c 65px,
-    #2c2c2c calc(100% - 65px),
-    transparent calc(100% - 65px)
-    ) no-repeat top / 100% 1px;
+    transparent 50px,
+    #2c2c2c 50px,
+    #2c2c2c calc(100% - 50px),
+    transparent calc(100% - 50px)
+    ) no-repeat top / 100% 2px;
     margin-top: auto;
 }
 

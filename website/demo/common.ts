@@ -36,6 +36,7 @@ class BaseView {
     public updateGraphicType: (type: number) => void;
     public showPerfData: (status: boolean) => void;
     public init: () => void;
+    public setAntiAlias: (antiAlia: boolean) => void;
 }
 
 export class TGFXBaseView extends BaseView {
@@ -46,6 +47,7 @@ export class TGFXBaseView extends BaseView {
     public updateGraphicType: (type: number) => void;
     public showPerfData: (status: boolean) => void;
     public init: () => void;
+    public setAntiAlias: (antiAlia: boolean) => void;
 }
 
 export class SkiaView extends BaseView {
@@ -56,6 +58,7 @@ export class SkiaView extends BaseView {
     public updateGraphicType: (type: number) => void;
     public showPerfData: (status: boolean) => void;
     public init: () => void;
+    public setAntiAlias: (antiAlia: boolean) => void;
 }
 
 export class ShareData {
@@ -73,7 +76,7 @@ enum EnumEngineType {
 }
 
 export let enumEngineType: EnumEngineType;
-
+const canvasSizeOption = []
 
 export enum GraphicType {
     Rect = 0,
@@ -119,6 +122,11 @@ export function updateSize(shareData: ShareData) {
 
     const resolutionSpan = document.querySelector('.resolution');
     resolutionSpan.textContent = `${canvas.width}x${canvas.height}`;
+
+    const canvasSizeSelect = document.getElementById('canvas-size-select') as HTMLSelectElement;
+    canvasSizeSelect.value = 'full-screen';
+    localStorage.setItem('canvasSize', 'full-screen');
+
 }
 
 export function startDraw(shareData: ShareData) {
@@ -197,7 +205,70 @@ export function parseSideBarParam(): SideBarConfig {
     }
 }
 
+
+function updatePageSetting() {
+    try {
+        const config = parseSideBarParam();
+        const savedSettings = localStorage.getItem('pageSettings');
+        if (savedSettings === null) return;
+
+        let jsonSettings: PageSettings;
+        jsonSettings = JSON.parse(savedSettings);
+
+        let shouldRemoveSettings = false;
+        const engineOptions = Object.keys(config.engineVersion);
+        jsonSettings.engineType.options = engineOptions;
+        if (!engineOptions.includes(jsonSettings.engineType.selected)) {
+            shouldRemoveSettings = true;
+        }
+
+        if (!shouldRemoveSettings) {
+            const engineConfig = config.engineVersion[jsonSettings.engineType.selected as keyof typeof config.engineVersion];
+            if (engineConfig) {
+                jsonSettings.engineVersion.options = Object.keys(engineConfig.versions);
+                if (!jsonSettings.engineVersion.options.includes(jsonSettings.engineVersion.selected)) {
+                    shouldRemoveSettings = true;
+                }
+                if (!shouldRemoveSettings) {
+                    const threadTypes = engineConfig.versions[jsonSettings.engineVersion.selected];
+                    if (threadTypes) {
+                        jsonSettings.threadType.options = threadTypes;
+                        if (!jsonSettings.threadType.options.includes(jsonSettings.threadType.selected)) {
+                            shouldRemoveSettings = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!shouldRemoveSettings) {
+            if (jsonSettings.antiAlias === undefined || jsonSettings.antiAlias.option === undefined) {
+                shouldRemoveSettings = true;
+            }
+        }
+        if (shouldRemoveSettings) {
+            localStorage.removeItem('pageSettings');
+            localStorage.removeItem('needRestore');
+            return;
+        }
+        localStorage.setItem('pageSettings', JSON.stringify(jsonSettings));
+    } catch (error) {
+        localStorage.removeItem('pageSettings');
+        localStorage.removeItem('needRestore');
+    }
+}
+
 export function pageInit() {
+    updatePageSetting();
+    const canvasSizeSelect = document.getElementById('canvas-size-select') as HTMLSelectElement;
+    canvasSizeSelect.innerHTML = '';
+    addCanvasSizeOption('full-screen', 'windowSizeOption');
+    addCanvasSizeOption('2048x1440', 'fixedSizeOption');
+    const antiAliasSwitchSelect = document.getElementById('antialias-switch-select') as HTMLSelectElement;
+    antiAliasSwitchSelect.innerHTML = '';
+    addAntiAliasOption('On', "antialiasOnOption");
+    addAntiAliasOption('Off', "antialiasOffOption");
+
     const needRestore = localStorage.getItem('needRestore') === 'true';
 
     if (!needRestore) {
@@ -239,7 +310,7 @@ export function pageInit() {
             return;
         }
         if (queryString !== '') {
-            param = UrlParamsManager.getUrlParams();
+            param = UrlParamsManager.splitEngineParams(UrlParamsManager.getUrlParams());
 
             if (param['engine']) {
                 let type = param['engine'].toString().toLowerCase();
@@ -271,19 +342,58 @@ export function pageInit() {
         }
     }
 
+    function updateThreadTypeOptions(engineType: string, version: string) {
+        const threadTypeSelect = document.getElementById('thread-type-select') as HTMLSelectElement;
+        if (!threadTypeSelect) return;
+
+        const engineConfig = config.engineVersion[engineType as keyof typeof config.engineVersion];
+        if (!engineConfig || !engineConfig.versions[version]) return;
+
+        const threadTypes = engineConfig.versions[version];
+
+        threadTypeSelect.innerHTML = '';
+
+        threadTypes.forEach(type => {
+            const option = document.createElement('option');
+            option.value = type;
+            option.setAttribute('data-locale', `${type}Option`);
+            threadTypeSelect.appendChild(option);
+        });
+
+        if (threadTypes.length === 1) {
+            threadTypeSelect.value = threadTypes[0];
+        }
+    }
+
 
     handleEngineVisibility();
 
     const engineTypeSelect = document.getElementById('engine-type-select') as HTMLSelectElement;
     if (engineTypeSelect) {
         updateVersionSelect(engineTypeSelect.value);
+        if (versionSelect) {
+            updateThreadTypeOptions(engineTypeSelect.value, versionSelect.value);
+        }
     }
 
     if (engineTypeSelect) {
         engineTypeSelect.addEventListener('change', (e) => {
             const target = e.target as HTMLSelectElement;
             updateVersionSelect(target.value);
+            if (versionSelect) {
+                updateThreadTypeOptions(engineTypeSelect.value, versionSelect.value);
+            }
         });
+    }
+
+    if (versionSelect) {
+        versionSelect.addEventListener('change', (e) => {
+            const target = e.target as HTMLSelectElement;
+            const engineTypeSelect = document.getElementById('engine-type-select') as HTMLSelectElement;
+            if (engineTypeSelect) {
+                updateThreadTypeOptions(engineTypeSelect.value, target.value);
+            }
+        }, true);
     }
 
     if (localStorage.getItem('needRestore') === 'true') {
@@ -291,57 +401,45 @@ export function pageInit() {
     }
     if (queryString !== '') {
         try {
-            param = UrlParamsManager.getUrlParams();
+            param = UrlParamsManager.splitEngineParams(UrlParamsManager.getUrlParams());
             if (param['engine']) {
                 engineTypeSelect.value = param['engine'].toString().toLowerCase();
             }
             if (param['version']) {
-                const targetVersion = param['version'].toString();
-                const matchingOption = Array.from(versionSelect.options).find(option =>
-                    option.value.toLowerCase() === targetVersion.toLowerCase()
-                );
-                if (matchingOption) {
-                    versionSelect.value = matchingOption.value;
-                }
-            }
-            const configInputs = document.querySelectorAll('#config-param input[type="number"]');
-
-            configInputs.forEach(input => {
-                const element = input as HTMLInputElement;
-                let key: string = htmlParamConvertUrlParam(element.id);
-                if (key in param && param[key] !== undefined) {
-                    const value = Number(param[key]);
-                    if (typeof value === 'number') {
-                        element.value = value.toString();
-                    } else {
-                        console.warn(`The value of ${key} is not of numeric type`);
+                const versionParam = param['version'].toString().toLowerCase();
+                const options = versionSelect.options;
+                for (let i = 0; i < options.length; i++) {
+                    if (options[i].value.toLowerCase() === versionParam) {
+                        versionSelect.value = options[i].value;
+                        break;
                     }
                 }
-            });
-
-            if (param['graphic']) {
-                let graphicType = param['graphic'].toString().toLowerCase();
-                const selectedInput = Array.from<HTMLInputElement>(document.querySelectorAll('input[name="graphic-type"]'))
-                    .find(input => input.value.toLowerCase() === graphicType.toLowerCase()) as HTMLInputElement;
-
-                if (selectedInput) {
-                    selectedInput.checked = true;
-                }
             }
-
+            if (param['threadType']) {
+                const threadTypeSelect = document.getElementById('thread-type-select') as HTMLSelectElement;
+                threadTypeSelect.value = param['threadType'].toString();
+            }
         } catch (error) {
             throw new Error(`The url parameter is incorrect: ${error}`);
         }
+    } else {
+        param = {};
+        const threadTypeSelect = document.getElementById('thread-type-select') as HTMLSelectElement;
+        param['engine'] = `${engineTypeSelect.value}-${versionSelect.value}-${threadTypeSelect.value}`;
+        UrlParamsManager.setUrlParams(param);
     }
     if (engineTypeSelect.value === 'tgfx') {
         enumEngineType = EnumEngineType.tgfx;
     } else if (engineTypeSelect.value === 'skia') {
         enumEngineType = EnumEngineType.skia;
     }
+
+    triggerLanguageChange();
+    savePageSettings();
 }
 
 
-interface PageSettings {
+class PageSettings {
     engineType: {
         options: string[];
         selected: string;
@@ -350,7 +448,12 @@ interface PageSettings {
         options: string[];
         selected: string;
     };
+    threadType: {
+        options: string[];
+        selected: string;
+    };
     configParams: {
+        canvasSize: string;
         startCount: number;
         stepCount: number;
         maxShapes: number;
@@ -364,13 +467,19 @@ interface PageSettings {
         options: string[];
         selected: string;
     };
+    antiAlias: {
+        option: boolean;
+    } = {
+        option: true
+    };
 }
 
-function getPageSettings(): PageSettings {
+function savePageSettings() {
     const engineTypeSelect = document.getElementById('engine-type-select') as HTMLSelectElement;
     const engineType = {
         options: Array.from(engineTypeSelect.options).map(option => option.value),
-        selected: engineTypeSelect.value
+        selected:
+        engineTypeSelect.value
     };
 
     const versionSelect = document.getElementById('engine-version') as HTMLSelectElement;
@@ -379,7 +488,14 @@ function getPageSettings(): PageSettings {
         selected: versionSelect.value
     };
 
+    const threadSelect = document.getElementById('thread-type-select') as HTMLSelectElement;
+    const threadType = {
+        options: Array.from(threadSelect.options).map(option => option.value),
+        selected: threadSelect.value
+    };
+
     const configParams = {
+        canvasSize: (document.getElementById('canvas-size-select') as HTMLSelectElement).value,
         startCount: Number((document.getElementById('startCount') as HTMLInputElement).value),
         stepCount: Number((document.getElementById('stepCount') as HTMLInputElement).value),
         maxShapes: Number((document.getElementById('maxShapes') as HTMLInputElement).value),
@@ -398,20 +514,34 @@ function getPageSettings(): PageSettings {
         selected: languageSelect.value
     };
 
-    return {
+    const antiAliasSwitch = document.getElementById('antialias-switch-select') as HTMLInputElement;
+    const value = antiAliasSwitch.value;
+
+    const antiAliasValue = value === 'On';
+    const antiAlias = {
+        option: antiAliasValue
+    }
+
+
+    const settings: PageSettings = {
         engineType,
         engineVersion,
+        threadType,
         configParams,
         graphicType,
-        language
+        language,
+        antiAlias
     };
-}
-
-export function pageRestart() {
-    const settings = getPageSettings();
 
     localStorage.setItem('pageSettings', JSON.stringify(settings));
     localStorage.setItem('needRestore', 'true');
+    let engineDir = `${engineVersionInfo['engineVersion'][engineType.selected].savePath}${engineType.selected}-${engineVersion.selected}-${threadType.selected}`
+    localStorage.setItem('engineDir', engineDir);
+}
+
+
+export function pageRestart() {
+    savePageSettings();
     location.reload();
 }
 
@@ -449,7 +579,6 @@ export function restorePageSettings(): void {
     }
 
     try {
-        let param: ParamsObject = {};
         const versionSelect = document.getElementById('engine-version') as HTMLSelectElement;
         if (versionSelect && settings.engineVersion.options.length > 0) {
             versionSelect.innerHTML = '';
@@ -464,7 +593,20 @@ export function restorePageSettings(): void {
             if (settings.engineVersion.selected) {
                 versionSelect.value = settings.engineVersion.selected;
                 versionSelect.dispatchEvent(new Event('change'));
-                param["version"] = settings.engineVersion.selected;
+            }
+        }
+        const threadTypeSelect = document.getElementById('thread-type-select') as HTMLSelectElement;
+        if (threadTypeSelect && settings.threadType.options.length > 0) {
+            threadTypeSelect.innerHTML = '';
+            settings.threadType.options.forEach(threadType => {
+                const option = document.createElement('option');
+                option.value = threadType;
+                option.setAttribute('data-locale', `${threadType}Option`);
+                threadTypeSelect.appendChild(option);
+            });
+
+            if (settings.threadType.selected) {
+                threadTypeSelect.value = settings.threadType.selected;
             }
         }
 
@@ -482,6 +624,11 @@ export function restorePageSettings(): void {
             }
         });
 
+        {
+            const convasSizes = document.getElementById('canvas-size-select') as HTMLSelectElement;
+            convasSizes.value = configParams.canvasSize;
+        }
+
         const graphicTypeRadio = document.querySelector(
             `input[name="graphic-type"][value="${settings.graphicType.selected}"]`
         ) as HTMLInputElement;
@@ -493,6 +640,11 @@ export function restorePageSettings(): void {
             languageSelect.value = settings.language.selected;
         }
 
+        const antiAliasSwitchSelect = document.getElementById('antialias-switch-select') as HTMLSelectElement;
+        if (antiAliasSwitchSelect && settings.antiAlias.option) {
+            antiAliasSwitchSelect.value = settings.antiAlias.option ? 'On' : 'Off';
+        }
+
     } catch (error) {
         console.error('Failed to restore page configuration:', error);
     }
@@ -500,10 +652,6 @@ export function restorePageSettings(): void {
 
 
 function setDefaultValues() {
-    const mtRadio = document.querySelector('input[name="thread-type"][value="mt"]') as HTMLInputElement;
-    if (mtRadio) {
-        mtRadio.checked = true;
-    }
     const defaultParams = {
         startCount: 1,
         stepCount: 1000,
@@ -521,10 +669,9 @@ function setDefaultValues() {
     if (rectangleRadio) {
         rectangleRadio.checked = true;
     }
-    const languageSelect = document.getElementById('language-type') as HTMLSelectElement;
-    if (languageSelect) {
-        languageSelect.value = 'auto';
-    }
+
+    const antiAliasSwitchSelect = document.getElementById('antialias-switch-select') as HTMLSelectElement;
+    antiAliasSwitchSelect.value = 'On';
 }
 
 
@@ -533,15 +680,12 @@ export function getEngineDir(): string {
     if (!needRestore) {
         const versionSelect = document.getElementById('engine-version') as HTMLSelectElement;
         const version = versionSelect.value;
-        const engineTypeSelect = document.getElementById('engine-type-select') as HTMLSelectElement;
-        if (engineTypeSelect.value === 'tgfx') {
-            return `${engineVersionInfo.engineVersion.tgfx.savePath}benchmark-${version}`;
-        } else if (engineTypeSelect.value === 'skia') {
-            return `${engineVersionInfo.engineVersion.skia.savePath}benchmark-${version}`;
-        }
+        const engineType = (document.getElementById('engine-type-select') as HTMLSelectElement).value;
+        const threadType = (document.getElementById('thread-type-select') as HTMLSelectElement).value;
+
+        return `${engineVersionInfo['engineVersion'][engineType].savePath}${engineType}-${version}-${threadType}`;
     } else {
         const engineDir = localStorage.getItem('engineDir');
-        localStorage.removeItem('needRestore');
         if (engineDir) {
             return engineDir;
         }
@@ -552,7 +696,6 @@ export function getEngineDir(): string {
 
 function handleConfigParamChange(event: Event) {
     const target = event.target as HTMLInputElement;
-    let param: ParamsObject = {};
     if (target.type !== 'number') {
         return;
     }
@@ -565,7 +708,6 @@ function handleConfigParamChange(event: Event) {
     if (currentValue < minValue) {
         target.value = minValue.toString();
     }
-    param[htmlParamConvertUrlParam(target.id)] = Number(target.value);
     if (target.id === 'startCount') {
         drawParam.startCount = Number(target.value);
     } else if (target.id === 'stepCount') {
@@ -579,7 +721,7 @@ function handleConfigParamChange(event: Event) {
         return;
     }
     shareData.baseView.updateDrawParam(drawParam);
-    UrlParamsManager.setUrlParams(param);
+    savePageSettings();
 }
 
 function setGraphicType(graphicType: string) {
@@ -612,16 +754,12 @@ function setGraphicType(graphicType: string) {
 
 function handleGraphicTypeChange(event: Event) {
     const target = event.target as HTMLInputElement;
-    let param: ParamsObject = {};
 
     if (target.type === 'radio' && target.name === 'graphic-type' && target.checked) {
 
         let graphicType = target.value;
-        param["graphic"] = graphicType;
-        UrlParamsManager.setUrlParams(param);
-        if (event.isTrusted) {
-            setGraphicType(graphicType);
-        }
+        savePageSettings();
+        setGraphicType(graphicType);
     }
 }
 
@@ -630,7 +768,6 @@ function handleEngineTypeChange(event: Event) {
         return;
     }
     const target = event.target as HTMLSelectElement;
-    let engineDir = "";
     const selectedEngine = target.value;
     const engineVersionSelect = document.getElementById('engine-version') as HTMLSelectElement;
     engineVersionSelect.innerHTML = '';
@@ -643,17 +780,10 @@ function handleEngineTypeChange(event: Event) {
         engineVersionSelect.appendChild(option);
     });
 
-    const param: ParamsObject = {};
-    param["engine"] = selectedEngine;
-    UrlParamsManager.setUrlParams(param);
-
     const firstVersion = Object.keys(versions)[0];
     if (firstVersion) {
         engineVersionSelect.value = firstVersion;
         engineVersionSelect.dispatchEvent(new Event('change'));
-        engineDir = `${engineVersionInfo.engineVersion[selectedEngine].savePath}benchmark-${firstVersion}`;
-        localStorage.setItem('engineDir', engineDir);
-        pageRestart();
     } else {
         console.warn('Unknown engine type:', selectedEngine);
     }
@@ -661,9 +791,8 @@ function handleEngineTypeChange(event: Event) {
 
 function handleEngineVersionChange(event: Event) {
     const target = event.target as HTMLSelectElement;
-    let engineDir = "";
-    const engineTypeSelect = document.getElementById('engine-type-select') as HTMLSelectElement;
-    if (!engineTypeSelect) {
+    const engineType = (document.getElementById('engine-type-select') as HTMLSelectElement).value;
+    if (engineType === undefined) {
         console.warn('Engine type selector not found');
         return;
     }
@@ -672,21 +801,50 @@ function handleEngineVersionChange(event: Event) {
         console.warn('No version selected');
         return;
     }
-    let param: ParamsObject = {};
-    param["version"] = selectedVersion;
-    UrlParamsManager.setUrlParams(param);
-    if (!event.isTrusted) {
+    const threads = engineVersionInfo.engineVersion[engineType].versions[selectedVersion];
+
+    const threadTypeSelect = document.getElementById('thread-type-select') as HTMLSelectElement;
+    if (!threadTypeSelect) {
+        console.warn('Thread type selector not found');
         return;
     }
-    const engineConfig = engineVersionInfo.engineVersion[engineTypeSelect.value];
-    if (engineConfig) {
-        engineDir = `${engineConfig.savePath}benchmark-${selectedVersion}`;
-        localStorage.setItem('engineDir', engineDir);
-        pageRestart();
-    } else {
-        console.error('Invalid engine configuration:', engineTypeSelect.value);
+
+    threadTypeSelect.innerHTML = '';
+
+    threads.forEach(threadType => {
+        const option = document.createElement('option');
+        option.value = threadType;
+        threadTypeSelect.appendChild(option);
+    });
+
+    let defaultThreadType = '';
+    if (engineType === 'tgfx') {
+        defaultThreadType = threads.includes('mt') ? 'mt' : threads[0];
+    } else if (engineType === 'skia') {
+        defaultThreadType = threads.includes('st') ? 'st' : threads[0];
     }
+    threadTypeSelect.value = defaultThreadType;
+    const changeEvent = new Event('change', {
+        bubbles: true,
+        cancelable: true
+    });
+    threadTypeSelect.dispatchEvent(changeEvent);
 }
+
+
+function handleThreadTypeChange(event: Event) {
+    const target = event.target as HTMLInputElement;
+    const engineType = (document.getElementById('engine-type-select') as HTMLSelectElement).value;
+    const engineVersion = (document.getElementById('engine-version') as HTMLSelectElement).value;
+    const threadType = target.value;
+    const engineDir = `${engineVersionInfo.engineVersion[engineType].savePath}${engineType}-${engineVersion}-${threadType}`;
+    localStorage.setItem('engineDir', engineDir);
+    const param: ParamsObject = {};
+    param["engine"] = `${engineType}-${engineVersion}-${threadType}`;
+    UrlParamsManager.setUrlParams(param);
+    pageRestart();
+}
+
 
 function handleCanvasSizeChange(event: Event) {
     const target = event.target as HTMLSelectElement;
@@ -705,7 +863,7 @@ function handleCanvasSizeChange(event: Event) {
         container.style.backgroundColor = '#2c2c2c';
         canvas.style.border = '10px solid #ffffff';
         canvas.style.boxSizing = 'content-box';
-        canvas.style.backgroundColor='#ffffff';
+        canvas.style.backgroundColor = '#ffffff';
         const scaleFactor = window.devicePixelRatio;
         canvas.width = 2048;
         canvas.height = 1440;
@@ -721,12 +879,28 @@ function handleCanvasSizeChange(event: Event) {
         shareData.baseView.updateSize(scaleFactor);
     }
 
+    localStorage.setItem('canvasSize', target.value);
+    savePageSettings();
+
     const resolutionSpan = document.querySelector('.resolution');
     resolutionSpan.textContent = `${canvas.width}x${canvas.height}`;
 
     if (shareData.baseView) {
         shareData.baseView.restartDraw();
     }
+}
+
+function handleAntiAliasChange(event: Event) {
+    const target = event.target as HTMLInputElement;
+    if (shareData.baseView) {
+        const antiAlia: boolean = target.value == 'On';
+        shareData.baseView.setAntiAlias(antiAlia);
+    }
+    savePageSettings();
+}
+
+function handleLanguageTypeChange(event: Event) {
+    savePageSettings();
 }
 
 function showProgress(): void {
@@ -815,94 +989,46 @@ export async function loadModule(engineDir: string, type: string = "mt") {
                 throw new Error('SharedArrayBuffer is not supported in this environment');
             }
         }
+
         const moduleConfig = {
             locateFile: (file: string) => {
                 const path = `${engineDir}.wasm`;
-                console.log('Loading WebAssembly file:', path);
+                updateProgress(getRandomInt(50, 70));
                 return path;
             },
-            onRuntimeError: (error) => {
-                console.error('Runtime error:', error);
-            },
             onRuntimeInitialized: () => {
-                console.log('WebAssembly runtime initialized successfully');
-            },
-            onWorkerError: (error) => {
-                console.error('Worker error:', error);
+                updateProgress(getRandomInt(71, 90));
             }
         };
-
         if (type === 'mt') {
             moduleConfig['mainScriptUrlOrBlob'] = `${engineDir}.js`;
         }
         const module = await Benchmark.default(moduleConfig);
-        updateProgress(getRandomInt(31, 50));
+
         if (enumEngineType === EnumEngineType.tgfx) {
             shareData.BenchmarkModule = module;
             TGFXBind(shareData.BenchmarkModule);
             let tgfxView: TGFXBaseView = shareData.BenchmarkModule.TGFXThreadsView.MakeFrom('#benchmark');
-            var imagePath = `${baseUrl}/static/image/bridge.jpg`;
-            await tgfxView.setImagePath(imagePath);
-
-            var fontPath = `${baseUrl}/static/font/NotoSansSC-Regular.otf`;
-            const fontBuffer = await loadFontBuffer(fontPath);
-            updateProgress(getRandomInt(51, 70));
-            const fontUIntArray = new Uint8Array(fontBuffer);
-
-            var emojiFontPath = `${baseUrl}/static/font/NotoColorEmoji.ttf`;
-            const emojiFontBuffer = await loadFontBuffer(emojiFontPath);
-            updateProgress(getRandomInt(71, 90));
-            const emojiFontUIntArray = new Uint8Array(emojiFontBuffer);
-
-
-            tgfxView.registerFonts(fontUIntArray, emojiFontUIntArray);
             shareData.baseView = tgfxView;
         } else if (enumEngineType === EnumEngineType.skia) {
             let skiaView: SkiaView = module.SkiaView.MakeFrom('#benchmark');
-
-            var fontPath = `${baseUrl}/static/font/SFNSRounded.ttf`;
-            const fontBuffer = await loadFontBuffer(fontPath);
-            updateProgress(getRandomInt(51, 70));
-            const fontUIntArray = new Uint8Array(fontBuffer);
-
-            var emojiFontPath = `${baseUrl}/static/font/NotoColorEmoji.ttf`;
-            const emojiFontBuffer = await loadFontBuffer(emojiFontPath);
-            updateProgress(getRandomInt(71, 90));
-            const emojiFontUIntArray = new Uint8Array(emojiFontBuffer);
-
-            skiaView.registerFonts(fontUIntArray, emojiFontUIntArray);
             shareData.baseView = skiaView;
         }
+        updateProgress(getRandomInt(91, 99));
         shareData.baseView.showPerfData(false);
         updateProgress(100);
         hideProgress();
-        updateSize(shareData);
+        setDrawParamFromPageSettings();
+        loadCanvasSizeAndTriggerChange(shareData);
         startDraw(shareData);
-        setDrawParamFromUrl();
     } catch (error) {
         console.error(error);
         throw new Error(`Failed to load ${type} version. Please check the wasm file path!`);
     }
 }
 
-async function handleThreadTypeChange(event: Event) {
-    const target = event.target as HTMLInputElement;
-    if (target.type === 'radio' && target.name === 'thread-type' && target.checked) {
-        const threadType = target.value;
-        localStorage.setItem('threadType', threadType);
-        console.log(`Thread type changed to ${threadType}`);
-        await loadModule(threadType);
-        pageRestart();
-    }
-}
 
 export function bindEventListeners() {
-
-    const threadTypeRadioGroup = document.querySelector('.radio-group-thread-type');
-    if (threadTypeRadioGroup) {
-        threadTypeRadioGroup.addEventListener('change', handleThreadTypeChange);
-    }
-
     const restartBtn = document.getElementById('restartBtn');
     if (restartBtn) {
         restartBtn.addEventListener('click', () => {
@@ -929,9 +1055,22 @@ export function bindEventListeners() {
     const engineVersionSelect = document.getElementById('engine-version');
     engineVersionSelect.addEventListener('change', handleEngineVersionChange);
 
+    const threadTypeSelect = document.getElementById('thread-type-select');
+    threadTypeSelect.addEventListener('change', handleThreadTypeChange);
+
     const canvasSizeSelect = document.getElementById('canvas-size-select');
     if (canvasSizeSelect) {
         canvasSizeSelect.addEventListener('change', handleCanvasSizeChange);
+    }
+
+    const antiAliasSelect = document.getElementById('antialias-switch-select');
+    if (antiAliasSelect) {
+        antiAliasSelect.addEventListener('change', handleAntiAliasChange);
+    }
+
+    const languageTypeSelect = document.getElementById('language-type');
+    if (languageTypeSelect) {
+        languageTypeSelect.addEventListener('change', handleLanguageTypeChange);
     }
 
 }
@@ -1026,99 +1165,51 @@ export class UrlParamsManager {
         window.history.pushState({}, '', newUrl);
     }
 
+    static splitEngineParams(param: ParamsObject): ParamsObject {
+        const params: ParamsObject = {};
+        const engineParts = param['engine'].toString().toLowerCase().split('-');
+        if (engineParts.length !== 3) {
+            console.error('params.engine is invalid,example: engine-version-threadType');
+            return;
+        }
+        const engineType = engineParts[0];
+        const version = engineParts[1];
+        const threadType = engineParts[2];
+        params['engine'] = engineType;
+        params['version'] = version;
+        params['threadType'] = threadType;
+
+        return params;
+    }
+
     static validateUrlParams(params: ParamsObject): boolean {
+        if (params['engine'] === undefined) {
+            return false;
+        }
         if (params['engine'] !== undefined) {
-            const engineValue = params['engine'].toString().toLowerCase();
-            if (!['tgfx', 'skia'].includes(engineValue)) {
+            const engineParts = params['engine'].toString().toLowerCase().split('-');
+            if (engineParts.length !== 3) {
+                console.error('params.engine is invalid,example: engine-version-threadType');
+                return;
+            }
+            const engineType = engineParts[0];
+            const version = engineParts[1];
+            const threadType = engineParts[2];
+
+            if (engineVersionInfo.engineVersion[engineType] === undefined) {
+                console.error('engineType is invalid,example: tgfx/skia');
                 return false;
             }
-            if (engineValue === defaultUrlParams['engine']) {
-                UrlParamsManager.removeUrlParam('engine');
-            }
-        }
 
-        if (params['engine'] !== undefined && params['version'] !== undefined) {
-            const engineType = params['engine'].toString().toLowerCase();
-            const version = params['version'].toString();
-            if (!engineVersionInfo?.engineVersion?.[engineType]) {
+            if (engineVersionInfo.engineVersion[engineType].versions[version] === undefined) {
+                console.error('engine version is invalid');
                 return false;
             }
-            const versions = engineVersionInfo.engineVersion[engineType].versions;
-            const hasMatchingVersion = Object.keys(versions).some(v =>
-                v.toLowerCase() === version.toLowerCase()
-            );
-            if (!hasMatchingVersion) {
+
+            if (engineVersionInfo.engineVersion[engineType].versions[version].includes(threadType) === false) {
+                console.error('threadType is invalid');
                 return false;
             }
-        } else if (params['version'] !== undefined) {
-            const version = params['version'].toString();
-            const versions = engineVersionInfo.engineVersion[defaultUrlParams['engine']].versions;
-            const hasMatchingVersion = Object.keys(versions).some(v =>
-                v.toLowerCase() === version.toLowerCase()
-            );
-            if (!hasMatchingVersion) {
-                return false;
-            }
-        }
-
-        if (params['start'] !== undefined) {
-            const value = Number(params['start']);
-            if (isNaN(value) || value <= 0) {
-                return false;
-            }
-            if (value === Number(defaultUrlParams['start'])) {
-                UrlParamsManager.removeUrlParam('start');
-            }
-        }
-
-
-        if (params['step'] !== undefined) {
-            const value = Number(params['step']);
-            if (isNaN(value) || value <= 0) {
-                return false;
-            }
-            if (value === Number(defaultUrlParams['step'])) {
-                UrlParamsManager.removeUrlParam('step');
-            }
-        }
-
-        if (params['max'] !== undefined) {
-            const value = Number(params['max']);
-            if (isNaN(value) || value <= 0) {
-                return false;
-            }
-            if (value === Number(defaultUrlParams['max'])) {
-                UrlParamsManager.removeUrlParam('max');
-            }
-        }
-
-        if (params['min'] !== undefined) {
-            const value = Number(params['min']);
-            if (isNaN(value) || value <= 0) {
-                return false;
-            }
-            if (value === Number(defaultUrlParams['min'])) {
-                UrlParamsManager.removeUrlParam('min');
-            }
-        }
-
-        if (params['graphic'] !== undefined) {
-            const graphicValue = params['graphic'].toString().toLowerCase();
-            const graphicTypes = graphicTypeStr.map(type => type.toLowerCase());
-
-            if (!graphicTypes.includes(graphicValue)) {
-                return false;
-            }
-            if (graphicValue === defaultUrlParams['graphic'].toString().toLowerCase()) {
-                UrlParamsManager.removeUrlParam('graphic');
-            }
-        }
-
-        const currentParams = new URLSearchParams(window.location.search);
-        if (currentParams.toString() === '') {
-            const url = new URL(window.location.href);
-            url.search = '';
-            window.history.replaceState({}, '', url.toString());
         }
         return true;
     }
@@ -1137,27 +1228,30 @@ export class UrlParamsManager {
     }
 }
 
-export function setDrawParamFromUrl() {
-    let param: ParamsObject = UrlParamsManager.getUrlParams();
-    if (param["start"]) {
-        drawParam.startCount = Number(param["start"]);
+export function setDrawParamFromPageSettings() {
+
+    const savedSettings = localStorage.getItem('pageSettings');
+    if (savedSettings === null) return;
+
+    let jsonSettings: PageSettings;
+    try {
+        jsonSettings = JSON.parse(savedSettings);
+    } catch (error) {
+        console.error('Page parameter parsing failed:', error);
+        return;
     }
-    if (param["step"]) {
-        drawParam.stepCount = Number(param["step"]);
-    }
-    if (param["max"]) {
-        drawParam.maxCount = Number(param["max"]);
-    }
-    if (param["min"]) {
-        drawParam.minFPS = Number(param["min"]);
-    }
+    let drawingParam = jsonSettings.configParams;
+    drawParam.startCount = Number(drawingParam.startCount);
+    drawParam.stepCount = Number(drawingParam.stepCount);
+    drawParam.maxCount = Number(drawingParam.maxShapes);
+    drawParam.minFPS = Number(drawingParam.minFPS);
     shareData.baseView.updateDrawParam(drawParam);
-    if (param["graphic"]) {
-        setGraphicType(param["graphic"].toString());
-    }
+    setGraphicType(jsonSettings.graphicType.selected);
+    console.log("jsonSettings.antiAlias.option:", jsonSettings.antiAlias.option);
+    shareData.baseView.setAntiAlias(jsonSettings.antiAlias.option);
 }
 
-function webUpdateGraphicType(type:number) {
+function webUpdateGraphicType(type: number) {
     try {
         if (typeof type !== 'number' || type < 0 || type >= graphicTypeStr.length) {
             console.warn('Invalid graphic type: ' + type);
@@ -1181,16 +1275,13 @@ function webUpdateGraphicType(type:number) {
             return;
         }
         targetRadio.checked = true;
-        console.log('Updated graphic type to: ' + typeStr);
-        const event = new Event('change', { bubbles: true });
-        targetRadio.dispatchEvent(event);
+        savePageSettings();
     } catch (error) {
         console.error('Error updating graphic type:', error);
     }
 }
 
 export function setupCoordinateConversion(canvasId: string, showSideBar: boolean) {
-    console.log("setupCoordinateConversion");
     const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
 
     let isProcessingMouseEvent = false;
@@ -1283,4 +1374,69 @@ function convertCoordinates(e: MouseEvent, showSideBar: boolean) {
         clientX: (e.clientX - offsetX),
         clientY: (e.clientY - offsetY)
     };
+}
+
+
+function loadCanvasSizeAndTriggerChange(shareData: ShareData): void {
+    try {
+        const savedSize = localStorage.getItem('canvasSize');
+        const sizeSelect = document.getElementById('canvas-size-select') as HTMLSelectElement;
+        if (savedSize && sizeSelect) {
+            sizeSelect.value = savedSize;
+            handleCanvasSizeChange({
+                target: sizeSelect,
+                isTrusted: true
+            } as unknown as Event);
+        } else {
+            updateSize(shareData);
+        }
+    } catch (error) {
+        console.error('loadCanvasSizeAndTriggerChange:', error);
+    }
+}
+
+export function triggerLanguageChange(): void {
+    const languageSelect = document.getElementById('language-type') as HTMLSelectElement;
+    if (!languageSelect) {
+        console.error('find languageSelect failed');
+        return;
+    }
+    const event = new Event('change', {
+        bubbles: true,
+        cancelable: true
+    });
+    languageSelect.dispatchEvent(event);
+}
+
+
+function addCanvasSizeOption(value: string, localeKey: string): void {
+    const select = document.getElementById('canvas-size-select') as HTMLSelectElement;
+    if (!select) {
+        console.error('find canvas-size-select failed');
+        return;
+    }
+    const option = document.createElement('option');
+    option.value = value;
+    option.setAttribute('data-locale', localeKey);
+
+    const savedSize = localStorage.getItem('canvasSize');
+
+    if (savedSize === value) {
+        option.selected = true;
+    }
+
+    select.appendChild(option);
+}
+
+function addAntiAliasOption(value: string, localeKey: string): void {
+    const select = document.getElementById('antialias-switch-select') as HTMLSelectElement;
+    if (!select) {
+        console.error('find antialias-switch-select failed');
+        return;
+    }
+    const option = document.createElement('option');
+    option.value = value;
+    option.setAttribute('data-locale', localeKey);
+
+    select.appendChild(option);
 }
