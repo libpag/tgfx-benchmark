@@ -17,7 +17,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "AppHost.h"
-#include "tgfx/utils/Clock.h"
+#include "tgfx/core/Clock.h"
 #include "tgfx/platform/Print.h"
 
 namespace benchmark {

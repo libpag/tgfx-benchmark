@@ -23,10 +23,10 @@
 #include "base/AppHost.h"
 #include "base/Bench.h"
 #include "tgfx/core/Canvas.h"
-#include "tgfx/gpu/Surface.h"
-#include "tgfx/opengl/GLDevice.h"
-#include "tgfx/opengl/cgl/CGLWindow.h"
-#include "tgfx/utils/Clock.h"
+#include "tgfx/core/Clock.h"
+#include "tgfx/core/Surface.h"
+#include "tgfx/gpu/opengl/GLDevice.h"
+#include "tgfx/gpu/opengl/cgl/CGLWindow.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
@@ -182,8 +182,7 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
     return;
   }
   auto canvas = surface->getCanvas();
-  canvas->clearRect(tgfx::Rect::MakeWH(surface->width(), surface->height()),
-                    {0.87f, 0.87f, 0.87f, 1.0f});
+  canvas->clear({0.87f, 0.87f, 0.87f, 1.0f});
   auto numBenches = benchmark::Bench::Count();
   auto index = (drawIndex % numBenches);
   auto bench = benchmark::Bench::GetByIndex(index);

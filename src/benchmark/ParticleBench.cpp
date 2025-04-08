@@ -21,7 +21,7 @@
 #include <iomanip>
 #include <random>
 #include <sstream>
-#include "tgfx/utils/Clock.h"
+#include "tgfx/core/Clock.h"
 
 namespace benchmark {
 static constexpr int64_t FLUSH_INTERVAL = 300000;
@@ -34,7 +34,7 @@ static size_t InitDrawCount = 1;
 static float TargetFPS = 60.0f;
 static size_t MaxDrawCount = 1000000;
 static size_t IncreaseStep = 1000;
-static bool AntiAliasFlag = false;
+static bool AntiAliasFlag = true;
 
 static std::string ToString(GraphicType type) {
   switch (type) {
