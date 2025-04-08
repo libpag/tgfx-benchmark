@@ -670,9 +670,8 @@ function setDefaultValues() {
     const graphicTypeSelect = document.getElementById('graphic-type-select') as HTMLSelectElement;
     graphicTypeSelect.value = graphicTypeStr[0];
 
-
     const antiAliasSwitchSelect = document.getElementById('antialias-switch-select') as HTMLSelectElement;
-    antiAliasSwitchSelect.value = 'On';
+    antiAliasSwitchSelect.value = 'Off';
 }
 
 
@@ -1240,7 +1239,6 @@ export function setDrawParamFromPageSettings() {
     drawParam.minFPS = Number(drawingParam.minFPS);
     shareData.baseView.updateDrawParam(drawParam);
     setGraphicType(jsonSettings.graphicType.selected);
-    console.log("jsonSettings.antiAlias.option:", jsonSettings.antiAlias.option);
     shareData.baseView.setAntiAlias(jsonSettings.antiAlias.option);
 }
 
