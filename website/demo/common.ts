@@ -87,7 +87,8 @@ export enum GraphicType {
 }
 
 
-export const graphicTypeStr: readonly ['Rect', 'Circle', 'Oval', 'RRect'] = ['Rect', 'Circle', 'Oval', 'RRect'];
+// const graphicTypeStr: readonly ['Rect', 'Circle', 'Oval', 'RRect'] = ['Rect', 'Circle', 'Oval', 'RRect'];
+const graphicTypeStr: readonly ['Rect'] = ['Rect'];
 
 export let engineVersionInfo: SideBarConfig;
 
@@ -268,6 +269,7 @@ export function pageInit() {
     antiAliasSwitchSelect.innerHTML = '';
     addAntiAliasOption('On', "antialiasOnOption");
     addAntiAliasOption('Off', "antialiasOffOption");
+    addGraphicTypeOptions();
 
     const needRestore = localStorage.getItem('needRestore') === 'true';
 
@@ -502,10 +504,10 @@ function savePageSettings() {
         minFPS: Number((document.getElementById('minFPS') as HTMLInputElement).value)
     };
 
-    const graphicTypeInputs = document.getElementsByName('graphic-type') as NodeListOf<HTMLInputElement>;
+    const graphicTypeSelect = document.getElementById('graphic-type-select') as HTMLSelectElement;
     const graphicType = {
-        options: Array.from(graphicTypeInputs).map(input => input.value),
-        selected: Array.from(graphicTypeInputs).find(input => input.checked)?.value || ''
+        options: Array.from(graphicTypeSelect.options).map(option => option.value),
+        selected: graphicTypeSelect.value
     };
 
     const languageSelect = document.getElementById('language-type') as HTMLSelectElement;
@@ -624,24 +626,23 @@ export function restorePageSettings(): void {
             }
         });
 
-        {
-            const convasSizes = document.getElementById('canvas-size-select') as HTMLSelectElement;
-            convasSizes.value = configParams.canvasSize;
+        const canvasSizes = document.getElementById('canvas-size-select') as HTMLSelectElement;
+        if (canvasSizes && configParams.canvasSize !== undefined) {
+            canvasSizes.value = configParams.canvasSize;
         }
 
-        const graphicTypeRadio = document.querySelector(
-            `input[name="graphic-type"][value="${settings.graphicType.selected}"]`
-        ) as HTMLInputElement;
-        if (graphicTypeRadio) {
-            graphicTypeRadio.checked = true;
+        const graphicTypeSelect = document.getElementById('graphic-type-select') as HTMLSelectElement;
+        if (graphicTypeSelect && settings.graphicType.selected !== undefined) {
+            graphicTypeSelect.value = settings.graphicType.selected;
         }
+
         const languageSelect = document.getElementById('language-type') as HTMLSelectElement;
         if (languageSelect && settings.language.selected) {
             languageSelect.value = settings.language.selected;
         }
 
         const antiAliasSwitchSelect = document.getElementById('antialias-switch-select') as HTMLSelectElement;
-        if (antiAliasSwitchSelect && settings.antiAlias.option) {
+        if (antiAliasSwitchSelect && settings.antiAlias.option !== undefined) {
             antiAliasSwitchSelect.value = settings.antiAlias.option ? 'On' : 'Off';
         }
 
@@ -665,10 +666,10 @@ function setDefaultValues() {
             input.value = value.toString();
         }
     });
-    const rectangleRadio = document.querySelector('input[name="graphic-type"][value="Rect"]') as HTMLInputElement;
-    if (rectangleRadio) {
-        rectangleRadio.checked = true;
-    }
+
+    const graphicTypeSelect = document.getElementById('graphic-type-select') as HTMLSelectElement;
+    graphicTypeSelect.value = graphicTypeStr[0];
+
 
     const antiAliasSwitchSelect = document.getElementById('antialias-switch-select') as HTMLSelectElement;
     antiAliasSwitchSelect.value = 'On';
@@ -753,14 +754,10 @@ function setGraphicType(graphicType: string) {
 }
 
 function handleGraphicTypeChange(event: Event) {
-    const target = event.target as HTMLInputElement;
-
-    if (target.type === 'radio' && target.name === 'graphic-type' && target.checked) {
-
-        let graphicType = target.value;
-        savePageSettings();
-        setGraphicType(graphicType);
-    }
+    const target = event.target as HTMLSelectElement;
+    let graphicType = target.value;
+    savePageSettings();
+    setGraphicType(graphicType);
 }
 
 function handleEngineTypeChange(event: Event) {
@@ -818,11 +815,7 @@ function handleEngineVersionChange(event: Event) {
     });
 
     let defaultThreadType = '';
-    if (engineType === 'tgfx') {
-        defaultThreadType = threads.includes('mt') ? 'mt' : threads[0];
-    } else if (engineType === 'skia') {
-        defaultThreadType = threads.includes('st') ? 'st' : threads[0];
-    }
+    defaultThreadType = threads.includes('mt') ? 'mt' : threads[0];
     threadTypeSelect.value = defaultThreadType;
     const changeEvent = new Event('change', {
         bubbles: true,
@@ -833,7 +826,7 @@ function handleEngineVersionChange(event: Event) {
 
 
 function handleThreadTypeChange(event: Event) {
-    const target = event.target as HTMLInputElement;
+    const target = event.target as HTMLSelectElement;
     const engineType = (document.getElementById('engine-type-select') as HTMLSelectElement).value;
     const engineVersion = (document.getElementById('engine-version') as HTMLSelectElement).value;
     const threadType = target.value;
@@ -1044,9 +1037,9 @@ export function bindEventListeners() {
         configParamContainer.addEventListener('change', handleConfigParamChange);
     }
 
-    const graphicTypeRadioGroup = document.getElementById('radio-group-graphic-type');
-    if (graphicTypeRadioGroup) {
-        graphicTypeRadioGroup.addEventListener('change', handleGraphicTypeChange);
+    const graphicTypeSelect = document.getElementById('graphic-type-select');
+    if (graphicTypeSelect) {
+        graphicTypeSelect.addEventListener('change', handleGraphicTypeChange);
     }
 
     const engineTypeSelect = document.getElementById('engine-type-select');
@@ -1264,17 +1257,12 @@ function webUpdateGraphicType(type: number) {
             return;
         }
 
-        const radioGroup = document.getElementById('radio-group-graphic-type');
-        if (!radioGroup) {
-            console.error('Radio group not found');
+        const graphicTypeSelect = document.getElementById('graphic-type-select') as HTMLSelectElement;
+        if (!graphicTypeSelect) {
+            console.error('graphic-type-select not found');
             return;
         }
-        const targetRadio = radioGroup.querySelector('input[value="' + typeStr + '"]');
-        if (!(targetRadio instanceof HTMLInputElement)) {
-            console.error('Radio button for ' + typeStr + ' not found');
-            return;
-        }
-        targetRadio.checked = true;
+        graphicTypeSelect.value = typeStr;
         savePageSettings();
     } catch (error) {
         console.error('Error updating graphic type:', error);
@@ -1439,4 +1427,18 @@ function addAntiAliasOption(value: string, localeKey: string): void {
     option.setAttribute('data-locale', localeKey);
 
     select.appendChild(option);
+}
+
+
+function addGraphicTypeOptions() {
+    const select = document.getElementById('graphic-type-select') as HTMLSelectElement;
+    if (!select) return;
+    select.innerHTML = '';
+    graphicTypeStr.forEach(type => {
+        const option = document.createElement('option');
+        option.value = type;
+        option.textContent = type;
+        option.setAttribute('data-locale', `${type.toLowerCase()}Option`);
+        select.appendChild(option);
+    });
 }
