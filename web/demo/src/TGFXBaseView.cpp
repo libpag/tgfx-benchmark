@@ -21,7 +21,7 @@
 #include <emscripten/val.h>
 #include <iostream>
 #include "base/Bench.h"
-#include "tgfx/core/Clock.h"
+#include "tgfx/utils/Clock.h"
 
 using namespace emscripten;
 
@@ -122,7 +122,8 @@ void TGFXBaseView::draw() {
     return;
   }
   auto canvas = surface->getCanvas();
-  canvas->clear({0.87f, 0.87f, 0.87f, 1.0f});
+  canvas->clearRect(tgfx::Rect::MakeWH(surface->width(), surface->height()),
+                    {0.87f, 0.87f, 0.87f, 1.0f});
   auto numBenches = benchmark::Bench::Count();
   auto index = (drawIndex % numBenches);
   auto bench = benchmark::Bench::GetByIndex(index);

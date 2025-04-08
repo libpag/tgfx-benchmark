@@ -21,7 +21,7 @@
 #include <emscripten/bind.h>
 #include "base/AppHost.h"
 #include "benchmark/ParticleBench.h"
-#include "tgfx/gpu/opengl/webgl/WebGLWindow.h"
+#include "tgfx/opengl/webgl/WebGLWindow.h"
 namespace benchmark {
 
 class TGFXBaseView {

@@ -21,7 +21,7 @@
 #if WINVER >= 0x0603  // Windows 8.1
 #include <shellscalingapi.h>
 #endif
-#include "tgfx/core/Clock.h"
+#include "tgfx/utils/Clock.h"
 
 namespace benchmark {
 static constexpr LPCWSTR ClassName = L"TGFXWindow";
