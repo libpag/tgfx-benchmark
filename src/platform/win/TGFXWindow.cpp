@@ -228,11 +228,7 @@ void TGFXWindow::createAppHost() {
 void TGFXWindow::draw() {
   auto currentTime = tgfx::Clock::Now();
   if (!tgfxWindow) {
-#ifdef TGFX_USE_ANGLE
     tgfxWindow = tgfx::EGLWindow::MakeFrom(windowHandle);
-#else
-    tgfxWindow = tgfx::WGLWindow::MakeFrom(windowHandle);
-#endif
   }
   if (tgfxWindow == nullptr) {
     return;
@@ -260,7 +256,8 @@ void TGFXWindow::draw() {
     return;
   }
   auto canvas = surface->getCanvas();
-  canvas->clear({0.87f, 0.87f, 0.87f, 1.0f});
+  canvas->clearRect(tgfx::Rect::MakeWH(surface->width(), surface->height()),
+                    {0.87f, 0.87f, 0.87f, 1.0f});
   canvas->save();
   auto numBenches = Bench::Count();
   auto index = (lastDrawIndex % numBenches);

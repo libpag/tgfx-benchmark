@@ -28,11 +28,7 @@
 #include <memory>
 #include <string>
 #include "base/Bench.h"
-#ifdef TGFX_USE_ANGLE
-#include "tgfx/gpu/opengl/egl/EGLWindow.h"
-#else
-#include "tgfx/gpu/opengl/wgl/WGLWindow.h"
-#endif
+#include "tgfx/opengl/egl/EGLWindow.h"
 
 namespace benchmark {
 class TGFXWindow {
@@ -46,11 +42,7 @@ class TGFXWindow {
   HWND windowHandle = nullptr;
   int lastDrawIndex = 0;
   std::shared_ptr<AppHost> appHost = nullptr;
-#ifdef TGFX_USE_ANGLE
   std::shared_ptr<tgfx::EGLWindow> tgfxWindow = nullptr;
-#else
-  std::shared_ptr<tgfx::WGLWindow> tgfxWindow = nullptr;
-#endif
 
   static WNDCLASS RegisterWindowClass();
   static LRESULT CALLBACK WndProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) noexcept;
