@@ -109,6 +109,7 @@ function updatePerfInfo(fps, drawTime, drawCount, maxDrawCountReached) {
     }
     const targetFPS = parseFloat(document.getElementById('minFPS').value) || 60;
 
+    drawCount = Number(drawCount).toLocaleString('en-US');
     maxDrawCountReached = !!maxDrawCountReached;
     if (maxDrawCountReached) {
         if (countElement) countElement.textContent = `[${drawCount}]`;
@@ -128,8 +129,8 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
-document.addEventListener('wheel', function(e) {
-if (e.ctrlKey) {
-    e.preventDefault();
-}
-}, { passive: false });
+document.addEventListener('wheel', function (e) {
+    if (e.ctrlKey) {
+        e.preventDefault();
+    }
+}, {passive: false});
