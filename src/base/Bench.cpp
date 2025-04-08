@@ -22,8 +22,7 @@
 #include "tgfx/platform/Print.h"
 
 namespace benchmark {
-static std::vector<Bench*> drawers = {
-    new ParticleBench(GraphicType::Rect)};
+static std::vector<Bench*> drawers = {new ParticleBench(GraphicType::Rect)};
 
 static std::vector<std::string> GetDrawerNames() {
   std::vector<std::string> names;
