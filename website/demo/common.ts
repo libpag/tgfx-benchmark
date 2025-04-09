@@ -111,23 +111,23 @@ export function updateSize(shareData: ShareData) {
         return;
     }
     shareData.resized = false;
-    let canvas = document.getElementById('benchmark') as HTMLCanvasElement;
-    let container = document.getElementById('container') as HTMLDivElement;
-    let screenRect = container.getBoundingClientRect();
-    let scaleFactor = window.devicePixelRatio;
-    canvas.width = screenRect.width * scaleFactor;
-    canvas.height = screenRect.height * scaleFactor;
-    canvas.style.width = screenRect.width + "px";
-    canvas.style.height = screenRect.height + "px";
-    shareData.baseView.updateSize(scaleFactor);
-
-    const resolutionSpan = document.querySelector('.resolution');
-    resolutionSpan.textContent = `${canvas.width}x${canvas.height}`;
-
     const canvasSizeSelect = document.getElementById('canvas-size-select') as HTMLSelectElement;
-    canvasSizeSelect.value = 'full-screen';
-    localStorage.setItem('canvasSize', 'full-screen');
+    let scaleFactor = window.devicePixelRatio;
+    if(canvasSizeSelect.value !== '2048x1440'){
+        let canvas = document.getElementById('benchmark') as HTMLCanvasElement;
+        let container = document.getElementById('container') as HTMLDivElement;
+        let screenRect = container.getBoundingClientRect();
+        canvas.width = screenRect.width * scaleFactor;
+        canvas.height = screenRect.height * scaleFactor;
+        canvas.style.width = screenRect.width + "px";
+        canvas.style.height = screenRect.height + "px";
 
+        const resolutionSpan = document.querySelector('.resolution');
+        resolutionSpan.textContent = `${canvas.width} x ${canvas.height}`;
+        canvasSizeSelect.value = 'full-screen';
+        localStorage.setItem('canvasSize', 'full-screen');
+    }
+    shareData.baseView.updateSize(scaleFactor);
 }
 
 export function startDraw(shareData: ShareData) {
@@ -850,7 +850,6 @@ function handleCanvasSizeChange(event: Event) {
         container.style.backgroundColor = '';
         canvas.style.border = '';
         canvas.style.boxSizing = '';
-        updateSize(shareData);
     } else if (target.value === '2048x1440') {
         container.style.backgroundColor = '#2c2c2c';
         canvas.style.border = '10px solid #ffffff';
@@ -868,14 +867,13 @@ function handleCanvasSizeChange(event: Event) {
         container.style.display = 'flex';
         container.style.justifyContent = 'center';
         container.style.alignItems = 'center';
-        shareData.baseView.updateSize(scaleFactor);
     }
-
+    updateSize(shareData);
     localStorage.setItem('canvasSize', target.value);
     savePageSettings();
 
     const resolutionSpan = document.querySelector('.resolution');
-    resolutionSpan.textContent = `${canvas.width}x${canvas.height}`;
+    resolutionSpan.textContent = `${canvas.width} x ${canvas.height}`;
 
     if (shareData.baseView) {
         shareData.baseView.restartDraw();

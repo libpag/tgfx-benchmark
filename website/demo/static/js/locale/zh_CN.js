@@ -15,7 +15,7 @@ const LocaleMaps_zh_CN = {
     'stepCountLabel.innerHTML':'步进数量:',
     'maxShapesLabel.innerHTML':'最大数量:',
     'minFPSLabel.innerHTML':'目标帧率:',
-    'antialiasSwitchLabel.innerHTML':'抗锯齿:',
+    'antialiasSwitchLabel.innerHTML':'消除锯齿:',
     'antialiasOnOption.innerHTML':'开',
     'antialiasOffOption.innerHTML':'关',
     'graphicTypeLabel.innerHTML':'图形类型:',
