@@ -9,7 +9,10 @@ process.env.PATH = process.platform === 'win32'
 
 Utils.exec("emsdk install latest", emsdkPath);
 Utils.exec("emsdk activate latest", emsdkPath);
-let result = Utils.execSafe("emsdk_env", emsdkPath);
+
+const emsdkEnv = process.platform === 'win32' ? "emsdk_env.bat" : "emsdk_env.sh";
+Utils.execSafe(`chmod +x ${emsdkEnv}`, emsdkPath);
+let result = Utils.execSafe(emsdkEnv, emsdkPath);
 let lines = result.split("\n");
 for (let line of lines) {
     let values = line.split("=");
