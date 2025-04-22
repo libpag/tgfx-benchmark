@@ -26,7 +26,10 @@ if (typeof window !== 'undefined') {
     window.onload = async () => {
         try {
             setupCoordinateConversion('benchmark');
-            shareData.BenchmarkModule = await Benchmark({ locateFile: (file: string) => './wasm-mt/' + file });
+            shareData.BenchmarkModule = await Benchmark({
+                locateFile: (file: string) => './wasm-mt/' + file,
+                mainScriptUrlOrBlob: './wasm-mt/benchmark.js',
+            });
             TGFXBind(shareData.BenchmarkModule);
 
             let tgfxView = shareData.BenchmarkModule.TGFXThreadsView.MakeFrom('#benchmark');
