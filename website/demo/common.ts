@@ -113,7 +113,7 @@ export function updateSize(shareData: ShareData) {
     shareData.resized = false;
     const canvasSizeSelect = document.getElementById('canvas-size-select') as HTMLSelectElement;
     let scaleFactor = window.devicePixelRatio;
-    if(canvasSizeSelect.value !== '2048x1440'){
+    if (canvasSizeSelect.value !== '2048x1440') {
         let canvas = document.getElementById('benchmark') as HTMLCanvasElement;
         let container = document.getElementById('container') as HTMLDivElement;
         let screenRect = container.getBoundingClientRect();
@@ -217,30 +217,6 @@ function updatePageSetting() {
         jsonSettings = JSON.parse(savedSettings);
 
         let shouldRemoveSettings = false;
-        const engineOptions = Object.keys(config.engineVersion);
-        jsonSettings.engineType.options = engineOptions;
-        if (!engineOptions.includes(jsonSettings.engineType.selected)) {
-            shouldRemoveSettings = true;
-        }
-
-        if (!shouldRemoveSettings) {
-            const engineConfig = config.engineVersion[jsonSettings.engineType.selected as keyof typeof config.engineVersion];
-            if (engineConfig) {
-                jsonSettings.engineVersion.options = Object.keys(engineConfig.versions);
-                if (!jsonSettings.engineVersion.options.includes(jsonSettings.engineVersion.selected)) {
-                    shouldRemoveSettings = true;
-                }
-                if (!shouldRemoveSettings) {
-                    const threadTypes = engineConfig.versions[jsonSettings.engineVersion.selected];
-                    if (threadTypes) {
-                        jsonSettings.threadType.options = threadTypes;
-                        if (!jsonSettings.threadType.options.includes(jsonSettings.threadType.selected)) {
-                            shouldRemoveSettings = true;
-                        }
-                    }
-                }
-            }
-        }
 
         if (!shouldRemoveSettings) {
             if (jsonSettings.antiAlias === undefined || jsonSettings.antiAlias.option === undefined) {
@@ -307,10 +283,6 @@ export function pageInit() {
             skiaOption.textContent = 'skia';
             engineTypeSelect.appendChild(skiaOption);
         }
-        if (needRestore) {
-            restoreEngineType();
-            return;
-        }
         if (queryString !== '') {
             param = UrlParamsManager.splitEngineParams(UrlParamsManager.getUrlParams());
 
@@ -329,7 +301,6 @@ export function pageInit() {
 
     function updateVersionSelect(engineType: string) {
         if (!versionSelect) return;
-        if (needRestore) return;
 
         versionSelect.innerHTML = '';
 
@@ -442,18 +413,6 @@ export function pageInit() {
 
 
 class PageSettings {
-    engineType: {
-        options: string[];
-        selected: string;
-    };
-    engineVersion: {
-        options: string[];
-        selected: string;
-    };
-    threadType: {
-        options: string[];
-        selected: string;
-    };
     configParams: {
         canvasSize: string;
         startCount: number;
@@ -526,9 +485,6 @@ function savePageSettings() {
 
 
     const settings: PageSettings = {
-        engineType,
-        engineVersion,
-        threadType,
         configParams,
         graphicType,
         language,
@@ -547,25 +503,6 @@ export function pageRestart() {
     location.reload();
 }
 
-function restoreEngineType(): void {
-    const savedSettings = localStorage.getItem('pageSettings');
-    if (!savedSettings) {
-        return;
-    }
-
-    let settings: PageSettings;
-    try {
-        settings = JSON.parse(savedSettings);
-    } catch (error) {
-        console.error('Page parameter parsing failed:', error);
-        return;
-    }
-    const engineTypeSelect = document.getElementById('engine-type-select') as HTMLSelectElement;
-    if (engineTypeSelect && settings.engineType.selected) {
-        engineTypeSelect.value = settings.engineType.selected;
-    }
-}
-
 export function restorePageSettings(): void {
     const savedSettings = localStorage.getItem('pageSettings');
     if (!savedSettings) {
@@ -581,36 +518,6 @@ export function restorePageSettings(): void {
     }
 
     try {
-        const versionSelect = document.getElementById('engine-version') as HTMLSelectElement;
-        if (versionSelect && settings.engineVersion.options.length > 0) {
-            versionSelect.innerHTML = '';
-
-            settings.engineVersion.options.forEach(version => {
-                const option = document.createElement('option');
-                option.value = version;
-                option.textContent = version;
-                versionSelect.appendChild(option);
-            });
-
-            if (settings.engineVersion.selected) {
-                versionSelect.value = settings.engineVersion.selected;
-                versionSelect.dispatchEvent(new Event('change'));
-            }
-        }
-        const threadTypeSelect = document.getElementById('thread-type-select') as HTMLSelectElement;
-        if (threadTypeSelect && settings.threadType.options.length > 0) {
-            threadTypeSelect.innerHTML = '';
-            settings.threadType.options.forEach(threadType => {
-                const option = document.createElement('option');
-                option.value = threadType;
-                option.setAttribute('data-locale', `${threadType}Option`);
-                threadTypeSelect.appendChild(option);
-            });
-
-            if (settings.threadType.selected) {
-                threadTypeSelect.value = settings.threadType.selected;
-            }
-        }
 
         const {configParams} = settings;
         const inputs = {
@@ -676,21 +583,14 @@ function setDefaultValues() {
 
 
 export function getEngineDir(): string {
-    const needRestore = localStorage.getItem('needRestore') === 'true';
-    if (!needRestore) {
-        const versionSelect = document.getElementById('engine-version') as HTMLSelectElement;
-        const version = versionSelect.value;
-        const engineType = (document.getElementById('engine-type-select') as HTMLSelectElement).value;
-        const threadType = (document.getElementById('thread-type-select') as HTMLSelectElement).value;
-
+    const versionSelect = document.getElementById('engine-version') as HTMLSelectElement;
+    const version = versionSelect.value;
+    const engineType = (document.getElementById('engine-type-select') as HTMLSelectElement).value;
+    const threadType = (document.getElementById('thread-type-select') as HTMLSelectElement).value;
+    if(version !=="" && threadType !=="" && engineType !==""){
         return `${engineVersionInfo['engineVersion'][engineType].savePath}${engineType}-${version}-${threadType}`;
-    } else {
-        const engineDir = localStorage.getItem('engineDir');
-        if (engineDir) {
-            return engineDir;
-        }
     }
-    return '';
+    return "";
 }
 
 
