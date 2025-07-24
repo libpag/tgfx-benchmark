@@ -102,8 +102,33 @@ npm run build:debug
 
 With these steps completed, you can debug C++ files directly in Chrome DevTools.
 
-The above commands build and run a multithreaded version. To build a single-threaded version,
-just add the suffix ":st" to each command. For example:
+The above commands build and run a multithreaded version.
+
+>**⚠️** In the multithreaded version, if you modify the filename of the compiled output benchmark.js, you need to search for
+> the keyword "benchmark.js" within the benchmark.js file and replace all occurrences of "benchmark.js" with the new filename.
+> Failure to do this will result in the program failing to run. Here's an example of how to modify it:
+
+Before modification:
+
+```js
+    // filename: benchmark.js
+    var worker = new Worker(new URL("benchmark.js", import.meta.url), {
+     type: "module",
+     name: "em-pthread"
+    });
+```
+
+After modification:
+
+```js
+    // filename: benchmark-test.js
+    var worker = new Worker(new URL("benchmark-test.js", import.meta.url), {
+     type: "module",
+     name: "em-pthread"
+    });
+```
+
+To build a single-threaded version, just add the suffix ":st" to each command. For example:
 
 ```
 npm run build:st
