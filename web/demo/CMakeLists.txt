@@ -28,7 +28,7 @@ file(GLOB_RECURSE BENCHMARK_FILES
 if (DEFINED EMSCRIPTEN)
     add_executable(benchmark ${BENCHMARK_FILES})
     list(APPEND BENCHMARK_COMPILE_OPTIONS -fno-rtti -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0)
-    list(APPEND BENCHMARK_LINK_OPTIONS --no-entry -lembind -fno-rtti -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0 -sEXPORT_NAME='Benchmark' -sWASM=1 -sASYNCIFY
+    list(APPEND BENCHMARK_LINK_OPTIONS --no-entry -lembind -fno-rtti -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0 -sEXPORT_NAME='Benchmark' -sWASM=1
             -sMAX_WEBGL_VERSION=2 -sEXPORTED_RUNTIME_METHODS=['GL','Asyncify','HEAPU8'] -sMODULARIZE=1
             -sENVIRONMENT=web,worker -sEXPORT_ES6=1)
     set(unsupported_emsdk_versions "4.0.11")
