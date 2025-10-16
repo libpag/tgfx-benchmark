@@ -168,7 +168,7 @@ function getResourceUrl(): string {
 export function parseSideBarParam(): SideBarConfig {
     try {
         const xhr = new XMLHttpRequest();
-        xhr.open('GET', `${getResourceUrl()}/static/sideBarConfigParam.json`, false);
+        xhr.open('GET', 'static/sideBarConfigParam.json', false);
         xhr.send();
         const config = JSON.parse(xhr.responseText) as SideBarConfig;
         if (!config.engineVersion) {
@@ -865,7 +865,6 @@ async function loadFontBuffer(fontPath: string): Promise<ArrayBuffer> {
 
 export async function loadModule(engineDir: string, type: string = "mt") {
     try {
-        const baseUrl = getResourceUrl();
         showProgress();
         shareData = new ShareData();
         const Benchmark = await import(`./${engineDir}.js`);
