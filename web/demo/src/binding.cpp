@@ -35,7 +35,8 @@ EMSCRIPTEN_BINDINGS(TGFXDemo) {
       .function("updateGraphicType", &TGFXBaseView::updateGraphicType)
       .function("showPerfData", &TGFXBaseView::showPerfData)
       .function("setAntiAlias", &TGFXBaseView::setAntiAlias)
-      .function("setStroke", &TGFXBaseView::setStroke);
+      .function("setStroke", &TGFXBaseView::setStroke)
+      .function("setLineJoinType", &TGFXBaseView::setLineJoinType);
 
   value_object<DrawParam>("DrawParam")
       .field("startCount", &DrawParam::startCount)

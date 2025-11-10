@@ -36,6 +36,7 @@ static size_t MaxDrawCount = 1000000;
 static size_t IncreaseStep = 1000;
 static bool AntiAliasFlag = true;
 static bool StrokeFlag = true;
+static tgfx::LineJoin LineJoinType = tgfx::LineJoin::Miter;
 
 static std::string ToString(GraphicType type) {
   switch (type) {
@@ -109,7 +110,7 @@ void ParticleBench::Init(const AppHost* host) {
     if (StrokeFlag) {
       paints[i].setStyle(tgfx::PaintStyle::Stroke);
       paints[i].setStrokeWidth(4.0f);
-      paints[i].setLineJoin(tgfx::LineJoin::Round);
+      paints[i].setLineJoin(LineJoinType);
     } else {
       paints[i].setStyle(tgfx::PaintStyle::Fill);
     }
@@ -125,8 +126,7 @@ void ParticleBench::Init(const AppHost* host) {
     const auto size = (4.f + rectDistribution(rectRng) * 10.f) * host->density();
     auto& graphic = graphics[i];
     if (graphicType == GraphicType::Oval) {
-      const float ratio = 0.5f + rectDistribution(rectRng);
-      graphic.rect.setXYWH(-size, -size, size, ratio * size);
+      graphic.rect.setXYWH(-size, -size, size, 0.8f * size);
     } else {
       graphic.rect.setXYWH(-size, -size, size, size);
     }
@@ -347,6 +347,10 @@ void ParticleBench::SetAntiAlias(bool aa) {
 
 void ParticleBench::SetStroke(bool stroke) {
   StrokeFlag = stroke;
+}
+
+void ParticleBench::SetLineJoinType(int type) {
+  LineJoinType = static_cast<tgfx::LineJoin>(type);
 }
 
 }  // namespace benchmark

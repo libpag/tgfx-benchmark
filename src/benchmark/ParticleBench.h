@@ -64,6 +64,8 @@ class ParticleBench : public Bench {
 
   static void SetStroke(bool stroke);
 
+  static void SetLineJoinType(int type);
+
   bool isMaxDrawCountReached() const;
 
   PerfData getPerfData() const;

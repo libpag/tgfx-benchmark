@@ -38,6 +38,7 @@ class BaseView {
     public init: () => void;
     public setAntiAlias: (antiAlia: boolean) => void;
     public setStroke: (stroke: boolean) => void;
+    public setLineJoinType: (type: number) => void;
 }
 
 export class TGFXBaseView extends BaseView {
@@ -87,9 +88,16 @@ export enum GraphicType {
     Star = 4
 }
 
+export enum LineJoinType {
+    Miter = 0,
+    Round = 1,
+    Bevel = 2
+}
+
 
 const graphicTypeStr: readonly ['Rect', 'Circle', 'Oval', 'RRect'] = ['Rect', 'Circle', 'Oval', 'RRect'];
-// const graphicTypeStr: readonly ['Rect'] = ['Rect'];
+
+const lineJoinTypeStr: readonly ['Miter', 'Round', 'Bevel'] = ['Miter', 'Round', 'Bevel'];
 
 export let engineVersionInfo: SideBarConfig;
 
@@ -210,7 +218,7 @@ export function parseSideBarParam(): SideBarConfig {
 
 function updatePageSetting() {
     try {
-        const config = parseSideBarParam();
+        parseSideBarParam();
         const savedSettings = localStorage.getItem('pageSettings');
         if (savedSettings === null) return;
 
@@ -244,13 +252,14 @@ export function pageInit() {
     addCanvasSizeOption('2048x1440', 'fixedSizeOption');
     const antiAliasSwitchSelect = document.getElementById('antialias-switch-select') as HTMLSelectElement;
     antiAliasSwitchSelect.innerHTML = '';
-    addSwitchOption('antialias-switch-select','On', "antialiasOnOption");
-    addSwitchOption('antialias-switch-select','Off', "antialiasOffOption");
+    addSwitchOption('antialias-switch-select', 'On', "antialiasOnOption");
+    addSwitchOption('antialias-switch-select', 'Off', "antialiasOffOption");
     const strokeSwitchSelect = document.getElementById('stroke-switch-select') as HTMLSelectElement;
     strokeSwitchSelect.innerHTML = '';
-    addSwitchOption('stroke-switch-select','On', "strokeOnOption");
-    addSwitchOption('stroke-switch-select','Off', "strokeOffOption");
+    addSwitchOption('stroke-switch-select', 'On', "strokeOnOption");
+    addSwitchOption('stroke-switch-select', 'Off', "strokeOffOption");
     addGraphicTypeOptions();
+    addLineJoinTypeOptions();
 
     const needRestore = localStorage.getItem('needRestore') === 'true';
 
@@ -414,6 +423,7 @@ export function pageInit() {
 
     triggerLanguageChange();
     savePageSettings();
+    updateLineJoinDivStatus();
 }
 
 
@@ -426,6 +436,10 @@ class PageSettings {
         minFPS: number;
     };
     graphicType: {
+        options: string[];
+        selected: string;
+    };
+    lineJoinType: {
         options: string[];
         selected: string;
     };
@@ -479,6 +493,12 @@ function savePageSettings() {
         selected: graphicTypeSelect.value
     };
 
+    const lineJoinTypeSelect = document.getElementById('lineJoin-type-select') as HTMLSelectElement;
+    const lineJoinType = {
+        options: Array.from(lineJoinTypeSelect.options).map(option => option.value),
+        selected: lineJoinTypeSelect.value
+    };
+
     const languageSelect = document.getElementById('language-type') as HTMLSelectElement;
     const language = {
         options: Array.from(languageSelect.options).map(option => option.value),
@@ -498,13 +518,14 @@ function savePageSettings() {
 
     const strokeValue = strokeSwitchValue === 'On';
     const stroke = {
-        option: antiAliasValue
+        option: strokeValue
     }
 
 
     const settings: PageSettings = {
         configParams,
         graphicType,
+        lineJoinType,
         language,
         antiAlias,
         stroke
@@ -562,6 +583,11 @@ export function restorePageSettings(): void {
             graphicTypeSelect.value = settings.graphicType.selected;
         }
 
+        const lineJoinTypeSelect = document.getElementById('lineJoin-type-select') as HTMLSelectElement;
+        if (lineJoinTypeSelect && settings.lineJoinType.selected !== undefined) {
+            lineJoinTypeSelect.value = settings.lineJoinType.selected;
+        }
+
         const languageSelect = document.getElementById('language-type') as HTMLSelectElement;
         if (languageSelect && settings.language.selected) {
             languageSelect.value = settings.language.selected;
@@ -606,6 +632,9 @@ function setDefaultValues() {
 
     const strokeSwitchSelect = document.getElementById('stroke-switch-select') as HTMLSelectElement;
     strokeSwitchSelect.value = 'Off';
+
+    const lineJoinTypeSelect = document.getElementById('lineJoin-type-select') as HTMLSelectElement;
+    lineJoinTypeSelect.value = lineJoinTypeStr[0];
 }
 
 
@@ -614,7 +643,7 @@ export function getEngineDir(): string {
     const version = versionSelect.value;
     const engineType = (document.getElementById('engine-type-select') as HTMLSelectElement).value;
     const threadType = (document.getElementById('thread-type-select') as HTMLSelectElement).value;
-    if(version !=="" && threadType !=="" && engineType !==""){
+    if (version !== "" && threadType !== "" && engineType !== "") {
         return `${engineVersionInfo['engineVersion'][engineType].savePath}${engineType}-${version}-${threadType}`;
     }
     return "";
@@ -679,11 +708,42 @@ function setGraphicType(graphicType: string) {
     }
 }
 
+
+function setLineJoinType(lineJoinType: string) {
+    lineJoinType = lineJoinType.toLowerCase();
+    let type: LineJoinType;
+    switch (lineJoinType) {
+        case 'miter':
+            type = LineJoinType.Miter;
+            break;
+        case 'round':
+            type = LineJoinType.Round;
+            break;
+        case 'bevel':
+            type = LineJoinType.Bevel;
+            break;
+        default:
+            type = LineJoinType.Miter;
+    }
+    if (shareData.baseView) {
+        shareData.baseView.setLineJoinType(type);
+    }
+}
+
 function handleGraphicTypeChange(event: Event) {
     const target = event.target as HTMLSelectElement;
     let graphicType = target.value;
+
+    updateLineJoinDivStatus();
     savePageSettings();
     setGraphicType(graphicType);
+}
+
+function handleLineJoinTypeChange(event: Event) {
+    const target = event.target as HTMLSelectElement;
+    let lineJoinType = target.value;
+    savePageSettings();
+    setLineJoinType(lineJoinType);
 }
 
 function handleEngineTypeChange(event: Event) {
@@ -974,6 +1034,12 @@ export function bindEventListeners() {
         graphicTypeSelect.addEventListener('change', handleGraphicTypeChange);
     }
 
+    const lineJoinTypeSelect = document.getElementById('lineJoin-type-select') as HTMLSelectElement;
+    ;
+    if (lineJoinTypeSelect) {
+        lineJoinTypeSelect.addEventListener('change', handleLineJoinTypeChange);
+    }
+
     const engineTypeSelect = document.getElementById('engine-type-select');
     engineTypeSelect.addEventListener('change', handleEngineTypeChange);
 
@@ -1179,6 +1245,7 @@ export function setDrawParamFromPageSettings() {
     setGraphicType(jsonSettings.graphicType.selected);
     shareData.baseView.setAntiAlias(jsonSettings.antiAlias.option);
     shareData.baseView.setStroke(jsonSettings.stroke.option);
+    setLineJoinType(jsonSettings.lineJoinType.selected);
 }
 
 function webUpdateGraphicType(type: number) {
@@ -1201,6 +1268,7 @@ function webUpdateGraphicType(type: number) {
         }
         graphicTypeSelect.value = typeStr;
         savePageSettings();
+        updateLineJoinDivStatus();
     } catch (error) {
         console.error('Error updating graphic type:', error);
     }
@@ -1353,7 +1421,7 @@ function addCanvasSizeOption(value: string, localeKey: string): void {
     select.appendChild(option);
 }
 
-function addSwitchOption(elemId:string,value: string, localeKey: string): void {
+function addSwitchOption(elemId: string, value: string, localeKey: string): void {
     const select = document.getElementById(elemId) as HTMLSelectElement;
     if (!select) {
         console.error('find switch-select failed');
@@ -1378,4 +1446,32 @@ function addGraphicTypeOptions() {
         option.setAttribute('data-locale', `${type.toLowerCase()}Option`);
         select.appendChild(option);
     });
+}
+
+function addLineJoinTypeOptions() {
+    const select = document.getElementById('lineJoin-type-select') as HTMLSelectElement;
+    if (!select) return;
+    select.innerHTML = '';
+    lineJoinTypeStr.forEach(type => {
+        const option = document.createElement('option');
+        option.value = type;
+        option.textContent = type;
+        option.setAttribute('data-locale', `${type.toLowerCase()}Option`);
+        select.appendChild(option);
+    });
+}
+
+function updateLineJoinDivStatus() {
+    const graphicTypeSelect = document.getElementById('graphic-type-select') as HTMLSelectElement;
+    const lineJoinTypeDiv = document.getElementById('lineJoin-type') as HTMLDivElement;
+
+    if (graphicTypeSelect.value.toLowerCase() === 'rect') {
+        if (lineJoinTypeDiv.classList.contains("hidden")) {
+            lineJoinTypeDiv.classList.remove("hidden");
+        }
+    } else {
+        if (!lineJoinTypeDiv.classList.contains("hidden")) {
+            lineJoinTypeDiv.classList.add("hidden");
+        }
+    }
 }
