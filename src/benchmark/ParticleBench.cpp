@@ -106,6 +106,13 @@ void ParticleBench::Init(const AppHost* host) {
     color[i] = 1.f;
     paints[i].setColor(color);
     paints[i].setAntiAlias(AntiAliasFlag);
+    if (StrokeFlag) {
+      paints[i].setStyle(tgfx::PaintStyle::Stroke);
+      paints[i].setStrokeWidth(4.0f);
+      paints[i].setLineJoin(tgfx::LineJoin::Round);
+    } else {
+      paints[i].setStyle(tgfx::PaintStyle::Fill);
+    }
   }
 
   startRect = tgfx::Rect::MakeWH(20.f * host->density(), 20.f * host->density());
