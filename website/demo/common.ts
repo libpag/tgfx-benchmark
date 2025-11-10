@@ -37,6 +37,7 @@ class BaseView {
     public showPerfData: (status: boolean) => void;
     public init: () => void;
     public setAntiAlias: (antiAlia: boolean) => void;
+    public setStroke: (stroke: boolean) => void;
 }
 
 export class TGFXBaseView extends BaseView {
@@ -87,8 +88,8 @@ export enum GraphicType {
 }
 
 
-// const graphicTypeStr: readonly ['Rect', 'Circle', 'Oval', 'RRect'] = ['Rect', 'Circle', 'Oval', 'RRect'];
-const graphicTypeStr: readonly ['Rect'] = ['Rect'];
+const graphicTypeStr: readonly ['Rect', 'Circle', 'Oval', 'RRect'] = ['Rect', 'Circle', 'Oval', 'RRect'];
+// const graphicTypeStr: readonly ['Rect'] = ['Rect'];
 
 export let engineVersionInfo: SideBarConfig;
 
@@ -243,8 +244,12 @@ export function pageInit() {
     addCanvasSizeOption('2048x1440', 'fixedSizeOption');
     const antiAliasSwitchSelect = document.getElementById('antialias-switch-select') as HTMLSelectElement;
     antiAliasSwitchSelect.innerHTML = '';
-    addAntiAliasOption('On', "antialiasOnOption");
-    addAntiAliasOption('Off', "antialiasOffOption");
+    addSwitchOption('antialias-switch-select','On', "antialiasOnOption");
+    addSwitchOption('antialias-switch-select','Off', "antialiasOffOption");
+    const strokeSwitchSelect = document.getElementById('stroke-switch-select') as HTMLSelectElement;
+    strokeSwitchSelect.innerHTML = '';
+    addSwitchOption('stroke-switch-select','On', "strokeOnOption");
+    addSwitchOption('stroke-switch-select','Off', "strokeOffOption");
     addGraphicTypeOptions();
 
     const needRestore = localStorage.getItem('needRestore') === 'true';
@@ -433,6 +438,11 @@ class PageSettings {
     } = {
         option: true
     };
+    stroke: {
+        option: boolean;
+    } = {
+        option: true
+    };
 }
 
 function savePageSettings() {
@@ -476,10 +486,18 @@ function savePageSettings() {
     };
 
     const antiAliasSwitch = document.getElementById('antialias-switch-select') as HTMLInputElement;
-    const value = antiAliasSwitch.value;
+    const antiAliasSwitchValue = antiAliasSwitch.value;
 
-    const antiAliasValue = value === 'On';
+    const antiAliasValue = antiAliasSwitchValue === 'On';
     const antiAlias = {
+        option: antiAliasValue
+    }
+
+    const strokeSwitch = document.getElementById('stroke-switch-select') as HTMLInputElement;
+    const strokeSwitchValue = strokeSwitch.value;
+
+    const strokeValue = strokeSwitchValue === 'On';
+    const stroke = {
         option: antiAliasValue
     }
 
@@ -488,7 +506,8 @@ function savePageSettings() {
         configParams,
         graphicType,
         language,
-        antiAlias
+        antiAlias,
+        stroke
     };
 
     localStorage.setItem('pageSettings', JSON.stringify(settings));
@@ -553,6 +572,11 @@ export function restorePageSettings(): void {
             antiAliasSwitchSelect.value = settings.antiAlias.option ? 'On' : 'Off';
         }
 
+        const strokeSwitchSelect = document.getElementById('stroke-switch-select') as HTMLSelectElement;
+        if (strokeSwitchSelect && settings.stroke.option !== undefined) {
+            strokeSwitchSelect.value = settings.stroke.option ? 'On' : 'Off';
+        }
+
     } catch (error) {
         console.error('Failed to restore page configuration:', error);
     }
@@ -579,6 +603,9 @@ function setDefaultValues() {
 
     const antiAliasSwitchSelect = document.getElementById('antialias-switch-select') as HTMLSelectElement;
     antiAliasSwitchSelect.value = 'Off';
+
+    const strokeSwitchSelect = document.getElementById('stroke-switch-select') as HTMLSelectElement;
+    strokeSwitchSelect.value = 'Off';
 }
 
 
@@ -789,6 +816,15 @@ function handleAntiAliasChange(event: Event) {
     savePageSettings();
 }
 
+function handleStrokeChange(event: Event) {
+    const target = event.target as HTMLInputElement;
+    if (shareData.baseView) {
+        const stroke: boolean = target.value == 'On';
+        shareData.baseView.setStroke(stroke);
+    }
+    savePageSettings();
+}
+
 function handleLanguageTypeChange(event: Event) {
     savePageSettings();
 }
@@ -955,6 +991,11 @@ export function bindEventListeners() {
     const antiAliasSelect = document.getElementById('antialias-switch-select');
     if (antiAliasSelect) {
         antiAliasSelect.addEventListener('change', handleAntiAliasChange);
+    }
+
+    const strokeSelect = document.getElementById('stroke-switch-select');
+    if (strokeSelect) {
+        strokeSelect.addEventListener('change', handleStrokeChange);
     }
 
     const languageTypeSelect = document.getElementById('language-type');
@@ -1137,6 +1178,7 @@ export function setDrawParamFromPageSettings() {
     shareData.baseView.updateDrawParam(drawParam);
     setGraphicType(jsonSettings.graphicType.selected);
     shareData.baseView.setAntiAlias(jsonSettings.antiAlias.option);
+    shareData.baseView.setStroke(jsonSettings.stroke.option);
 }
 
 function webUpdateGraphicType(type: number) {
@@ -1311,10 +1353,10 @@ function addCanvasSizeOption(value: string, localeKey: string): void {
     select.appendChild(option);
 }
 
-function addAntiAliasOption(value: string, localeKey: string): void {
-    const select = document.getElementById('antialias-switch-select') as HTMLSelectElement;
+function addSwitchOption(elemId:string,value: string, localeKey: string): void {
+    const select = document.getElementById(elemId) as HTMLSelectElement;
     if (!select) {
-        console.error('find antialias-switch-select failed');
+        console.error('find switch-select failed');
         return;
     }
     const option = document.createElement('option');

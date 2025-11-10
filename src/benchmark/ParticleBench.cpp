@@ -35,6 +35,7 @@ static float TargetFPS = 60.0f;
 static size_t MaxDrawCount = 1000000;
 static size_t IncreaseStep = 1000;
 static bool AntiAliasFlag = true;
+static bool StrokeFlag = true;
 
 static std::string ToString(GraphicType type) {
   switch (type) {
@@ -335,6 +336,10 @@ PerfData ParticleBench::getPerfData() const {
 
 void ParticleBench::SetAntiAlias(bool aa) {
   AntiAliasFlag = aa;
+}
+
+void ParticleBench::SetStroke(bool stroke) {
+  StrokeFlag = stroke;
 }
 
 }  // namespace benchmark
