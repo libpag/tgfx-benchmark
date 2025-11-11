@@ -17,8 +17,8 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "AppHost.h"
-#include "tgfx/utils/Clock.h"
 #include "tgfx/platform/Print.h"
+#include "tgfx/utils/Clock.h"
 
 namespace benchmark {
 AppHost::AppHost(int width, int height, float density)
