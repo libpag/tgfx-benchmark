@@ -109,7 +109,7 @@ void ParticleBench::Init(const AppHost* host) {
     paints[i].setAntiAlias(AntiAliasFlag);
     if (StrokeFlag) {
       paints[i].setStyle(tgfx::PaintStyle::Stroke);
-      paints[i].setStrokeWidth(4.0f);
+      paints[i].setStrokeWidth(2.0f);
       paints[i].setLineJoin(LineJoinType);
     } else {
       paints[i].setStyle(tgfx::PaintStyle::Fill);
