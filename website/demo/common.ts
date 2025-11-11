@@ -38,7 +38,6 @@ class BaseView {
     public init: () => void;
     public setAntiAlias: (antiAlia: boolean) => void;
     public setStroke: (stroke: boolean) => void;
-    public setLineJoinType: (type: number) => void;
 }
 
 export class TGFXBaseView extends BaseView {
@@ -88,16 +87,8 @@ export enum GraphicType {
     Star = 4
 }
 
-export enum LineJoinType {
-    Miter = 0,
-    Round = 1,
-    Bevel = 2
-}
-
 
 const graphicTypeStr: readonly ['Rect', 'Circle', 'Oval', 'RRect'] = ['Rect', 'Circle', 'Oval', 'RRect'];
-
-const lineJoinTypeStr: readonly ['Miter', 'Round', 'Bevel'] = ['Miter', 'Round', 'Bevel'];
 
 export let engineVersionInfo: SideBarConfig;
 
@@ -259,7 +250,6 @@ export function pageInit() {
     addSwitchOption('stroke-switch-select', 'On', "strokeOnOption");
     addSwitchOption('stroke-switch-select', 'Off', "strokeOffOption");
     addGraphicTypeOptions();
-    addLineJoinTypeOptions();
 
     const needRestore = localStorage.getItem('needRestore') === 'true';
 
@@ -423,7 +413,6 @@ export function pageInit() {
 
     triggerLanguageChange();
     savePageSettings();
-    updateLineJoinDivStatus();
 }
 
 
@@ -436,10 +425,6 @@ class PageSettings {
         minFPS: number;
     };
     graphicType: {
-        options: string[];
-        selected: string;
-    };
-    lineJoinType: {
         options: string[];
         selected: string;
     };
@@ -493,12 +478,6 @@ function savePageSettings() {
         selected: graphicTypeSelect.value
     };
 
-    const lineJoinTypeSelect = document.getElementById('lineJoin-type-select') as HTMLSelectElement;
-    const lineJoinType = {
-        options: Array.from(lineJoinTypeSelect.options).map(option => option.value),
-        selected: lineJoinTypeSelect.value
-    };
-
     const languageSelect = document.getElementById('language-type') as HTMLSelectElement;
     const language = {
         options: Array.from(languageSelect.options).map(option => option.value),
@@ -525,7 +504,6 @@ function savePageSettings() {
     const settings: PageSettings = {
         configParams,
         graphicType,
-        lineJoinType,
         language,
         antiAlias,
         stroke
@@ -583,11 +561,6 @@ export function restorePageSettings(): void {
             graphicTypeSelect.value = settings.graphicType.selected;
         }
 
-        const lineJoinTypeSelect = document.getElementById('lineJoin-type-select') as HTMLSelectElement;
-        if (lineJoinTypeSelect && settings.lineJoinType.selected !== undefined) {
-            lineJoinTypeSelect.value = settings.lineJoinType.selected;
-        }
-
         const languageSelect = document.getElementById('language-type') as HTMLSelectElement;
         if (languageSelect && settings.language.selected) {
             languageSelect.value = settings.language.selected;
@@ -632,9 +605,6 @@ function setDefaultValues() {
 
     const strokeSwitchSelect = document.getElementById('stroke-switch-select') as HTMLSelectElement;
     strokeSwitchSelect.value = 'Off';
-
-    const lineJoinTypeSelect = document.getElementById('lineJoin-type-select') as HTMLSelectElement;
-    lineJoinTypeSelect.value = lineJoinTypeStr[0];
 }
 
 
@@ -708,42 +678,12 @@ function setGraphicType(graphicType: string) {
     }
 }
 
-
-function setLineJoinType(lineJoinType: string) {
-    lineJoinType = lineJoinType.toLowerCase();
-    let type: LineJoinType;
-    switch (lineJoinType) {
-        case 'miter':
-            type = LineJoinType.Miter;
-            break;
-        case 'round':
-            type = LineJoinType.Round;
-            break;
-        case 'bevel':
-            type = LineJoinType.Bevel;
-            break;
-        default:
-            type = LineJoinType.Miter;
-    }
-    if (shareData.baseView) {
-        shareData.baseView.setLineJoinType(type);
-    }
-}
-
 function handleGraphicTypeChange(event: Event) {
     const target = event.target as HTMLSelectElement;
     let graphicType = target.value;
 
-    updateLineJoinDivStatus();
     savePageSettings();
     setGraphicType(graphicType);
-}
-
-function handleLineJoinTypeChange(event: Event) {
-    const target = event.target as HTMLSelectElement;
-    let lineJoinType = target.value;
-    savePageSettings();
-    setLineJoinType(lineJoinType);
 }
 
 function handleEngineTypeChange(event: Event) {
@@ -993,7 +933,13 @@ export async function loadModule(engineDir: string, type: string = "mt") {
         if (enumEngineType === EnumEngineType.tgfx) {
             shareData.BenchmarkModule = module;
             TGFXBind(shareData.BenchmarkModule);
-            let tgfxView: TGFXBaseView = shareData.BenchmarkModule.TGFXThreadsView.MakeFrom('#benchmark');
+            let tgfxView: TGFXBaseView;
+            if (type === 'mt') {
+                tgfxView = shareData.BenchmarkModule.TGFXThreadsView.MakeFrom('#benchmark');
+            } else {
+                tgfxView = shareData.BenchmarkModule.TGFXView.MakeFrom('#benchmark');
+            }
+
             shareData.baseView = tgfxView;
         } else if (enumEngineType === EnumEngineType.skia) {
             let skiaView: SkiaView = module.SkiaView.MakeFrom('#benchmark');
@@ -1032,12 +978,6 @@ export function bindEventListeners() {
     const graphicTypeSelect = document.getElementById('graphic-type-select');
     if (graphicTypeSelect) {
         graphicTypeSelect.addEventListener('change', handleGraphicTypeChange);
-    }
-
-    const lineJoinTypeSelect = document.getElementById('lineJoin-type-select') as HTMLSelectElement;
-    ;
-    if (lineJoinTypeSelect) {
-        lineJoinTypeSelect.addEventListener('change', handleLineJoinTypeChange);
     }
 
     const engineTypeSelect = document.getElementById('engine-type-select');
@@ -1245,7 +1185,6 @@ export function setDrawParamFromPageSettings() {
     setGraphicType(jsonSettings.graphicType.selected);
     shareData.baseView.setAntiAlias(jsonSettings.antiAlias.option);
     shareData.baseView.setStroke(jsonSettings.stroke.option);
-    setLineJoinType(jsonSettings.lineJoinType.selected);
 }
 
 function webUpdateGraphicType(type: number) {
@@ -1268,7 +1207,6 @@ function webUpdateGraphicType(type: number) {
         }
         graphicTypeSelect.value = typeStr;
         savePageSettings();
-        updateLineJoinDivStatus();
     } catch (error) {
         console.error('Error updating graphic type:', error);
     }
@@ -1446,32 +1384,4 @@ function addGraphicTypeOptions() {
         option.setAttribute('data-locale', `${type.toLowerCase()}Option`);
         select.appendChild(option);
     });
-}
-
-function addLineJoinTypeOptions() {
-    const select = document.getElementById('lineJoin-type-select') as HTMLSelectElement;
-    if (!select) return;
-    select.innerHTML = '';
-    lineJoinTypeStr.forEach(type => {
-        const option = document.createElement('option');
-        option.value = type;
-        option.textContent = type;
-        option.setAttribute('data-locale', `${type.toLowerCase()}Option`);
-        select.appendChild(option);
-    });
-}
-
-function updateLineJoinDivStatus() {
-    const graphicTypeSelect = document.getElementById('graphic-type-select') as HTMLSelectElement;
-    const lineJoinTypeDiv = document.getElementById('lineJoin-type') as HTMLDivElement;
-
-    if (graphicTypeSelect.value.toLowerCase() === 'rect') {
-        if (lineJoinTypeDiv.classList.contains("hidden")) {
-            lineJoinTypeDiv.classList.remove("hidden");
-        }
-    } else {
-        if (!lineJoinTypeDiv.classList.contains("hidden")) {
-            lineJoinTypeDiv.classList.add("hidden");
-        }
-    }
 }

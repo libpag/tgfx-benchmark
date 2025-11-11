@@ -52,8 +52,6 @@ class TGFXBaseView {
 
   void setStroke(bool stroke);
 
-  void setLineJoinType(int type);
-
   int drawIndex = 0;
   std::shared_ptr<benchmark::AppHost> appHost = nullptr;
   bool showPerfDataFlag = true;

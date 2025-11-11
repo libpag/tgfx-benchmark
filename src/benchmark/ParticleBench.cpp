@@ -348,9 +348,4 @@ void ParticleBench::SetAntiAlias(bool aa) {
 void ParticleBench::SetStroke(bool stroke) {
   StrokeFlag = stroke;
 }
-
-void ParticleBench::SetLineJoinType(int type) {
-  LineJoinType = static_cast<tgfx::LineJoin>(type);
-}
-
 }  // namespace benchmark

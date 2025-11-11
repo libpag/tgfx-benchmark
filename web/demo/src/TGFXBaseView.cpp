@@ -199,11 +199,6 @@ void TGFXBaseView::setStroke(bool stroke) {
   appHost->resetFrames();
 }
 
-void TGFXBaseView::setLineJoinType(int type) {
-  ParticleBench::SetLineJoinType(type);
-  appHost->resetFrames();
-}
-
 }  // namespace benchmark
 
 int main() {
