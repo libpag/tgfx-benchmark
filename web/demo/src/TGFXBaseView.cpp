@@ -194,6 +194,11 @@ void TGFXBaseView::setAntiAlias(bool aa) {
   appHost->resetFrames();
 }
 
+void TGFXBaseView::setStroke(bool stroke) {
+  ParticleBench::SetStroke(stroke);
+  appHost->resetFrames();
+}
+
 }  // namespace benchmark
 
 int main() {
