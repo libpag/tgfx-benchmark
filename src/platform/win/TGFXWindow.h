@@ -44,6 +44,7 @@ class TGFXWindow {
 
  private:
   HWND windowHandle = nullptr;
+  std::unique_ptr<tgfx::Recording> lastRecording = nullptr;
   int lastDrawIndex = 0;
   std::shared_ptr<AppHost> appHost = nullptr;
 #ifdef TGFX_USE_ANGLE

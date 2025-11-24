@@ -36,6 +36,7 @@
   NSView* view;
   std::shared_ptr<tgfx::CGLWindow> cglWindow;
   std::unique_ptr<benchmark::AppHost> appHost;
+  std::unique_ptr<tgfx::Recording> lastRecording;
   int drawIndex;
   CVDisplayLinkRef displayLink;
 }
@@ -187,7 +188,11 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
   auto index = (drawIndex % numBenches);
   auto bench = benchmark::Bench::GetByIndex(index);
   bench->draw(canvas, appHost.get());
-  context->flushAndSubmit();
+  auto recording = context->flush();
+  std::swap(lastRecording, recording);
+  if (recording != nullptr) {
+    context->submit(std::move(recording));
+  }
   cglWindow->present(context);
   device->unlock();
   auto drawTime = tgfx::Clock::Now() - currentTime;

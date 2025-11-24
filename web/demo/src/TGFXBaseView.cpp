@@ -132,7 +132,11 @@ void TGFXBaseView::draw() {
   if (!showPerfDataFlag) {
     updatePerfInfo(particleBench->getPerfData());
   }
-  context->flushAndSubmit();
+  auto recording = context->flush();
+  std::swap(lastRecording, recording);
+  if (recording != nullptr) {
+    context->submit(std::move(recording));
+  }
   window->present(context);
   device->unlock();
   auto drawTime = tgfx::Clock::Now() - currentTime;

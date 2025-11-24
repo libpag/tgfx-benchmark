@@ -267,7 +267,12 @@ void TGFXWindow::draw() {
   auto bench = Bench::GetByIndex(index);
   bench->draw(canvas, appHost.get());
   canvas->restore();
-  context->flushAndSubmit();
+  auto recording = context->flush();
+  std::swap(lastRecording, recording);
+  if (recording != nullptr) {
+    context->submit(std::move(recording));
+  }
+
   auto presentStartTime = tgfx::Clock::Now();
   // Exclude the present time from the draw time to avoid blocking caused by vsync.
   tgfxWindow->present(context);
