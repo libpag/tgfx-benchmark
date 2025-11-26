@@ -49,6 +49,8 @@ elseif (MACOS)
 elseif (WIN32)
     file(GLOB_RECURSE PLATFORM_FILES src/platform/win/*.cpp)
     list(APPEND SRC_FILES ${PLATFORM_FILES})
+    add_compile_definitions(NOMINMAX)
+    add_compile_definitions(_USE_MATH_DEFINES)
 
     if (${CMAKE_SYSTEM_VERSION} VERSION_GREATER_EQUAL 6.3) # Windows 8.1 or later
         add_definitions(-D_WIN32_WINNT=0x0603)
