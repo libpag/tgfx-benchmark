@@ -8,7 +8,7 @@
     <meta name="full-screen" content="true"/>
     <meta name="description" content="A tool for benchmarking TGFX graphics library performance."/>
     <title>TGFX Benchmark - A tool for benchmarking TGFX graphics library performance.</title>
-    <link rel="icon" href="static/icon/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="static/icon/tgfx.png" type="image/png">
     <link rel="stylesheet" href="static/css/index.css"/>
     <link rel="stylesheet" href="static/css/browser-alert.css">
     <link rel="stylesheet" href="static/css/progress-bar.css">
@@ -23,6 +23,9 @@
 
 <div class="page-content">
     <div id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <img src="static/icon/tgfx-logo.svg" alt="TGFX Benchmark">
+        </div>
         <div class="perf-info">
             <div class="info-row"><p data-locale="fpsP" class="fpsP"></p><span class="fps"></span></div>
             <div class="info-row"><p data-locale="timeP" class="timeP"></p><span class="time"></span></div>
@@ -73,7 +76,7 @@
                 <input type="number" id="minFPS" min="20" step="0.1">
             </div>
         </div>
-        <div id="" class="common-style">
+        <div id="" class="common-style-thin">
             <div class="canvas-size select-common-style">
                 <div class="select-container">
                     <label for="canvas-size-select" data-locale="canvasSizeLabel"></label>
@@ -90,14 +93,6 @@
                 </div>
             </div>
 
-            <div id="stroke-switch" class="stroke-switch select-common-style">
-                <div class="select-container">
-                    <label for="stroke-switch-select" data-locale="strokeSwitchLabel"></label>
-                    <select id="stroke-switch-select">
-                    </select>
-                </div>
-            </div>
-
             <div id="graphic-type" class="graphic-type select-common-style">
                 <div class="select-container">
                     <label for="graphic-type-select" data-locale="graphicTypeLabel"></label>
@@ -106,7 +101,7 @@
                 </div>
             </div>
         </div>
-        <div id="language" class="language common-style">
+        <div id="language" class="language common-style-thin">
             <div class="language-select-container select-common-style">
                 <label for="language-type" data-locale="languageTypeLabel"></label>
                 <select id="language-type">
@@ -123,11 +118,18 @@
         </div>
         <div class="github-links">
             <a href="https://github.com/libpag/tgfx-benchmark" target="_blank" rel="noopener noreferrer"><i
-                    class="fab fa-github"></i> tgfx-benchmark</a>
+                    class="fab fa-github"></i> Github</a>
         </div>
     </div>
     <div id="container" class="container">
-        <canvas class="canvas" id="benchmark"></canvas>
+        <canvas class="benchmark full-screen" id="benchmark"></canvas>
+        <!-- 固定画布四角标记 -->
+        <div id="canvasCornerMarkers" class="canvas-corner-markers hidden">
+            <div class="corner-marker top-left"></div>
+            <div class="corner-marker top-right"></div>
+            <div class="corner-marker bottom-left"></div>
+            <div class="corner-marker bottom-right"></div>
+        </div>
         <div id="progressContainer" class="hidden">
             <div class="progress-wrapper">
                 <div id="progressBar">

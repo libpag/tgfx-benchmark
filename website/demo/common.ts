@@ -37,7 +37,6 @@ class BaseView {
     public showPerfData: (status: boolean) => void;
     public init: () => void;
     public setAntiAlias: (antiAlia: boolean) => void;
-    public setStroke: (stroke: boolean) => void;
 }
 
 export class TGFXBaseView extends BaseView {
@@ -138,7 +137,7 @@ export function startDraw(shareData: ShareData) {
 }
 
 export function onresizeEvent(shareData: ShareData) {
-    if (!shareData.baseView) {
+    if (!shareData || !shareData.baseView) {
         return;
     }
     shareData.resized = true;
@@ -245,10 +244,6 @@ export function pageInit() {
     antiAliasSwitchSelect.innerHTML = '';
     addSwitchOption('antialias-switch-select', 'On', "antialiasOnOption");
     addSwitchOption('antialias-switch-select', 'Off', "antialiasOffOption");
-    const strokeSwitchSelect = document.getElementById('stroke-switch-select') as HTMLSelectElement;
-    strokeSwitchSelect.innerHTML = '';
-    addSwitchOption('stroke-switch-select', 'On', "strokeOnOption");
-    addSwitchOption('stroke-switch-select', 'Off', "strokeOffOption");
     addGraphicTypeOptions();
 
     const needRestore = localStorage.getItem('needRestore') === 'true';
@@ -353,26 +348,6 @@ export function pageInit() {
         }
     }
 
-    if (engineTypeSelect) {
-        engineTypeSelect.addEventListener('change', (e) => {
-            const target = e.target as HTMLSelectElement;
-            updateVersionSelect(target.value);
-            if (versionSelect) {
-                updateThreadTypeOptions(engineTypeSelect.value, versionSelect.value);
-            }
-        });
-    }
-
-    if (versionSelect) {
-        versionSelect.addEventListener('change', (e) => {
-            const target = e.target as HTMLSelectElement;
-            const engineTypeSelect = document.getElementById('engine-type-select') as HTMLSelectElement;
-            if (engineTypeSelect) {
-                updateThreadTypeOptions(engineTypeSelect.value, target.value);
-            }
-        }, true);
-    }
-
     if (localStorage.getItem('needRestore') === 'true') {
         restorePageSettings();
     }
@@ -437,11 +412,6 @@ class PageSettings {
     } = {
         option: true
     };
-    stroke: {
-        option: boolean;
-    } = {
-        option: true
-    };
 }
 
 function savePageSettings() {
@@ -492,21 +462,12 @@ function savePageSettings() {
         option: antiAliasValue
     }
 
-    const strokeSwitch = document.getElementById('stroke-switch-select') as HTMLInputElement;
-    const strokeSwitchValue = strokeSwitch.value;
-
-    const strokeValue = strokeSwitchValue === 'On';
-    const stroke = {
-        option: strokeValue
-    }
-
 
     const settings: PageSettings = {
         configParams,
         graphicType,
         language,
-        antiAlias,
-        stroke
+        antiAlias
     };
 
     localStorage.setItem('pageSettings', JSON.stringify(settings));
@@ -571,11 +532,6 @@ export function restorePageSettings(): void {
             antiAliasSwitchSelect.value = settings.antiAlias.option ? 'On' : 'Off';
         }
 
-        const strokeSwitchSelect = document.getElementById('stroke-switch-select') as HTMLSelectElement;
-        if (strokeSwitchSelect && settings.stroke.option !== undefined) {
-            strokeSwitchSelect.value = settings.stroke.option ? 'On' : 'Off';
-        }
-
     } catch (error) {
         console.error('Failed to restore page configuration:', error);
     }
@@ -602,9 +558,6 @@ function setDefaultValues() {
 
     const antiAliasSwitchSelect = document.getElementById('antialias-switch-select') as HTMLSelectElement;
     antiAliasSwitchSelect.value = 'Off';
-
-    const strokeSwitchSelect = document.getElementById('stroke-switch-select') as HTMLSelectElement;
-    strokeSwitchSelect.value = 'Off';
 }
 
 
@@ -687,9 +640,6 @@ function handleGraphicTypeChange(event: Event) {
 }
 
 function handleEngineTypeChange(event: Event) {
-    if (!event.isTrusted) {
-        return;
-    }
     const target = event.target as HTMLSelectElement;
     const selectedEngine = target.value;
     const engineVersionSelect = document.getElementById('engine-version') as HTMLSelectElement;
@@ -706,29 +656,20 @@ function handleEngineTypeChange(event: Event) {
     const firstVersion = Object.keys(versions)[0];
     if (firstVersion) {
         engineVersionSelect.value = firstVersion;
-        engineVersionSelect.dispatchEvent(new Event('change'));
-    } else {
-        console.warn('Unknown engine type:', selectedEngine);
+        handleEngineVersionChange({ target: engineVersionSelect } as unknown as Event);
     }
 }
 
 function handleEngineVersionChange(event: Event) {
     const target = event.target as HTMLSelectElement;
     const engineType = (document.getElementById('engine-type-select') as HTMLSelectElement).value;
-    if (engineType === undefined) {
-        console.warn('Engine type selector not found');
-        return;
-    }
     const selectedVersion = target.value;
     if (!selectedVersion) {
-        console.warn('No version selected');
         return;
     }
     const threads = engineVersionInfo.engineVersion[engineType].versions[selectedVersion];
-
     const threadTypeSelect = document.getElementById('thread-type-select') as HTMLSelectElement;
     if (!threadTypeSelect) {
-        console.warn('Thread type selector not found');
         return;
     }
 
@@ -740,14 +681,9 @@ function handleEngineVersionChange(event: Event) {
         threadTypeSelect.appendChild(option);
     });
 
-    let defaultThreadType = '';
-    defaultThreadType = threads.includes('mt') ? 'mt' : threads[0];
+    let defaultThreadType = threads.includes('mt') ? 'mt' : threads[0];
     threadTypeSelect.value = defaultThreadType;
-    const changeEvent = new Event('change', {
-        bubbles: true,
-        cancelable: true
-    });
-    threadTypeSelect.dispatchEvent(changeEvent);
+    handleThreadTypeChange({ target: threadTypeSelect } as unknown as Event);
 }
 
 
@@ -757,11 +693,19 @@ function handleThreadTypeChange(event: Event) {
     const engineVersion = (document.getElementById('engine-version') as HTMLSelectElement).value;
     const threadType = target.value;
     const engineDir = `${engineVersionInfo.engineVersion[engineType].savePath}${engineType}-${engineVersion}-${threadType}`;
-    localStorage.setItem('engineDir', engineDir);
-    const param: ParamsObject = {};
-    param["engine"] = `${engineType}-${engineVersion}-${threadType}`;
-    UrlParamsManager.setUrlParams(param);
-    pageRestart();
+    const currentEngineDir = localStorage.getItem('engineDir');
+    
+    // 更新图形类型选项（根据当前引擎版本）
+    updateGraphicTypeOptions();
+    
+    // 只有当 engineDir 真正改变时才刷新页面
+    if (currentEngineDir !== engineDir) {
+        localStorage.setItem('engineDir', engineDir);
+        const param: ParamsObject = {};
+        param["engine"] = `${engineType}-${engineVersion}-${threadType}`;
+        UrlParamsManager.setUrlParams(param);
+        pageRestart();
+    }
 }
 
 
@@ -769,19 +713,34 @@ function handleCanvasSizeChange(event: Event) {
     const target = event.target as HTMLSelectElement;
     const container = document.getElementById('container') as HTMLDivElement;
     const canvas = document.getElementById('benchmark') as HTMLCanvasElement;
-    const sidebar = document.getElementById('sidebar') as HTMLDivElement;
+    const cornerMarkers = document.getElementById('canvasCornerMarkers');
 
     if (target.value === 'full-screen') {
-        canvas.style.width = '100%';
-        canvas.style.height = '100%';
-        container.style.backgroundColor = '';
+        // 切换为全屏模式
+        canvas.classList.remove('fixed-size');
+        canvas.classList.add('full-screen');
+        canvas.style.width = '';
+        canvas.style.height = '';
         canvas.style.border = '';
         canvas.style.boxSizing = '';
+        canvas.style.backgroundColor = '';
+        container.style.backgroundColor = '';
+        container.style.display = '';
+        container.style.justifyContent = '';
+        container.style.alignItems = '';
+        // 隐藏四角标记
+        if (cornerMarkers) {
+            cornerMarkers.classList.add('hidden');
+        }
     } else if (target.value === '2048x1440') {
-        container.style.backgroundColor = '#2c2c2c';
-        canvas.style.border = '10px solid #ffffff';
-        canvas.style.boxSizing = 'content-box';
-        canvas.style.backgroundColor = '#ffffff';
+        // 切换为固定尺寸模式
+        canvas.classList.remove('full-screen');
+        canvas.classList.add('fixed-size');
+        container.style.backgroundColor = '#262E3C';
+        container.style.display = 'flex';
+        container.style.justifyContent = 'center';
+        container.style.alignItems = 'center';
+
         const scaleFactor = window.devicePixelRatio;
         canvas.width = 2048;
         canvas.height = 1440;
@@ -789,22 +748,64 @@ function handleCanvasSizeChange(event: Event) {
         const scaleWidth = canvas.width / scaleFactor;
         const scaleHeight = canvas.height / scaleFactor;
 
-        canvas.style.width = scaleWidth + 'px';
-        canvas.style.height = scaleHeight + 'px';
-        container.style.display = 'flex';
-        container.style.justifyContent = 'center';
-        container.style.alignItems = 'center';
+        canvas.style.setProperty('width', scaleWidth + 'px', 'important');
+        canvas.style.setProperty('height', scaleHeight + 'px', 'important');
+
+        // 显示并定位四角标记
+        if (cornerMarkers) {
+            cornerMarkers.classList.remove('hidden');
+            // 延迟更新位置，等待 canvas 样式生效
+            requestAnimationFrame(() => {
+                updateCornerMarkerPositions(canvas, container);
+            });
+        }
     }
     updateSize(shareData);
     localStorage.setItem('canvasSize', target.value);
     savePageSettings();
 
     const resolutionSpan = document.querySelector('.resolution');
-    resolutionSpan.textContent = `${canvas.width} x ${canvas.height}`;
+    if (resolutionSpan) {
+        resolutionSpan.textContent = `${canvas.width} x ${canvas.height}`;
+    }
 
     if (shareData.baseView) {
         shareData.baseView.restartDraw();
     }
+}
+
+function updateCornerMarkerPositions(canvas: HTMLCanvasElement, container: HTMLDivElement) {
+    const cornerMarkers = document.getElementById('canvasCornerMarkers');
+    if (!cornerMarkers) return;
+
+    const canvasRect = canvas.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+
+    // 计算 canvas 相对于 container 的偏移
+    const offsetX = canvasRect.left - containerRect.left;
+    const offsetY = canvasRect.top - containerRect.top;
+    const canvasWidth = canvasRect.width;
+    const canvasHeight = canvasRect.height;
+
+    const markers = cornerMarkers.querySelectorAll('.corner-marker');
+    const markerSize = 28; // CSS 中定义的尺寸
+
+    markers.forEach((marker) => {
+        const el = marker as HTMLElement;
+        if (el.classList.contains('top-left')) {
+            el.style.left = (offsetX - markerSize) + 'px';
+            el.style.top = (offsetY - markerSize) + 'px';
+        } else if (el.classList.contains('top-right')) {
+            el.style.left = (offsetX + canvasWidth) + 'px';
+            el.style.top = (offsetY - markerSize) + 'px';
+        } else if (el.classList.contains('bottom-left')) {
+            el.style.left = (offsetX - markerSize) + 'px';
+            el.style.top = (offsetY + canvasHeight) + 'px';
+        } else if (el.classList.contains('bottom-right')) {
+            el.style.left = (offsetX + canvasWidth) + 'px';
+            el.style.top = (offsetY + canvasHeight) + 'px';
+        }
+    });
 }
 
 function handleAntiAliasChange(event: Event) {
@@ -812,15 +813,6 @@ function handleAntiAliasChange(event: Event) {
     if (shareData.baseView) {
         const antiAlia: boolean = target.value == 'On';
         shareData.baseView.setAntiAlias(antiAlia);
-    }
-    savePageSettings();
-}
-
-function handleStrokeChange(event: Event) {
-    const target = event.target as HTMLInputElement;
-    if (shareData.baseView) {
-        const stroke: boolean = target.value == 'On';
-        shareData.baseView.setStroke(stroke);
     }
     savePageSettings();
 }
@@ -981,13 +973,19 @@ export function bindEventListeners() {
     }
 
     const engineTypeSelect = document.getElementById('engine-type-select');
-    engineTypeSelect.addEventListener('change', handleEngineTypeChange);
+    if (engineTypeSelect) {
+        engineTypeSelect.addEventListener('change', handleEngineTypeChange);
+    }
 
     const engineVersionSelect = document.getElementById('engine-version');
-    engineVersionSelect.addEventListener('change', handleEngineVersionChange);
+    if (engineVersionSelect) {
+        engineVersionSelect.addEventListener('change', handleEngineVersionChange);
+    }
 
     const threadTypeSelect = document.getElementById('thread-type-select');
-    threadTypeSelect.addEventListener('change', handleThreadTypeChange);
+    if (threadTypeSelect) {
+        threadTypeSelect.addEventListener('change', handleThreadTypeChange);
+    }
 
     const canvasSizeSelect = document.getElementById('canvas-size-select');
     if (canvasSizeSelect) {
@@ -999,16 +997,10 @@ export function bindEventListeners() {
         antiAliasSelect.addEventListener('change', handleAntiAliasChange);
     }
 
-    const strokeSelect = document.getElementById('stroke-switch-select');
-    if (strokeSelect) {
-        strokeSelect.addEventListener('change', handleStrokeChange);
-    }
-
     const languageTypeSelect = document.getElementById('language-type');
     if (languageTypeSelect) {
         languageTypeSelect.addEventListener('change', handleLanguageTypeChange);
     }
-
 }
 
 function urlParamConvertHtmlParam(urlParam: string): string {
@@ -1184,7 +1176,6 @@ export function setDrawParamFromPageSettings() {
     shareData.baseView.updateDrawParam(drawParam);
     setGraphicType(jsonSettings.graphicType.selected);
     shareData.baseView.setAntiAlias(jsonSettings.antiAlias.option);
-    shareData.baseView.setStroke(jsonSettings.stroke.option);
 }
 
 function webUpdateGraphicType(type: number) {
@@ -1384,4 +1375,47 @@ function addGraphicTypeOptions() {
         option.setAttribute('data-locale', `${type.toLowerCase()}Option`);
         select.appendChild(option);
     });
+}
+
+// 检查当前引擎版本是否支持多种图形类型
+function isMultiGraphicTypeSupported(): boolean {
+    const engineType = (document.getElementById('engine-type-select') as HTMLSelectElement)?.value;
+    const engineVersion = (document.getElementById('engine-version') as HTMLSelectElement)?.value;
+    const threadType = (document.getElementById('thread-type-select') as HTMLSelectElement)?.value;
+    // 只有 tgfx-v2.1-mt 支持多种图形类型
+    return engineType === 'tgfx' && engineVersion === 'v2.1' && threadType === 'mt';
+}
+
+// 更新图形类型选项
+function updateGraphicTypeOptions() {
+    const select = document.getElementById('graphic-type-select') as HTMLSelectElement;
+    if (!select) return;
+    
+    const supportsMultiGraphic = isMultiGraphicTypeSupported();
+    const currentValue = select.value;
+    
+    select.innerHTML = '';
+    
+    if (supportsMultiGraphic) {
+        // tgfx-v2.1-mt 支持所有图形类型
+        graphicTypeStr.forEach(type => {
+            const option = document.createElement('option');
+            option.value = type;
+            option.textContent = type;
+            option.setAttribute('data-locale', `${type.toLowerCase()}Option`);
+            select.appendChild(option);
+        });
+        // 恢复之前选中的值（如果有效）
+        if (graphicTypeStr.includes(currentValue as any)) {
+            select.value = currentValue;
+        }
+    } else {
+        // 其他版本只支持 Rect
+        const option = document.createElement('option');
+        option.value = 'Rect';
+        option.textContent = 'Rect';
+        option.setAttribute('data-locale', 'rectOption');
+        select.appendChild(option);
+        select.value = 'Rect';
+    }
 }
