@@ -37,6 +37,7 @@ class BaseView {
     public showPerfData: (status: boolean) => void;
     public init: () => void;
     public setAntiAlias: (antiAlia: boolean) => void;
+    public setStroke: (stroke: boolean) => void;
 }
 
 export class TGFXBaseView extends BaseView {
@@ -48,6 +49,7 @@ export class TGFXBaseView extends BaseView {
     public showPerfData: (status: boolean) => void;
     public init: () => void;
     public setAntiAlias: (antiAlia: boolean) => void;
+    public setStroke: (stroke: boolean) => void;
 }
 
 export class SkiaView extends BaseView {
@@ -59,6 +61,7 @@ export class SkiaView extends BaseView {
     public showPerfData: (status: boolean) => void;
     public init: () => void;
     public setAntiAlias: (antiAlia: boolean) => void;
+    public setStroke: (stroke: boolean) => void;
 }
 
 export class ShareData {
@@ -244,6 +247,10 @@ export function pageInit() {
     antiAliasSwitchSelect.innerHTML = '';
     addSwitchOption('antialias-switch-select', 'On', "antialiasOnOption");
     addSwitchOption('antialias-switch-select', 'Off', "antialiasOffOption");
+    const strokeSwitchSelect = document.getElementById('stroke-switch-select') as HTMLSelectElement;
+    strokeSwitchSelect.innerHTML = '';
+    addSwitchOption('stroke-switch-select', 'On', "strokeOnOption");
+    addSwitchOption('stroke-switch-select', 'Off', "strokeOffOption");
     addGraphicTypeOptions();
 
     const needRestore = localStorage.getItem('needRestore') === 'true';
@@ -412,6 +419,11 @@ class PageSettings {
     } = {
         option: true
     };
+    stroke: {
+        option: boolean;
+    } = {
+        option: false
+    };
 }
 
 function savePageSettings() {
@@ -462,12 +474,21 @@ function savePageSettings() {
         option: antiAliasValue
     }
 
+    const strokeSwitch = document.getElementById('stroke-switch-select') as HTMLInputElement;
+    const strokeSwitchValue = strokeSwitch.value;
+
+    const strokeValue = strokeSwitchValue === 'On';
+    const stroke = {
+        option: strokeValue
+    }
+
 
     const settings: PageSettings = {
         configParams,
         graphicType,
         language,
-        antiAlias
+        antiAlias,
+        stroke
     };
 
     localStorage.setItem('pageSettings', JSON.stringify(settings));
@@ -532,6 +553,11 @@ export function restorePageSettings(): void {
             antiAliasSwitchSelect.value = settings.antiAlias.option ? 'On' : 'Off';
         }
 
+        const strokeSwitchSelect = document.getElementById('stroke-switch-select') as HTMLSelectElement;
+        if (strokeSwitchSelect && settings.stroke?.option !== undefined) {
+            strokeSwitchSelect.value = settings.stroke.option ? 'On' : 'Off';
+        }
+
     } catch (error) {
         console.error('Failed to restore page configuration:', error);
     }
@@ -558,6 +584,9 @@ function setDefaultValues() {
 
     const antiAliasSwitchSelect = document.getElementById('antialias-switch-select') as HTMLSelectElement;
     antiAliasSwitchSelect.value = 'Off';
+
+    const strokeSwitchSelect = document.getElementById('stroke-switch-select') as HTMLSelectElement;
+    strokeSwitchSelect.value = 'Off';
 }
 
 
@@ -695,9 +724,6 @@ function handleThreadTypeChange(event: Event) {
     const engineDir = `${engineVersionInfo.engineVersion[engineType].savePath}${engineType}-${engineVersion}-${threadType}`;
     const currentEngineDir = localStorage.getItem('engineDir');
     
-    // 更新图形类型选项（根据当前引擎版本）
-    updateGraphicTypeOptions();
-    
     // 只有当 engineDir 真正改变时才刷新页面
     if (currentEngineDir !== engineDir) {
         localStorage.setItem('engineDir', engineDir);
@@ -813,6 +839,15 @@ function handleAntiAliasChange(event: Event) {
     if (shareData.baseView) {
         const antiAlia: boolean = target.value == 'On';
         shareData.baseView.setAntiAlias(antiAlia);
+    }
+    savePageSettings();
+}
+
+function handleStrokeChange(event: Event) {
+    const target = event.target as HTMLInputElement;
+    if (shareData.baseView) {
+        const stroke: boolean = target.value == 'On';
+        shareData.baseView.setStroke(stroke);
     }
     savePageSettings();
 }
@@ -997,6 +1032,11 @@ export function bindEventListeners() {
         antiAliasSelect.addEventListener('change', handleAntiAliasChange);
     }
 
+    const strokeSelect = document.getElementById('stroke-switch-select');
+    if (strokeSelect) {
+        strokeSelect.addEventListener('change', handleStrokeChange);
+    }
+
     const languageTypeSelect = document.getElementById('language-type');
     if (languageTypeSelect) {
         languageTypeSelect.addEventListener('change', handleLanguageTypeChange);
@@ -1176,6 +1216,9 @@ export function setDrawParamFromPageSettings() {
     shareData.baseView.updateDrawParam(drawParam);
     setGraphicType(jsonSettings.graphicType.selected);
     shareData.baseView.setAntiAlias(jsonSettings.antiAlias.option);
+    if (jsonSettings.stroke?.option !== undefined) {
+        shareData.baseView.setStroke(jsonSettings.stroke.option);
+    }
 }
 
 function webUpdateGraphicType(type: number) {
@@ -1197,6 +1240,10 @@ function webUpdateGraphicType(type: number) {
             return;
         }
         graphicTypeSelect.value = typeStr;
+        // 同步更新自定义下拉框的显示
+        if (typeof (window as any).syncCustomSelectValue === 'function') {
+            (window as any).syncCustomSelectValue(graphicTypeSelect);
+        }
         savePageSettings();
     } catch (error) {
         console.error('Error updating graphic type:', error);
@@ -1375,47 +1422,4 @@ function addGraphicTypeOptions() {
         option.setAttribute('data-locale', `${type.toLowerCase()}Option`);
         select.appendChild(option);
     });
-}
-
-// 检查当前引擎版本是否支持多种图形类型
-function isMultiGraphicTypeSupported(): boolean {
-    const engineType = (document.getElementById('engine-type-select') as HTMLSelectElement)?.value;
-    const engineVersion = (document.getElementById('engine-version') as HTMLSelectElement)?.value;
-    const threadType = (document.getElementById('thread-type-select') as HTMLSelectElement)?.value;
-    // 只有 tgfx-v2.1-mt 支持多种图形类型
-    return engineType === 'tgfx' && engineVersion === 'v2.1' && threadType === 'mt';
-}
-
-// 更新图形类型选项
-function updateGraphicTypeOptions() {
-    const select = document.getElementById('graphic-type-select') as HTMLSelectElement;
-    if (!select) return;
-    
-    const supportsMultiGraphic = isMultiGraphicTypeSupported();
-    const currentValue = select.value;
-    
-    select.innerHTML = '';
-    
-    if (supportsMultiGraphic) {
-        // tgfx-v2.1-mt 支持所有图形类型
-        graphicTypeStr.forEach(type => {
-            const option = document.createElement('option');
-            option.value = type;
-            option.textContent = type;
-            option.setAttribute('data-locale', `${type.toLowerCase()}Option`);
-            select.appendChild(option);
-        });
-        // 恢复之前选中的值（如果有效）
-        if (graphicTypeStr.includes(currentValue as any)) {
-            select.value = currentValue;
-        }
-    } else {
-        // 其他版本只支持 Rect
-        const option = document.createElement('option');
-        option.value = 'Rect';
-        option.textContent = 'Rect';
-        option.setAttribute('data-locale', 'rectOption');
-        select.appendChild(option);
-        select.value = 'Rect';
-    }
 }
