@@ -209,6 +209,53 @@ export function parseSideBarParam(): SideBarConfig {
 }
 
 
+function validateObjectStructure(obj: any, template: any, path: string = 'root'): boolean {
+    for (const key in obj) {
+        if (key === '' || key.trim() === '') {
+            console.warn(`Empty key found at ${path}`);
+            return false;
+        }
+
+        if (!(key in template)) {
+            console.warn(`Unexpected field: ${path}.${key}`);
+            return false;
+        }
+    }
+
+    for (const key in template) {
+        if (!(key in obj)) {
+            console.warn(`Missing field: ${path}.${key}`);
+            return false;
+        }
+
+        const templateValue = template[key];
+        const objValue = obj[key];
+
+        if (objValue === null || objValue === undefined) {
+            console.warn(`Empty value at ${path}.${key}: value is ${objValue}`);
+            return false;
+        }
+
+        if (typeof objValue === 'string' && objValue.trim() === '') {
+            console.warn(`Empty string at ${path}.${key}`);
+            return false;
+        }
+
+        if (typeof templateValue !== typeof objValue) {
+            console.warn(`Type mismatch at ${path}.${key}: expected ${typeof templateValue}, got ${typeof objValue}`);
+            return false;
+        }
+
+        if (templateValue !== null && typeof templateValue === 'object' && !Array.isArray(templateValue)) {
+            if (!validateObjectStructure(objValue, templateValue, `${path}.${key}`)) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 function updatePageSetting() {
     try {
         parseSideBarParam();
@@ -218,22 +265,18 @@ function updatePageSetting() {
         let jsonSettings: PageSettings;
         jsonSettings = JSON.parse(savedSettings);
 
-        let shouldRemoveSettings = false;
+        const template = new PageSettings();
 
-        if (!shouldRemoveSettings) {
-            if (jsonSettings.antiAlias === undefined || jsonSettings.antiAlias.option === undefined) {
-                shouldRemoveSettings = true;
-            }
-        }
-        if (shouldRemoveSettings) {
+        if (!validateObjectStructure(jsonSettings, template)) {
+            console.warn('PageSettings structure mismatch, clearing old cache');
             localStorage.removeItem('pageSettings');
             localStorage.removeItem('needRestore');
             return;
         }
-        localStorage.setItem('pageSettings', JSON.stringify(jsonSettings));
     } catch (error) {
         localStorage.removeItem('pageSettings');
         localStorage.removeItem('needRestore');
+        console.warn('json parse failed,error:',error);
     }
 }
 
@@ -405,14 +448,26 @@ class PageSettings {
         stepCount: number;
         maxShapes: number;
         minFPS: number;
+    } = {
+        canvasSize: 'full-screen',
+        startCount: 1,
+        stepCount: 1000,
+        maxShapes: 1000000,
+        minFPS: 60.0
     };
     graphicType: {
         options: string[];
         selected: string;
+    } = {
+        options: ['Rect', 'Circle', 'Oval', 'RRect'],
+        selected: 'Rect'
     };
     language: {
         options: string[];
         selected: string;
+    } = {
+        options: ["auto", "zh", "en"],
+        selected: 'auto'
     };
     antiAlias: {
         option: boolean;
