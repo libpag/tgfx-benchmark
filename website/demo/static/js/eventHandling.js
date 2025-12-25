@@ -99,8 +99,8 @@ function updatePerfInfo(fps, drawTime, drawCount, maxDrawCountReached) {
     const timeElement = document.querySelector('.time');
     const timeParagraph = document.querySelector('.timeP');
     const countElement = document.querySelector('.count');
-    // 固定使用 #CCE1FF 颜色，不再根据数值变化
-    const fixedColor = '#CCE1FF';
+    // 固定使用白色
+    const fixedColor = '#ffffff';
     if (fpsElement && fpsParagraph) {
         fpsElement.textContent = Number(fps).toFixed(1);
         fpsElement.style.color = fixedColor;

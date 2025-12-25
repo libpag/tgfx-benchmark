@@ -1,8 +1,8 @@
 const LocaleMaps_en_US = {
-    'fpsP.innerHTML': 'FPS: ',
-    'timeP.innerHTML': 'Time: ',
-    'countP.innerHTML': 'Count: ',
-    'resolutionP.innerHTML': 'Size: ',
+    'fpsP.innerHTML': 'FPS:&nbsp;',
+    'timeP.innerHTML': 'Time:&nbsp;',
+    'countP.innerHTML': 'Count:&nbsp;',
+    'resolutionP.innerHTML': 'Size:&nbsp;',
     'engineTypeP.innerHTML': 'Engine',
     'engineVersionLabel.innerHTML': "Version",
     'threadTypeLabel.innerHTML':"Thread",
@@ -33,5 +33,5 @@ const LocaleMaps_en_US = {
     'chineseOption.innerHTML': 'Chinese (CN)',
     'englishOption.innerHTML': 'English (US)',
     'desktopWarning.innerHTML': 'This website only supports desktop browsers based on Chromium (like Chrome or Edge). Please switch to one of these browsers to access it.',
-    'progressBarDescP.innerHTML': 'Loading:',
+    'progressBarDescP.innerHTML': 'Loading:&nbsp;',
 }

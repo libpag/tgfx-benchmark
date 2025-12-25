@@ -130,13 +130,11 @@
         </div>
     </div>
     <div id="container" class="container">
-        <canvas class="benchmark full-screen" id="benchmark"></canvas>
-        <!-- 固定画布四角标记 -->
-        <div id="canvasCornerMarkers" class="canvas-corner-markers hidden">
-            <div class="corner-marker top-left"></div>
-            <div class="corner-marker top-right"></div>
-            <div class="corner-marker bottom-left"></div>
-            <div class="corner-marker bottom-right"></div>
+        <div id="canvasWrapper" class="canvas-wrapper">
+            <canvas class="benchmark full-screen" id="benchmark"></canvas>
+            <div class="corner-overlay"></div>
+            <div class="corner-overlay-bottom"></div>
+            <div class="corner-overlay-bottom-right"></div>
         </div>
         <div id="progressContainer" class="hidden">
             <div class="progress-wrapper">

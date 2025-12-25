@@ -68,6 +68,28 @@ html, body {
     z-index: 99999;
 }
 
+/* Canvas 包装器 - 用于四角标记定位 */
+.canvas-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+/* 全屏模式下包装器填满容器 */
+.container .canvas-wrapper {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+/* 固定尺寸模式下包装器自适应 canvas 大小 */
+.container[style*="flex"] .canvas-wrapper {
+    position: relative;
+    width: auto;
+    height: auto;
+}
+
 /* 全屏模式 - 画布填满容器 */
 .benchmark.full-screen {
     width: 100%;
@@ -93,7 +115,7 @@ html, body {
 /* 性能信息区域 - Figma: left 18px, top 83px */
 .perf-info {
     margin: 0;
-    padding: 23px 18px 23px 18px;
+    padding: 18px 16px 18px 16px;
     width: 100%;
     text-align: left;
     box-sizing: border-box;
@@ -104,11 +126,11 @@ html, body {
     margin: 0;
     display: flex;
     align-items: center;
-    color: #CCE1FF;
+    color: #ffffff;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
     font-weight: 500;
-    font-size: 16px;
-    line-height: 30px;
+    font-size: 18px;
+    line-height: 26px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
@@ -117,33 +139,37 @@ html, body {
     display: flex;
     align-items: center;
     margin: 0;
-    height: 30px;
-    line-height: 30px;
+    height: 26px;
+    line-height: 26px;
 }
 
 .info-row p {
     margin: 0;
     padding: 0;
+    color: #ffffff;
+    font-size: 18px;
 }
 
 .info-row span {
     margin-left: 0;
     padding: 0;
+    color: #ffffff;
+    font-size: 18px;
 }
 
 .perf-info span {
-    color: #CCE1FF;
+    color: #ffffff;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
     font-weight: 500;
-    font-size: 16px;
-    line-height: 30px;
+    font-size: 18px;
+    line-height: 26px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
 
 /* 通用样式区块 - Figma: border 2px solid #000814 */
 .common-style {
-    padding: 15px 19px;
+    padding: 12px 16px;
     color: #ffffff;
     border-top: 2px solid #000814;
     flex-shrink: 0;
@@ -151,7 +177,7 @@ html, body {
 
 /* 细分割线 - Figma: border 1px solid #000814 */
 .common-style-thin {
-    padding: 15px 19px;
+    padding: 12px 16px;
     color: #ffffff;
     border-top: 1px solid #000814;
     flex-shrink: 0;
@@ -166,8 +192,8 @@ html, body {
 .input-group {
     display: flex;
     align-items: center;
-    height: 30px;
-    margin-bottom: 15px;
+    height: 28px;
+    margin-bottom: 10px;
 }
 
 .input-group:last-child {
@@ -177,8 +203,8 @@ html, body {
 .select-common-style {
     display: flex;
     align-items: center;
-    height: 30px;
-    margin-bottom: 15px;
+    height: 28px;
+    margin-bottom: 10px;
 }
 
 .select-common-style:last-child {
@@ -187,12 +213,12 @@ html, body {
 
 /* 标签样式 - Figma: opacity 0.7, color #FFFFFF */
 .input-group label {
-    width: 98px;
+    width: 90px;
     color: rgba(255, 255, 255, 0.7);
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
     font-weight: 500;
-    font-size: 16px;
-    line-height: 30px;
+    font-size: 14px;
+    line-height: 28px;
     display: flex;
     align-items: center;
     flex-shrink: 0;
@@ -203,15 +229,15 @@ html, body {
 /* 输入框样式 - Figma: width 124px, height 30px, border-radius 3px */
 .input-group input {
     width: 124px;
-    height: 30px;
+    height: 28px;
     background-color: #262E3C;
     color: #ffffff;
     border: 1px solid transparent;
     border-radius: 3px;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
     font-weight: 500;
-    font-size: 16px;
-    line-height: 30px;
+    font-size: 14px;
+    line-height: 28px;
     display: flex;
     align-items: center;
     padding: 0 8px;
@@ -262,8 +288,8 @@ input[type="number"] {
     margin: 0 0 5px 0;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
     font-weight: 500;
-    font-size: 16px;
-    line-height: 30px;
+    font-size: 14px;
+    line-height: 26px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
@@ -279,9 +305,9 @@ input[type="number"] {
     margin: 0;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
     font-weight: 500;
-    font-size: 16px;
-    line-height: 30px;
-    width: 98px;
+    font-size: 14px;
+    line-height: 28px;
+    width: 90px;
     display: flex;
     align-items: center;
     color: rgba(255, 255, 255, 0.7);
@@ -316,8 +342,8 @@ input[type="number"] {
     margin-left: 6px;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
     font-weight: 500;
-    font-size: 16px;
-    line-height: 30px;
+    font-size: 14px;
+    line-height: 26px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
@@ -330,8 +356,8 @@ input[type="number"] {
     margin-left: 6px;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
     font-weight: 500;
-    font-size: 16px;
-    line-height: 30px;
+    font-size: 14px;
+    line-height: 26px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
@@ -343,12 +369,12 @@ input[type="number"] {
 /* 下拉框样式 - Figma: width 124px, height 30px, border-radius 3px */
 select {
     width: 124px;
-    height: 30px;
+    height: 28px;
     padding: 0 28px 0 8px;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
     font-weight: 500;
-    font-size: 16px;
-    line-height: 30px;
+    font-size: 14px;
+    line-height: 28px;
     display: flex;
     align-items: center;
 
@@ -391,8 +417,8 @@ select option {
     padding: 5px 8px;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
     font-weight: 500;
-    font-size: 16px;
-    line-height: 30px;
+    font-size: 14px;
+    line-height: 28px;
 }
 
 /* Figma: 选中项 - background: #0066FF */
@@ -435,12 +461,12 @@ select:focus option:checked {
 
 .custom-select-trigger {
     width: 124px;
-    height: 30px;
+    height: 28px;
     padding: 0 28px 0 8px;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
     font-weight: 500;
-    font-size: 16px;
-    line-height: 30px;
+    font-size: 14px;
+    line-height: 28px;
     display: flex;
     align-items: center;
     background-color: #262E3C;
@@ -490,12 +516,12 @@ select:focus option:checked {
 }
 
 .custom-select-option {
-    padding: 5px 8px;
+    padding: 4px 8px;
     color: #ffffff;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
     font-weight: 500;
-    font-size: 16px;
-    line-height: 20px;
+    font-size: 14px;
+    line-height: 18px;
     cursor: pointer;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -527,7 +553,7 @@ select:focus option:checked {
     flex: 1;
     display: flex;
     flex-direction: column;
-    min-height: 100px;
+    min-height: 70px;
     flex-shrink: 0;
 }
 
@@ -540,8 +566,8 @@ select:focus option:checked {
 
 /* 重新启动按钮 - Figma: width 122px, height 42px, border-radius 35px, font-size 18px */
 #restartBtn {
-    width: 122px;
-    height: 42px;
+    width: 130px;
+    height: 46px;
     padding: 0;
     background-color: #0066FF;
     color: #FFFFFF;
@@ -550,8 +576,8 @@ select:focus option:checked {
     cursor: pointer;
     font-family: 'Roboto', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     font-weight: 400;
-    font-size: 18px;
-    line-height: 21px;
+    font-size: 16px;
+    line-height: 18px;
     transition: background-color 0.2s ease;
     display: flex;
     justify-content: center;
@@ -577,9 +603,9 @@ select:focus option:checked {
 .language-select-container label {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
     font-weight: 500;
-    font-size: 16px;
-    line-height: 30px;
-    width: 98px;
+    font-size: 14px;
+    line-height: 28px;
+    width: 90px;
     display: flex;
     align-items: center;
     color: rgba(255, 255, 255, 0.7);
@@ -589,7 +615,7 @@ select:focus option:checked {
 
 /* Github 链接 - Figma: font-weight 400, font-size 16px, line-height 19px */
 .github-links {
-    padding: 12px 0 15px 0;
+    padding: 10px 0 12px 0;
     color: #ffffff;
     text-align: center;
     border-top: 1px solid #000814;
@@ -605,8 +631,8 @@ select:focus option:checked {
     text-decoration: none;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
     font-weight: 400;
-    font-size: 16px;
-    line-height: 19px;
+    font-size: 14px;
+    line-height: 17px;
     margin: 0;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -628,11 +654,11 @@ select:focus option:checked {
 }
 
 .dropdown-item {
-    padding: 5px 8px;
+    padding: 4px 8px;
     color: #ffffff;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
     font-weight: 500;
-    font-size: 16px;
+    font-size: 14px;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -654,82 +680,136 @@ select:focus option:checked {
     height: 9px;
 }
 
-/* 固定画布模式 - 四角白色角标 */
-.canvas-corner-markers {
+/* 固定画布模式 - 四角白色角标（直接附加在 canvas 容器上） */
+.canvas-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+/* 固定尺寸模式下显示四角标记 */
+.canvas-wrapper.show-corners::before,
+.canvas-wrapper.show-corners::after,
+.canvas-wrapper.show-corners .corner-overlay::before,
+.canvas-wrapper.show-corners .corner-overlay::after {
+    content: '';
+    position: absolute;
+    background-color: #ffffff;
+    pointer-events: none;
+    z-index: 100001;
+}
+
+/* 左上角 - 横线（往左1点、往上1点） */
+.canvas-wrapper.show-corners::before {
+    width: 29px;
+    height: 1px;
+    top: -3px;
+    left: -31px;
+}
+
+/* 左上角 - 竖线（往左1点、往上1点） */
+.canvas-wrapper.show-corners::after {
+    width: 1px;
+    height: 29px;
+    top: -31px;
+    left: -3px;
+}
+
+/* 角标覆盖层 - 用于右上、左下、右下角 */
+.corner-overlay {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     pointer-events: none;
-    z-index: 100000; /* 高于 canvas 的 z-index */
 }
 
-.corner-marker {
+/* 右上角 - 横线（往右1点、往上1点） */
+.canvas-wrapper.show-corners .corner-overlay::before {
+    width: 29px;
+    height: 1px;
+    top: -3px;
+    right: -31px;
+    left: auto;
+}
+
+/* 右上角 - 竖线（往右1点、往上1点） */
+.canvas-wrapper.show-corners .corner-overlay::after {
+    width: 1px;
+    height: 29px;
+    top: -31px;
+    right: -3px;
+    left: auto;
+}
+
+/* 底部角标覆盖层 */
+.corner-overlay-bottom {
     position: absolute;
-    width: 28px;
-    height: 28px;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
 }
 
-.corner-marker::before,
-.corner-marker::after {
+.corner-overlay-bottom::before,
+.corner-overlay-bottom::after {
     content: '';
     position: absolute;
-    background-color: rgba(255, 255, 255, 0.5); /* 半透明灰白色 */
+    background-color: #ffffff;
+    pointer-events: none;
+    z-index: 100001;
 }
 
-/* 左上角 - L尖角指向画布（右下），竖线在右，横线在底 */
-.corner-marker.top-left::before {
-    width: 1px;
-    height: 28px;
-    right: 0;
-    top: 0;
-}
-.corner-marker.top-left::after {
-    width: 28px;
+/* 左下角 - 横线（往左1点、往上1点） */
+.canvas-wrapper.show-corners .corner-overlay-bottom::before {
+    width: 29px;
     height: 1px;
-    left: 0;
-    bottom: 0;
+    bottom: -1px;
+    left: -31px;
 }
 
-/* 右上角 - L尖角指向画布（左下），竖线在左，横线在底 */
-.corner-marker.top-right::before {
+/* 左下角 - 竖线（往左1点、往上1点） */
+.canvas-wrapper.show-corners .corner-overlay-bottom::after {
     width: 1px;
-    height: 28px;
-    left: 0;
-    top: 0;
-}
-.corner-marker.top-right::after {
-    width: 28px;
-    height: 1px;
-    right: 0;
-    bottom: 0;
+    height: 29px;
+    bottom: -29px;
+    left: -3px;
 }
 
-/* 左下角 - L尖角指向画布（右上），竖线在右，横线在顶 */
-.corner-marker.bottom-left::before {
-    width: 1px;
-    height: 28px;
-    right: 0;
-    bottom: 0;
-}
-.corner-marker.bottom-left::after {
-    width: 28px;
-    height: 1px;
-    left: 0;
+/* 右下角覆盖层 */
+.corner-overlay-bottom-right {
+    position: absolute;
     top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
 }
 
-/* 右下角 - L尖角指向画布（左上），竖线在左，横线在顶 */
-.corner-marker.bottom-right::before {
-    width: 1px;
-    height: 28px;
-    left: 0;
-    bottom: 0;
+.corner-overlay-bottom-right::before,
+.corner-overlay-bottom-right::after {
+    content: '';
+    position: absolute;
+    background-color: #ffffff;
+    pointer-events: none;
+    z-index: 100001;
 }
-.corner-marker.bottom-right::after {
-    width: 28px;
+
+/* 右下角 - 横线（往右1点、往上1点） */
+.canvas-wrapper.show-corners .corner-overlay-bottom-right::before {
+    width: 29px;
     height: 1px;
-    right: 0;
-    top: 0;
+    bottom: -1px;
+    right: -31px;
+    left: auto;
+}
+
+/* 右下角 - 竖线（往右1点、往上1点） */
+.canvas-wrapper.show-corners .corner-overlay-bottom-right::after {
+    width: 1px;
+    height: 29px;
+    bottom: -29px;
+    right: -3px;
+    left: auto;
 }

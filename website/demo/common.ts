@@ -722,16 +722,11 @@ function handleThreadTypeChange(event: Event) {
     const engineVersion = (document.getElementById('engine-version') as HTMLSelectElement).value;
     const threadType = target.value;
     const engineDir = `${engineVersionInfo.engineVersion[engineType].savePath}${engineType}-${engineVersion}-${threadType}`;
-    const currentEngineDir = localStorage.getItem('engineDir');
-    
-    // 只有当 engineDir 真正改变时才刷新页面
-    if (currentEngineDir !== engineDir) {
-        localStorage.setItem('engineDir', engineDir);
-        const param: ParamsObject = {};
-        param["engine"] = `${engineType}-${engineVersion}-${threadType}`;
-        UrlParamsManager.setUrlParams(param);
-        pageRestart();
-    }
+    localStorage.setItem('engineDir', engineDir);
+    const param: ParamsObject = {};
+    param["engine"] = `${engineType}-${engineVersion}-${threadType}`;
+    UrlParamsManager.setUrlParams(param);
+    pageRestart();
 }
 
 
@@ -739,7 +734,7 @@ function handleCanvasSizeChange(event: Event) {
     const target = event.target as HTMLSelectElement;
     const container = document.getElementById('container') as HTMLDivElement;
     const canvas = document.getElementById('benchmark') as HTMLCanvasElement;
-    const cornerMarkers = document.getElementById('canvasCornerMarkers');
+    const canvasWrapper = document.getElementById('canvasWrapper');
 
     if (target.value === 'full-screen') {
         // 切换为全屏模式
@@ -755,8 +750,8 @@ function handleCanvasSizeChange(event: Event) {
         container.style.justifyContent = '';
         container.style.alignItems = '';
         // 隐藏四角标记
-        if (cornerMarkers) {
-            cornerMarkers.classList.add('hidden');
+        if (canvasWrapper) {
+            canvasWrapper.classList.remove('show-corners');
         }
     } else if (target.value === '2048x1440') {
         // 切换为固定尺寸模式
@@ -777,13 +772,9 @@ function handleCanvasSizeChange(event: Event) {
         canvas.style.setProperty('width', scaleWidth + 'px', 'important');
         canvas.style.setProperty('height', scaleHeight + 'px', 'important');
 
-        // 显示并定位四角标记
-        if (cornerMarkers) {
-            cornerMarkers.classList.remove('hidden');
-            // 延迟更新位置，等待 canvas 样式生效
-            requestAnimationFrame(() => {
-                updateCornerMarkerPositions(canvas, container);
-            });
+        // 显示四角标记（现在通过 CSS 自动跟随 canvas）
+        if (canvasWrapper) {
+            canvasWrapper.classList.add('show-corners');
         }
     }
     updateSize(shareData);
@@ -798,40 +789,6 @@ function handleCanvasSizeChange(event: Event) {
     if (shareData.baseView) {
         shareData.baseView.restartDraw();
     }
-}
-
-function updateCornerMarkerPositions(canvas: HTMLCanvasElement, container: HTMLDivElement) {
-    const cornerMarkers = document.getElementById('canvasCornerMarkers');
-    if (!cornerMarkers) return;
-
-    const canvasRect = canvas.getBoundingClientRect();
-    const containerRect = container.getBoundingClientRect();
-
-    // 计算 canvas 相对于 container 的偏移
-    const offsetX = canvasRect.left - containerRect.left;
-    const offsetY = canvasRect.top - containerRect.top;
-    const canvasWidth = canvasRect.width;
-    const canvasHeight = canvasRect.height;
-
-    const markers = cornerMarkers.querySelectorAll('.corner-marker');
-    const markerSize = 28; // CSS 中定义的尺寸
-
-    markers.forEach((marker) => {
-        const el = marker as HTMLElement;
-        if (el.classList.contains('top-left')) {
-            el.style.left = (offsetX - markerSize) + 'px';
-            el.style.top = (offsetY - markerSize) + 'px';
-        } else if (el.classList.contains('top-right')) {
-            el.style.left = (offsetX + canvasWidth) + 'px';
-            el.style.top = (offsetY - markerSize) + 'px';
-        } else if (el.classList.contains('bottom-left')) {
-            el.style.left = (offsetX - markerSize) + 'px';
-            el.style.top = (offsetY + canvasHeight) + 'px';
-        } else if (el.classList.contains('bottom-right')) {
-            el.style.left = (offsetX + canvasWidth) + 'px';
-            el.style.top = (offsetY + canvasHeight) + 'px';
-        }
-    });
 }
 
 function handleAntiAliasChange(event: Event) {
