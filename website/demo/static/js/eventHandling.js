@@ -86,7 +86,6 @@ function initResourceBundle(locale) {
             }
         }
     }
-    // 更新自定义下拉框的显示文本
     if (typeof updateCustomSelectsText === 'function') {
         updateCustomSelectsText();
     }
@@ -99,7 +98,6 @@ function updatePerfInfo(fps, drawTime, drawCount, maxDrawCountReached) {
     const timeElement = document.querySelector('.time');
     const timeParagraph = document.querySelector('.timeP');
     const countElement = document.querySelector('.count');
-    // 固定使用白色
     const fixedColor = '#ffffff';
     if (fpsElement && fpsParagraph) {
         fpsElement.textContent = Number(fps).toFixed(1);
@@ -124,33 +122,26 @@ function updatePerfInfo(fps, drawTime, drawCount, maxDrawCountReached) {
 
 window.updatePerfInfo = updatePerfInfo;
 
-// ===== 自定义下拉框功能 =====
 function initCustomSelects() {
     const selects = document.querySelectorAll('select');
     
     selects.forEach(select => {
-        // 跳过已经处理过的 select
         if (select.parentElement && select.parentElement.classList.contains('custom-select-wrapper')) {
             return;
         }
         
-        // 创建自定义下拉框包装器
         const wrapper = document.createElement('div');
         wrapper.className = 'custom-select-wrapper';
         
-        // 创建触发器（显示当前选中值）
         const trigger = document.createElement('div');
         trigger.className = 'custom-select-trigger';
         
-        // 创建选项容器
         const optionsContainer = document.createElement('div');
         optionsContainer.className = 'custom-select-options';
         
-        // 获取当前选中的选项文本
         const selectedOption = select.options[select.selectedIndex];
         trigger.textContent = selectedOption ? selectedOption.textContent : '';
         
-        // 为每个选项创建自定义选项元素
         Array.from(select.options).forEach((option, index) => {
             const customOption = document.createElement('div');
             customOption.className = 'custom-select-option';
@@ -164,23 +155,18 @@ function initCustomSelects() {
             customOption.addEventListener('click', (e) => {
                 e.stopPropagation();
                 
-                // 更新原生 select 的值
                 select.selectedIndex = index;
                 select.value = option.value;
                 
-                // 更新触发器文本
                 trigger.textContent = option.textContent;
                 
-                // 更新选中状态
                 optionsContainer.querySelectorAll('.custom-select-option').forEach(opt => {
                     opt.classList.remove('selected');
                 });
                 customOption.classList.add('selected');
                 
-                // 关闭下拉框
                 wrapper.classList.remove('open');
                 
-                // 触发原生 change 事件
                 const event = new Event('change', { bubbles: true });
                 select.dispatchEvent(event);
             });
@@ -188,11 +174,9 @@ function initCustomSelects() {
             optionsContainer.appendChild(customOption);
         });
         
-        // 点击触发器切换下拉框
         trigger.addEventListener('click', (e) => {
             e.stopPropagation();
             
-            // 关闭其他打开的下拉框
             document.querySelectorAll('.custom-select-wrapper.open').forEach(w => {
                 if (w !== wrapper) {
                     w.classList.remove('open');
@@ -202,14 +186,12 @@ function initCustomSelects() {
             wrapper.classList.toggle('open');
         });
         
-        // 将原生 select 包装到自定义结构中
         select.parentNode.insertBefore(wrapper, select);
         wrapper.appendChild(trigger);
         wrapper.appendChild(optionsContainer);
         wrapper.appendChild(select);
     });
     
-    // 点击外部关闭所有下拉框
     document.addEventListener('click', () => {
         document.querySelectorAll('.custom-select-wrapper.open').forEach(w => {
             w.classList.remove('open');
@@ -217,7 +199,6 @@ function initCustomSelects() {
     });
 }
 
-// 更新自定义下拉框选项（当原生 select 选项改变时调用）
 function updateCustomSelect(selectElement) {
     const wrapper = selectElement.closest('.custom-select-wrapper');
     if (!wrapper) return;
@@ -225,10 +206,8 @@ function updateCustomSelect(selectElement) {
     const trigger = wrapper.querySelector('.custom-select-trigger');
     const optionsContainer = wrapper.querySelector('.custom-select-options');
     
-    // 清空现有选项
     optionsContainer.innerHTML = '';
     
-    // 重新创建选项
     Array.from(selectElement.options).forEach((option, index) => {
         const customOption = document.createElement('div');
         customOption.className = 'custom-select-option';
@@ -256,14 +235,12 @@ function updateCustomSelect(selectElement) {
         optionsContainer.appendChild(customOption);
     });
     
-    // 更新触发器文本
     const selectedOption = selectElement.options[selectElement.selectedIndex];
     if (selectedOption) {
         trigger.textContent = selectedOption.textContent;
     }
 }
 
-// 同步自定义下拉框的显示值
 function syncCustomSelectValue(selectElement) {
     const wrapper = selectElement.closest('.custom-select-wrapper');
     if (!wrapper) return;
@@ -271,13 +248,11 @@ function syncCustomSelectValue(selectElement) {
     const trigger = wrapper.querySelector('.custom-select-trigger');
     const optionsContainer = wrapper.querySelector('.custom-select-options');
     
-    // 更新触发器文本
     const selectedOption = selectElement.options[selectElement.selectedIndex];
     if (selectedOption) {
         trigger.textContent = selectedOption.textContent;
     }
     
-    // 更新选中状态
     optionsContainer.querySelectorAll('.custom-select-option').forEach((opt, index) => {
         if (index === selectElement.selectedIndex) {
             opt.classList.add('selected');
@@ -287,7 +262,6 @@ function syncCustomSelectValue(selectElement) {
     });
 }
 
-// 更新所有自定义下拉框的文本（语言切换时调用）
 function updateCustomSelectsText() {
     document.querySelectorAll('.custom-select-wrapper').forEach(wrapper => {
         const select = wrapper.querySelector('select');
@@ -296,13 +270,11 @@ function updateCustomSelectsText() {
         
         if (!select || !trigger || !optionsContainer) return;
         
-        // 更新触发器文本
         const selectedOption = select.options[select.selectedIndex];
         if (selectedOption) {
             trigger.textContent = selectedOption.textContent;
         }
         
-        // 更新所有选项文本
         const customOptions = optionsContainer.querySelectorAll('.custom-select-option');
         customOptions.forEach((customOption, index) => {
             if (select.options[index]) {
@@ -327,9 +299,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
-// 在页面加载完成后初始化自定义下拉框
 document.addEventListener('DOMContentLoaded', function() {
-    // 延迟初始化，确保其他脚本已经填充了 select 选项
     setTimeout(initCustomSelects, 500);
 });
 

@@ -20,7 +20,6 @@ html, body {
     background-color: #262E3C;
 }
 
-/* 侧边栏 - 隐藏滚动条，固定宽度260px */
 .sidebar {
     display: flex;
     flex-direction: column;
@@ -34,19 +33,16 @@ html, body {
     background-color: #1D242D;
     border-right: none;
     flex-shrink: 0;
-    /* 隐藏滚动条 */
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* IE/Edge */
 }
 
-/* 隐藏 Webkit 滚动条 */
 .sidebar::-webkit-scrollbar {
     display: none;
     width: 0;
     height: 0;
 }
 
-/* 顶部 Logo 区域 - Figma: height 60px, padding-left 30px */
 .sidebar-header {
     width: 100%;
     height: 60px;
@@ -68,13 +64,11 @@ html, body {
     z-index: 99999;
 }
 
-/* Canvas 包装器 - 用于四角标记定位 */
 .canvas-wrapper {
     position: relative;
     display: inline-block;
 }
 
-/* 全屏模式下包装器填满容器 */
 .container .canvas-wrapper {
     width: 100%;
     height: 100%;
@@ -83,14 +77,12 @@ html, body {
     left: 0;
 }
 
-/* 固定尺寸模式下包装器自适应 canvas 大小 */
 .container[style*="flex"] .canvas-wrapper {
     position: relative;
     width: auto;
     height: auto;
 }
 
-/* 全屏模式 - 画布填满容器 */
 .benchmark.full-screen {
     width: 100%;
     height: 100%;
@@ -101,18 +93,14 @@ html, body {
     right: 0;
 }
 
-/* 固定尺寸模式 - 画布居中显示，宽高由 JS 内联样式控制 */
 .benchmark.fixed-size {
     position: relative;
-    /* 重置 full-screen 的定位样式 */
     top: auto;
     bottom: auto;
     left: auto;
     right: auto;
-    /* 不设置 width/height，让 JS 内联样式 (!important) 生效 */
 }
 
-/* 性能信息区域 - Figma: left 18px, top 83px */
 .perf-info {
     margin: 0;
     padding: 18px 16px 18px 16px;
@@ -167,7 +155,6 @@ html, body {
     -moz-osx-font-smoothing: grayscale;
 }
 
-/* 通用样式区块 - Figma: border 2px solid #000814 */
 .common-style {
     padding: 12px 16px;
     color: #ffffff;
@@ -175,7 +162,6 @@ html, body {
     flex-shrink: 0;
 }
 
-/* 细分割线 - Figma: border 1px solid #000814 */
 .common-style-thin {
     padding: 12px 16px;
     color: #ffffff;
@@ -183,12 +169,10 @@ html, body {
     flex-shrink: 0;
 }
 
-/* 语言区块 - 无底部分割线 */
 .language {
     border-bottom: none;
 }
 
-/* 输入框组和下拉框组的行间距 */
 .input-group {
     display: flex;
     align-items: center;
@@ -211,7 +195,6 @@ html, body {
     margin-bottom: 0;
 }
 
-/* 标签样式 - Figma: opacity 0.7, color #FFFFFF */
 .input-group label {
     width: 90px;
     color: rgba(255, 255, 255, 0.7);
@@ -226,7 +209,6 @@ html, body {
     -moz-osx-font-smoothing: grayscale;
 }
 
-/* 输入框样式 - Figma: width 124px, height 30px, border-radius 3px */
 .input-group input {
     width: 124px;
     height: 28px;
@@ -252,7 +234,6 @@ html, body {
     background-color: #000814;
 }
 
-/* 只有未聚焦时才触发 hover 效果 */
 .input-group input:hover:not(:focus) {
     background-color: #303A4D;
 }
@@ -278,7 +259,6 @@ input[type="number"] {
     appearance: textfield;
 }
 
-/* 单选组 */
 .radio-group {
     margin: 10px 0;
     color: #ffffff;
@@ -294,7 +274,6 @@ input[type="number"] {
     -moz-osx-font-smoothing: grayscale;
 }
 
-/* 下拉框容器标签 - Figma: opacity 0.7 */
 .select-container {
     display: flex;
     align-items: center;
@@ -366,7 +345,6 @@ input[type="number"] {
     color: #ffffff;
 }
 
-/* 下拉框样式 - Figma: width 124px, height 30px, border-radius 3px */
 select {
     width: 124px;
     height: 28px;
@@ -388,7 +366,6 @@ select {
     -webkit-appearance: none;
     -moz-appearance: none;
 
-    /* Figma: Polygon 三角箭头 - 10.39px x 5.25px, border 1px solid #FFFFFF */
     background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'%3e%3cpath d='M1 1L5 5L9 1' stroke='white' stroke-width='1' stroke-linecap='round' stroke-linejoin='round'/%3e%3c/svg%3e");
     background-repeat: no-repeat;
     background-position: right 10px center;
@@ -398,19 +375,16 @@ select {
     -moz-osx-font-smoothing: grayscale;
 }
 
-/* 只有未聚焦时才触发 hover 效果 */
 select:hover:not(:focus) {
     background-color: #303A4D;
     cursor: pointer;
 }
 
-/* Figma: 选中状态 - border: 1px solid #0066FF */
 select:focus {
     outline: none;
     border-color: #0066FF;
 }
 
-/* Figma: 下拉菜单 - background: #000814, box-shadow */
 select option {
     background-color: #000814;
     color: #ffffff;
@@ -421,7 +395,6 @@ select option {
     line-height: 28px;
 }
 
-/* Figma: 选中项 - background: #0066FF */
 select option:hover,
 select option:focus,
 select option:checked {
@@ -429,31 +402,26 @@ select option:checked {
     color: #ffffff;
 }
 
-/* 强制覆盖浏览器默认选中样式 */
 select option:checked {
     background: #0066FF linear-gradient(0deg, #0066FF 0%, #0066FF 100%);
     color: #ffffff !important;
 }
 
-/* Firefox 特定样式 */
 select:-moz-focusring {
     color: transparent;
     text-shadow: 0 0 0 #ffffff;
 }
 
-/* Firefox 下拉框选中项样式 */
 @-moz-document url-prefix() {
     select option:checked {
         background-color: #0066FF !important;
     }
 }
 
-/* Webkit 浏览器 (Chrome, Safari) */
 select:focus option:checked {
     background: #0066FF linear-gradient(0deg, #0066FF 0%, #0066FF 100%);
 }
 
-/* ===== 自定义下拉框样式 ===== */
 .custom-select-wrapper {
     position: relative;
     display: inline-block;
@@ -486,7 +454,6 @@ select:focus option:checked {
     text-overflow: ellipsis;
 }
 
-/* 只有未打开时才触发 hover 效果 */
 .custom-select-wrapper:not(.open) .custom-select-trigger:hover {
     background-color: #303A4D;
 }
@@ -538,17 +505,14 @@ select:focus option:checked {
     background-color: #0066FF;
 }
 
-/* 当有任何选项被悬停时，取消选中项的高亮 */
 .custom-select-options:hover .custom-select-option.selected:not(:hover) {
     background-color: transparent;
 }
 
-/* 隐藏原生 select（当使用自定义下拉框时） */
 .custom-select-wrapper select {
     display: none;
 }
 
-/* 重启按钮区域 - 无顶部分割线 */
 .restart-wrapper {
     flex: 1;
     display: flex;
@@ -564,7 +528,6 @@ select:focus option:checked {
     align-items: center;
 }
 
-/* 重新启动按钮 - Figma: width 122px, height 42px, border-radius 35px, font-size 18px */
 #restartBtn {
     width: 130px;
     height: 46px;
@@ -594,7 +557,6 @@ select:focus option:checked {
     background-color: #0052CC;
 }
 
-/* 语言选择 */
 .language-select-container {
     display: flex;
     align-items: center;
@@ -613,7 +575,6 @@ select:focus option:checked {
     -moz-osx-font-smoothing: grayscale;
 }
 
-/* Github 链接 - Figma: font-weight 400, font-size 16px, line-height 19px */
 .github-links {
     padding: 10px 0 12px 0;
     color: #ffffff;
@@ -643,7 +604,6 @@ select:focus option:checked {
     cursor: pointer;
 }
 
-/* 下拉菜单展开样式 (自定义下拉框) */
 .dropdown-menu {
     position: absolute;
     background-color: #000814;
@@ -680,13 +640,11 @@ select:focus option:checked {
     height: 9px;
 }
 
-/* 固定画布模式 - 四角白色角标（直接附加在 canvas 容器上） */
 .canvas-wrapper {
     position: relative;
     display: inline-block;
 }
 
-/* 固定尺寸模式下显示四角标记 */
 .canvas-wrapper.show-corners::before,
 .canvas-wrapper.show-corners::after,
 .canvas-wrapper.show-corners .corner-overlay::before,
@@ -698,7 +656,6 @@ select:focus option:checked {
     z-index: 100001;
 }
 
-/* 左上角 - 横线（往左1点、往上1点） */
 .canvas-wrapper.show-corners::before {
     width: 29px;
     height: 1px;
@@ -706,7 +663,6 @@ select:focus option:checked {
     left: -31px;
 }
 
-/* 左上角 - 竖线（往左1点、往上1点） */
 .canvas-wrapper.show-corners::after {
     width: 1px;
     height: 29px;
@@ -714,7 +670,6 @@ select:focus option:checked {
     left: -3px;
 }
 
-/* 角标覆盖层 - 用于右上、左下、右下角 */
 .corner-overlay {
     position: absolute;
     top: 0;
@@ -724,7 +679,6 @@ select:focus option:checked {
     pointer-events: none;
 }
 
-/* 右上角 - 横线（往右1点、往上1点） */
 .canvas-wrapper.show-corners .corner-overlay::before {
     width: 29px;
     height: 1px;
@@ -733,7 +687,6 @@ select:focus option:checked {
     left: auto;
 }
 
-/* 右上角 - 竖线（往右1点、往上1点） */
 .canvas-wrapper.show-corners .corner-overlay::after {
     width: 1px;
     height: 29px;
@@ -742,7 +695,6 @@ select:focus option:checked {
     left: auto;
 }
 
-/* 底部角标覆盖层 */
 .corner-overlay-bottom {
     position: absolute;
     top: 0;
@@ -761,7 +713,6 @@ select:focus option:checked {
     z-index: 100001;
 }
 
-/* 左下角 - 横线（往左1点、往上1点） */
 .canvas-wrapper.show-corners .corner-overlay-bottom::before {
     width: 29px;
     height: 1px;
@@ -769,7 +720,6 @@ select:focus option:checked {
     left: -31px;
 }
 
-/* 左下角 - 竖线（往左1点、往上1点） */
 .canvas-wrapper.show-corners .corner-overlay-bottom::after {
     width: 1px;
     height: 29px;
@@ -777,7 +727,6 @@ select:focus option:checked {
     left: -3px;
 }
 
-/* 右下角覆盖层 */
 .corner-overlay-bottom-right {
     position: absolute;
     top: 0;
@@ -796,7 +745,6 @@ select:focus option:checked {
     z-index: 100001;
 }
 
-/* 右下角 - 横线（往右1点、往上1点） */
 .canvas-wrapper.show-corners .corner-overlay-bottom-right::before {
     width: 29px;
     height: 1px;
@@ -805,7 +753,6 @@ select:focus option:checked {
     left: auto;
 }
 
-/* 右下角 - 竖线（往右1点、往上1点） */
 .canvas-wrapper.show-corners .corner-overlay-bottom-right::after {
     width: 1px;
     height: 29px;
