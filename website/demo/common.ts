@@ -398,6 +398,39 @@ export function pageInit() {
         }
     }
 
+    if (engineTypeSelect) {
+        engineTypeSelect.addEventListener('change', (e) => {
+            const target = e.target as HTMLSelectElement;
+            updateVersionSelect(target.value);
+            if (versionSelect) {
+                updateThreadTypeOptions(engineTypeSelect.value, versionSelect.value);
+            }
+            if (typeof (window as any).updateCustomSelect === 'function') {
+                (window as any).updateCustomSelect(versionSelect);
+                const threadTypeSelect = document.getElementById('thread-type-select');
+                if (threadTypeSelect) {
+                    (window as any).updateCustomSelect(threadTypeSelect);
+                }
+            }
+        });
+    }
+
+    if (versionSelect) {
+        versionSelect.addEventListener('change', (e) => {
+            const target = e.target as HTMLSelectElement;
+            const engineTypeSelect = document.getElementById('engine-type-select') as HTMLSelectElement;
+            if (engineTypeSelect) {
+                updateThreadTypeOptions(engineTypeSelect.value, target.value);
+            }
+            if (typeof (window as any).updateCustomSelect === 'function') {
+                const threadTypeSelect = document.getElementById('thread-type-select');
+                if (threadTypeSelect) {
+                    (window as any).updateCustomSelect(threadTypeSelect);
+                }
+            }
+        }, true);
+    }
+
     if (localStorage.getItem('needRestore') === 'true') {
         restorePageSettings();
     }
@@ -740,20 +773,30 @@ function handleEngineTypeChange(event: Event) {
     const firstVersion = Object.keys(versions)[0];
     if (firstVersion) {
         engineVersionSelect.value = firstVersion;
-        handleEngineVersionChange({ target: engineVersionSelect } as unknown as Event);
+        if (typeof (window as any).updateCustomSelect === 'function') {
+            (window as any).updateCustomSelect(engineVersionSelect);
+        }
+        engineVersionSelect.dispatchEvent(new Event('change'));
     }
 }
 
 function handleEngineVersionChange(event: Event) {
     const target = event.target as HTMLSelectElement;
     const engineType = (document.getElementById('engine-type-select') as HTMLSelectElement).value;
+    if (engineType === undefined) {
+        console.warn('Engine type selector not found');
+        return;
+    }
     const selectedVersion = target.value;
     if (!selectedVersion) {
+        console.warn('No version selected');
         return;
     }
     const threads = engineVersionInfo.engineVersion[engineType].versions[selectedVersion];
+
     const threadTypeSelect = document.getElementById('thread-type-select') as HTMLSelectElement;
     if (!threadTypeSelect) {
+        console.warn('Thread type selector not found');
         return;
     }
 
@@ -767,7 +810,14 @@ function handleEngineVersionChange(event: Event) {
 
     let defaultThreadType = threads.includes('mt') ? 'mt' : threads[0];
     threadTypeSelect.value = defaultThreadType;
-    handleThreadTypeChange({ target: threadTypeSelect } as unknown as Event);
+    if (typeof (window as any).updateCustomSelect === 'function') {
+        (window as any).updateCustomSelect(threadTypeSelect);
+    }
+    const changeEvent = new Event('change', {
+        bubbles: true,
+        cancelable: true
+    });
+    threadTypeSelect.dispatchEvent(changeEvent);
 }
 
 
