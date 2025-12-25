@@ -792,7 +792,6 @@ function handleCanvasSizeChange(event: Event) {
     const canvasWrapper = document.getElementById('canvasWrapper');
 
     if (target.value === 'full-screen') {
-        // 切换为全屏模式
         canvas.classList.remove('fixed-size');
         canvas.classList.add('full-screen');
         canvas.style.width = '';
@@ -804,12 +803,10 @@ function handleCanvasSizeChange(event: Event) {
         container.style.display = '';
         container.style.justifyContent = '';
         container.style.alignItems = '';
-        // 隐藏四角标记
         if (canvasWrapper) {
             canvasWrapper.classList.remove('show-corners');
         }
     } else if (target.value === '2048x1440') {
-        // 切换为固定尺寸模式
         canvas.classList.remove('full-screen');
         canvas.classList.add('fixed-size');
         container.style.backgroundColor = '#262E3C';
@@ -827,7 +824,6 @@ function handleCanvasSizeChange(event: Event) {
         canvas.style.setProperty('width', scaleWidth + 'px', 'important');
         canvas.style.setProperty('height', scaleHeight + 'px', 'important');
 
-        // 显示四角标记（现在通过 CSS 自动跟随 canvas）
         if (canvasWrapper) {
             canvasWrapper.classList.add('show-corners');
         }
@@ -1252,7 +1248,6 @@ function webUpdateGraphicType(type: number) {
             return;
         }
         graphicTypeSelect.value = typeStr;
-        // 同步更新自定义下拉框的显示
         if (typeof (window as any).syncCustomSelectValue === 'function') {
             (window as any).syncCustomSelectValue(graphicTypeSelect);
         }
