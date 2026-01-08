@@ -1275,7 +1275,9 @@ export function setDrawParamFromPageSettings() {
     setGraphicType(jsonSettings.graphicType.selected);
     shareData.baseView.setAntiAlias(jsonSettings.antiAlias.option);
     if (jsonSettings.stroke?.option !== undefined) {
-        shareData.baseView.setStroke(jsonSettings.stroke.option);
+        // shareData.baseView.setStroke(jsonSettings.stroke.option);
+        // 临时关闭，待 tgfx 2.2 发布后再打开
+        shareData.baseView.setStroke(false);
     }
 }
 
