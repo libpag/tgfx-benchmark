@@ -299,10 +299,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
-document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(initCustomSelects, 500);
-});
-
 document.addEventListener('wheel', function (e) {
     if (e.ctrlKey) {
         e.preventDefault();

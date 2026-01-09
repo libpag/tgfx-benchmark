@@ -471,6 +471,10 @@ export function pageInit() {
 
     triggerLanguageChange();
     savePageSettings();
+    // Initialize custom selects after all selects are populated
+    if (typeof (window as any).initCustomSelects === 'function') {
+        (window as any).initCustomSelects();
+    }
 }
 
 

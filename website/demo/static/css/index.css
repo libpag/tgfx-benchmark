@@ -373,6 +373,9 @@ select {
     box-sizing: border-box;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    
+    opacity: 0;
+    visibility: hidden;
 }
 
 select:hover:not(:focus) {
