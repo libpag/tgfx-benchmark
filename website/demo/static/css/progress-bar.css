@@ -45,7 +45,7 @@
 #descriptionText {
     margin-top: 5px;
     font-size: 14px;
-    color: #000;
+    color: rgba(255, 255, 255, 0.7);
     text-align: center;
 }
 

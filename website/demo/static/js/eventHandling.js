@@ -86,6 +86,9 @@ function initResourceBundle(locale) {
             }
         }
     }
+    if (typeof updateCustomSelectsText === 'function') {
+        updateCustomSelectsText();
+    }
     return resourceBundle;
 }
 
@@ -95,17 +98,16 @@ function updatePerfInfo(fps, drawTime, drawCount, maxDrawCountReached) {
     const timeElement = document.querySelector('.time');
     const timeParagraph = document.querySelector('.timeP');
     const countElement = document.querySelector('.count');
+    const fixedColor = '#ffffff';
     if (fpsElement && fpsParagraph) {
         fpsElement.textContent = Number(fps).toFixed(1);
-        const color = fps < 29 ? '#FF4444' : fps < 59 ? '#FFAA00' : '#4CAF50';
-        fpsElement.style.color = color;
-        fpsParagraph.style.color = color;
+        fpsElement.style.color = fixedColor;
+        fpsParagraph.style.color = fixedColor;
     }
     if (timeElement && timeParagraph) {
         timeElement.textContent = Number(drawTime).toFixed(1);
-        const color = drawTime > 34.3 ? '#FF4444' : drawTime > 16.9 ? '#FFAA00' : '#4CAF50';
-        timeElement.style.color = color;
-        timeParagraph.style.color = color;
+        timeElement.style.color = fixedColor;
+        timeParagraph.style.color = fixedColor;
     }
     const targetFPS = parseFloat(document.getElementById('minFPS').value) || 60;
 
@@ -119,6 +121,174 @@ function updatePerfInfo(fps, drawTime, drawCount, maxDrawCountReached) {
 }
 
 window.updatePerfInfo = updatePerfInfo;
+
+function initCustomSelects() {
+    const selects = document.querySelectorAll('select');
+    
+    selects.forEach(select => {
+        if (select.parentElement && select.parentElement.classList.contains('custom-select-wrapper')) {
+            return;
+        }
+        
+        const wrapper = document.createElement('div');
+        wrapper.className = 'custom-select-wrapper';
+        
+        const trigger = document.createElement('div');
+        trigger.className = 'custom-select-trigger';
+        
+        const optionsContainer = document.createElement('div');
+        optionsContainer.className = 'custom-select-options';
+        
+        const selectedOption = select.options[select.selectedIndex];
+        trigger.textContent = selectedOption ? selectedOption.textContent : '';
+        
+        Array.from(select.options).forEach((option, index) => {
+            const customOption = document.createElement('div');
+            customOption.className = 'custom-select-option';
+            if (index === select.selectedIndex) {
+                customOption.classList.add('selected');
+            }
+            customOption.textContent = option.textContent;
+            customOption.dataset.value = option.value;
+            customOption.dataset.index = index;
+            
+            customOption.addEventListener('click', (e) => {
+                e.stopPropagation();
+                
+                select.selectedIndex = index;
+                select.value = option.value;
+                
+                trigger.textContent = option.textContent;
+                
+                optionsContainer.querySelectorAll('.custom-select-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                customOption.classList.add('selected');
+                
+                wrapper.classList.remove('open');
+                
+                const event = new Event('change', { bubbles: true });
+                select.dispatchEvent(event);
+            });
+            
+            optionsContainer.appendChild(customOption);
+        });
+        
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            
+            document.querySelectorAll('.custom-select-wrapper.open').forEach(w => {
+                if (w !== wrapper) {
+                    w.classList.remove('open');
+                }
+            });
+            
+            wrapper.classList.toggle('open');
+        });
+        
+        select.parentNode.insertBefore(wrapper, select);
+        wrapper.appendChild(trigger);
+        wrapper.appendChild(optionsContainer);
+        wrapper.appendChild(select);
+    });
+    
+    document.addEventListener('click', () => {
+        document.querySelectorAll('.custom-select-wrapper.open').forEach(w => {
+            w.classList.remove('open');
+        });
+    });
+}
+
+function updateCustomSelect(selectElement) {
+    const wrapper = selectElement.closest('.custom-select-wrapper');
+    if (!wrapper) return;
+    
+    const trigger = wrapper.querySelector('.custom-select-trigger');
+    const optionsContainer = wrapper.querySelector('.custom-select-options');
+    
+    optionsContainer.innerHTML = '';
+    
+    Array.from(selectElement.options).forEach((option, index) => {
+        const customOption = document.createElement('div');
+        customOption.className = 'custom-select-option';
+        if (index === selectElement.selectedIndex) {
+            customOption.classList.add('selected');
+        }
+        customOption.textContent = option.textContent;
+        customOption.dataset.value = option.value;
+        customOption.dataset.index = index;
+        
+        customOption.addEventListener('click', (e) => {
+            e.stopPropagation();
+            selectElement.selectedIndex = index;
+            selectElement.value = option.value;
+            trigger.textContent = option.textContent;
+            optionsContainer.querySelectorAll('.custom-select-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            customOption.classList.add('selected');
+            wrapper.classList.remove('open');
+            const event = new Event('change', { bubbles: true });
+            selectElement.dispatchEvent(event);
+        });
+        
+        optionsContainer.appendChild(customOption);
+    });
+    
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    if (selectedOption) {
+        trigger.textContent = selectedOption.textContent;
+    }
+}
+
+function syncCustomSelectValue(selectElement) {
+    const wrapper = selectElement.closest('.custom-select-wrapper');
+    if (!wrapper) return;
+    
+    const trigger = wrapper.querySelector('.custom-select-trigger');
+    const optionsContainer = wrapper.querySelector('.custom-select-options');
+    
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    if (selectedOption) {
+        trigger.textContent = selectedOption.textContent;
+    }
+    
+    optionsContainer.querySelectorAll('.custom-select-option').forEach((opt, index) => {
+        if (index === selectElement.selectedIndex) {
+            opt.classList.add('selected');
+        } else {
+            opt.classList.remove('selected');
+        }
+    });
+}
+
+function updateCustomSelectsText() {
+    document.querySelectorAll('.custom-select-wrapper').forEach(wrapper => {
+        const select = wrapper.querySelector('select');
+        const trigger = wrapper.querySelector('.custom-select-trigger');
+        const optionsContainer = wrapper.querySelector('.custom-select-options');
+        
+        if (!select || !trigger || !optionsContainer) return;
+        
+        const selectedOption = select.options[select.selectedIndex];
+        if (selectedOption) {
+            trigger.textContent = selectedOption.textContent;
+        }
+        
+        const customOptions = optionsContainer.querySelectorAll('.custom-select-option');
+        customOptions.forEach((customOption, index) => {
+            if (select.options[index]) {
+                customOption.textContent = select.options[index].textContent;
+            }
+        });
+    });
+}
+
+window.initCustomSelects = initCustomSelects;
+window.updateCustomSelect = updateCustomSelect;
+window.syncCustomSelectValue = syncCustomSelectValue;
+window.updateCustomSelectsText = updateCustomSelectsText;
+
 document.addEventListener('DOMContentLoaded', checkBrowser);
 document.addEventListener('DOMContentLoaded', initLanguage);
 document.addEventListener('DOMContentLoaded', function () {

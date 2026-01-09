@@ -49,6 +49,7 @@ export class TGFXBaseView extends BaseView {
     public showPerfData: (status: boolean) => void;
     public init: () => void;
     public setAntiAlias: (antiAlia: boolean) => void;
+    public setStroke: (stroke: boolean) => void;
 }
 
 export class SkiaView extends BaseView {
@@ -60,6 +61,7 @@ export class SkiaView extends BaseView {
     public showPerfData: (status: boolean) => void;
     public init: () => void;
     public setAntiAlias: (antiAlia: boolean) => void;
+    public setStroke: (stroke: boolean) => void;
 }
 
 export class ShareData {
@@ -138,7 +140,7 @@ export function startDraw(shareData: ShareData) {
 }
 
 export function onresizeEvent(shareData: ShareData) {
-    if (!shareData.baseView) {
+    if (!shareData || !shareData.baseView) {
         return;
     }
     shareData.resized = true;
@@ -207,6 +209,53 @@ export function parseSideBarParam(): SideBarConfig {
 }
 
 
+function validateObjectStructure(obj: any, template: any, path: string = 'root'): boolean {
+    for (const key in obj) {
+        if (key === '' || key.trim() === '') {
+            console.warn(`Empty key found at ${path}`);
+            return false;
+        }
+
+        if (!(key in template)) {
+            console.warn(`Unexpected field: ${path}.${key}`);
+            return false;
+        }
+    }
+
+    for (const key in template) {
+        if (!(key in obj)) {
+            console.warn(`Missing field: ${path}.${key}`);
+            return false;
+        }
+
+        const templateValue = template[key];
+        const objValue = obj[key];
+
+        if (objValue === null || objValue === undefined) {
+            console.warn(`Empty value at ${path}.${key}: value is ${objValue}`);
+            return false;
+        }
+
+        if (typeof objValue === 'string' && objValue.trim() === '') {
+            console.warn(`Empty string at ${path}.${key}`);
+            return false;
+        }
+
+        if (typeof templateValue !== typeof objValue) {
+            console.warn(`Type mismatch at ${path}.${key}: expected ${typeof templateValue}, got ${typeof objValue}`);
+            return false;
+        }
+
+        if (templateValue !== null && typeof templateValue === 'object' && !Array.isArray(templateValue)) {
+            if (!validateObjectStructure(objValue, templateValue, `${path}.${key}`)) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 function updatePageSetting() {
     try {
         parseSideBarParam();
@@ -216,22 +265,18 @@ function updatePageSetting() {
         let jsonSettings: PageSettings;
         jsonSettings = JSON.parse(savedSettings);
 
-        let shouldRemoveSettings = false;
+        const template = new PageSettings();
 
-        if (!shouldRemoveSettings) {
-            if (jsonSettings.antiAlias === undefined || jsonSettings.antiAlias.option === undefined) {
-                shouldRemoveSettings = true;
-            }
-        }
-        if (shouldRemoveSettings) {
+        if (!validateObjectStructure(jsonSettings, template)) {
+            console.warn('PageSettings structure mismatch, clearing old cache');
             localStorage.removeItem('pageSettings');
             localStorage.removeItem('needRestore');
             return;
         }
-        localStorage.setItem('pageSettings', JSON.stringify(jsonSettings));
     } catch (error) {
         localStorage.removeItem('pageSettings');
         localStorage.removeItem('needRestore');
+        console.warn('json parse failed,error:',error);
     }
 }
 
@@ -360,6 +405,13 @@ export function pageInit() {
             if (versionSelect) {
                 updateThreadTypeOptions(engineTypeSelect.value, versionSelect.value);
             }
+            if (typeof (window as any).updateCustomSelect === 'function') {
+                (window as any).updateCustomSelect(versionSelect);
+                const threadTypeSelect = document.getElementById('thread-type-select');
+                if (threadTypeSelect) {
+                    (window as any).updateCustomSelect(threadTypeSelect);
+                }
+            }
         });
     }
 
@@ -369,6 +421,12 @@ export function pageInit() {
             const engineTypeSelect = document.getElementById('engine-type-select') as HTMLSelectElement;
             if (engineTypeSelect) {
                 updateThreadTypeOptions(engineTypeSelect.value, target.value);
+            }
+            if (typeof (window as any).updateCustomSelect === 'function') {
+                const threadTypeSelect = document.getElementById('thread-type-select');
+                if (threadTypeSelect) {
+                    (window as any).updateCustomSelect(threadTypeSelect);
+                }
             }
         }, true);
     }
@@ -413,6 +471,10 @@ export function pageInit() {
 
     triggerLanguageChange();
     savePageSettings();
+    // Initialize custom selects after all selects are populated
+    if (typeof (window as any).initCustomSelects === 'function') {
+        (window as any).initCustomSelects();
+    }
 }
 
 
@@ -423,14 +485,26 @@ class PageSettings {
         stepCount: number;
         maxShapes: number;
         minFPS: number;
+    } = {
+        canvasSize: 'full-screen',
+        startCount: 1,
+        stepCount: 1000,
+        maxShapes: 1000000,
+        minFPS: 60.0
     };
     graphicType: {
         options: string[];
         selected: string;
+    } = {
+        options: ['Rect', 'Circle', 'Oval', 'RRect'],
+        selected: 'Rect'
     };
     language: {
         options: string[];
         selected: string;
+    } = {
+        options: ["auto", "zh", "en"],
+        selected: 'auto'
     };
     antiAlias: {
         option: boolean;
@@ -440,7 +514,7 @@ class PageSettings {
     stroke: {
         option: boolean;
     } = {
-        option: true
+        option: false
     };
 }
 
@@ -572,7 +646,7 @@ export function restorePageSettings(): void {
         }
 
         const strokeSwitchSelect = document.getElementById('stroke-switch-select') as HTMLSelectElement;
-        if (strokeSwitchSelect && settings.stroke.option !== undefined) {
+        if (strokeSwitchSelect && settings.stroke?.option !== undefined) {
             strokeSwitchSelect.value = settings.stroke.option ? 'On' : 'Off';
         }
 
@@ -687,9 +761,6 @@ function handleGraphicTypeChange(event: Event) {
 }
 
 function handleEngineTypeChange(event: Event) {
-    if (!event.isTrusted) {
-        return;
-    }
     const target = event.target as HTMLSelectElement;
     const selectedEngine = target.value;
     const engineVersionSelect = document.getElementById('engine-version') as HTMLSelectElement;
@@ -706,9 +777,10 @@ function handleEngineTypeChange(event: Event) {
     const firstVersion = Object.keys(versions)[0];
     if (firstVersion) {
         engineVersionSelect.value = firstVersion;
+        if (typeof (window as any).updateCustomSelect === 'function') {
+            (window as any).updateCustomSelect(engineVersionSelect);
+        }
         engineVersionSelect.dispatchEvent(new Event('change'));
-    } else {
-        console.warn('Unknown engine type:', selectedEngine);
     }
 }
 
@@ -740,9 +812,11 @@ function handleEngineVersionChange(event: Event) {
         threadTypeSelect.appendChild(option);
     });
 
-    let defaultThreadType = '';
-    defaultThreadType = threads.includes('mt') ? 'mt' : threads[0];
+    let defaultThreadType = threads.includes('mt') ? 'mt' : threads[0];
     threadTypeSelect.value = defaultThreadType;
+    if (typeof (window as any).updateCustomSelect === 'function') {
+        (window as any).updateCustomSelect(threadTypeSelect);
+    }
     const changeEvent = new Event('change', {
         bubbles: true,
         cancelable: true
@@ -769,19 +843,31 @@ function handleCanvasSizeChange(event: Event) {
     const target = event.target as HTMLSelectElement;
     const container = document.getElementById('container') as HTMLDivElement;
     const canvas = document.getElementById('benchmark') as HTMLCanvasElement;
-    const sidebar = document.getElementById('sidebar') as HTMLDivElement;
+    const canvasWrapper = document.getElementById('canvasWrapper');
 
     if (target.value === 'full-screen') {
-        canvas.style.width = '100%';
-        canvas.style.height = '100%';
-        container.style.backgroundColor = '';
+        canvas.classList.remove('fixed-size');
+        canvas.classList.add('full-screen');
+        canvas.style.width = '';
+        canvas.style.height = '';
         canvas.style.border = '';
         canvas.style.boxSizing = '';
+        canvas.style.backgroundColor = '';
+        container.style.backgroundColor = '';
+        container.style.display = '';
+        container.style.justifyContent = '';
+        container.style.alignItems = '';
+        if (canvasWrapper) {
+            canvasWrapper.classList.remove('show-corners');
+        }
     } else if (target.value === '2048x1440') {
-        container.style.backgroundColor = '#2c2c2c';
-        canvas.style.border = '10px solid #ffffff';
-        canvas.style.boxSizing = 'content-box';
-        canvas.style.backgroundColor = '#ffffff';
+        canvas.classList.remove('full-screen');
+        canvas.classList.add('fixed-size');
+        container.style.backgroundColor = '#262E3C';
+        container.style.display = 'flex';
+        container.style.justifyContent = 'center';
+        container.style.alignItems = 'center';
+
         const scaleFactor = window.devicePixelRatio;
         canvas.width = 2048;
         canvas.height = 1440;
@@ -789,18 +875,21 @@ function handleCanvasSizeChange(event: Event) {
         const scaleWidth = canvas.width / scaleFactor;
         const scaleHeight = canvas.height / scaleFactor;
 
-        canvas.style.width = scaleWidth + 'px';
-        canvas.style.height = scaleHeight + 'px';
-        container.style.display = 'flex';
-        container.style.justifyContent = 'center';
-        container.style.alignItems = 'center';
+        canvas.style.setProperty('width', scaleWidth + 'px', 'important');
+        canvas.style.setProperty('height', scaleHeight + 'px', 'important');
+
+        if (canvasWrapper) {
+            canvasWrapper.classList.add('show-corners');
+        }
     }
     updateSize(shareData);
     localStorage.setItem('canvasSize', target.value);
     savePageSettings();
 
     const resolutionSpan = document.querySelector('.resolution');
-    resolutionSpan.textContent = `${canvas.width} x ${canvas.height}`;
+    if (resolutionSpan) {
+        resolutionSpan.textContent = `${canvas.width} x ${canvas.height}`;
+    }
 
     if (shareData.baseView) {
         shareData.baseView.restartDraw();
@@ -981,13 +1070,19 @@ export function bindEventListeners() {
     }
 
     const engineTypeSelect = document.getElementById('engine-type-select');
-    engineTypeSelect.addEventListener('change', handleEngineTypeChange);
+    if (engineTypeSelect) {
+        engineTypeSelect.addEventListener('change', handleEngineTypeChange);
+    }
 
     const engineVersionSelect = document.getElementById('engine-version');
-    engineVersionSelect.addEventListener('change', handleEngineVersionChange);
+    if (engineVersionSelect) {
+        engineVersionSelect.addEventListener('change', handleEngineVersionChange);
+    }
 
     const threadTypeSelect = document.getElementById('thread-type-select');
-    threadTypeSelect.addEventListener('change', handleThreadTypeChange);
+    if (threadTypeSelect) {
+        threadTypeSelect.addEventListener('change', handleThreadTypeChange);
+    }
 
     const canvasSizeSelect = document.getElementById('canvas-size-select');
     if (canvasSizeSelect) {
@@ -1008,7 +1103,6 @@ export function bindEventListeners() {
     if (languageTypeSelect) {
         languageTypeSelect.addEventListener('change', handleLanguageTypeChange);
     }
-
 }
 
 function urlParamConvertHtmlParam(urlParam: string): string {
@@ -1184,7 +1278,11 @@ export function setDrawParamFromPageSettings() {
     shareData.baseView.updateDrawParam(drawParam);
     setGraphicType(jsonSettings.graphicType.selected);
     shareData.baseView.setAntiAlias(jsonSettings.antiAlias.option);
-    shareData.baseView.setStroke(jsonSettings.stroke.option);
+    if (jsonSettings.stroke?.option !== undefined) {
+        // shareData.baseView.setStroke(jsonSettings.stroke.option);
+        // 临时关闭，待 tgfx 2.2 发布后再打开
+        shareData.baseView.setStroke(false);
+    }
 }
 
 function webUpdateGraphicType(type: number) {
@@ -1206,6 +1304,9 @@ function webUpdateGraphicType(type: number) {
             return;
         }
         graphicTypeSelect.value = typeStr;
+        if (typeof (window as any).syncCustomSelectValue === 'function') {
+            (window as any).syncCustomSelectValue(graphicTypeSelect);
+        }
         savePageSettings();
     } catch (error) {
         console.error('Error updating graphic type:', error);
