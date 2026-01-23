@@ -22,7 +22,7 @@
 
 namespace benchmark {
 
-enum class GraphicType { Rect, Circle, Oval, RRect, Star };
+enum class GraphicType { Rect, Circle, Oval, RRect, Star, Text };
 
 struct GraphicData {
   tgfx::Rect rect{0, 0, 1, 1};
@@ -41,6 +41,12 @@ struct PerfData {
   float fps = 0.0f;
   float drawTime = 0.0f;
   size_t drawCount = 0;
+};
+
+struct GlyphRunData {
+  tgfx::Font font = {};
+  std::vector<tgfx::GlyphID> glyphs = {};
+  std::vector<tgfx::Point> positions = {};
 };
 
 class ParticleBench : public Bench {
@@ -88,6 +94,8 @@ class ParticleBench : public Bench {
 
   void DrawStar(tgfx::Canvas* canvas) const;
 
+  void DrawText(tgfx::Canvas* canvas) const;
+
   void DrawGraphics(tgfx::Canvas* canvas) const;
 
  private:
@@ -106,6 +114,7 @@ class ParticleBench : public Bench {
   GraphicType graphicType = GraphicType::Rect;
   bool maxDrawCountReached = false;
   PerfData perfData = {};
+  GlyphRunData glyphRun = {};
 };
 
 }  // namespace benchmark

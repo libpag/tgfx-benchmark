@@ -19,9 +19,11 @@
 #include "ParticleBench.h"
 #include <cmath>
 #include <iomanip>
+#include <iostream>
 #include <random>
 #include <sstream>
 #include "tgfx/core/Clock.h"
+#include "tgfx/core/UTF.h"
 
 namespace benchmark {
 static constexpr int64_t FLUSH_INTERVAL = 300000;
@@ -50,6 +52,8 @@ static std::string ToString(GraphicType type) {
       return "Oval";
     case GraphicType::Star:
       return "Star";
+    case GraphicType::Text:
+      return "Text";
     default:
       return "Unknown";
   }
@@ -87,6 +91,47 @@ static tgfx::Path CreateStar(const tgfx::Rect& rect) {
   }
   path.close();
   return path;
+}
+
+static GlyphRunData CreateGlyphRun(const AppHost* host, std::vector<GraphicData>& glyphDatas) {
+  constexpr std::string_view LONG_TEXT =
+      R"(君子曰：学不可以已。青，取之于蓝，而青于蓝；冰，水为之，而寒于水。木直中绳，
+𫐓以为轮，其曲中规。虽有槁暴，不复挺者，𫐓使之然也。故木受绳则直，金就砺则利，君子博学而日参省乎己，则知明而行无过矣。
+故不登高山，不知天之高也；不临深溪，不知地之厚也；不闻先王之遗言，不知学问之大也。干、越、夷、貉之子，生而同声，
+长而异俗，教使之然也。诗曰："嗟尔君子，无恒安息。靖共尔位，好是正直。神之听之，介尔景福。"神莫大于化道，福莫长于无祸。
+（此段教材无）吾尝终日而思矣，不如须臾之所学也；吾尝跂而望矣，不如登高之博见也。登高而招，臂非加长也，而见者远；顺风而呼，
+声非加疾也，而闻者彰。假舆马者，非利足也，而致千里；假舟楫者，非能水也，而绝江河。君子生非异也，善假于物也。南方有鸟焉，
+名曰蒙鸠，以羽为巢，而编之以发，系之苇苕，风至苕折，卵破子死。巢非不完也，所系者然也。西方有木焉，名曰射干，茎长四寸，
+生于高山之上，而临百仞之渊，木茎非能长也，所立者然也。)";
+
+  std::vector<tgfx::GlyphID> sourceGlyphIDs = {};
+  const char* textStart = LONG_TEXT.data();
+  const char* textStop = textStart + LONG_TEXT.size();
+  auto font = tgfx::Font(host->getTypeface("default"), 10.f * host->density());
+  while (textStart != textStop) {
+    auto unichar = tgfx::UTF::NextUTF8(&textStart, textStop);
+    auto glyphID = font.getGlyphID(unichar);
+    if (glyphID == 0) {
+      continue;
+    }
+    sourceGlyphIDs.push_back(glyphID);
+  }
+  if (sourceGlyphIDs.empty()) {
+    return {};
+  }
+
+  //auto centerX = static_cast<float>(host->width()) * 0.5f;
+  //auto centerY = static_cast<float>(host->height()) * 0.5f;
+  std::vector<tgfx::GlyphID> glyphIDs = {};
+  std::vector<tgfx::Point> positions = {};
+  const auto totalCount = glyphDatas.size();
+  const auto sourceGlyphCount = sourceGlyphIDs.size();
+  for (size_t i = 0; i < totalCount; i++) {
+    //glyphDatas[i].rect.offsetTo(centerX, centerY);
+    glyphIDs.push_back(sourceGlyphIDs[i % sourceGlyphCount]);
+    positions.emplace_back(glyphDatas[i].rect.left, glyphDatas[i].rect.top);
+  }
+  return {font, std::move(glyphIDs), std::move(positions)};
 }
 
 void ParticleBench::Init(const AppHost* host) {
@@ -139,6 +184,9 @@ void ParticleBench::Init(const AppHost* host) {
       paths[i] = CreateStar(graphics[i].rect);
     }
   }
+  if (graphicType == GraphicType::Text) {
+    glyphRun = CreateGlyphRun(host, graphics);
+  }
 }
 
 void ParticleBench::AnimateRects(const AppHost* host) {
@@ -164,15 +212,23 @@ void ParticleBench::AnimateRects(const AppHost* host) {
     startY = screenRect.centerY();
   }
   startRect.offsetTo(startX - startRect.width() * 0.5f, startY - startRect.height() * 0.5f);
+  tgfx::Rect border{0, 0, width, height};
+  if (graphicType == GraphicType::Text) {
+    // Expand border for text clipping test
+    border.outset(width, height);
+  }
   for (size_t i = 0; i < drawCount; i++) {
     auto& graphic = graphics[i];
     auto& rect = graphic.rect;
-    if (rect.right <= 0 || rect.left >= width || rect.bottom <= 0 || rect.top >= height) {
+    if (!tgfx::Rect::Intersects(rect, border)) {
       auto offsetX = rect.width() * 0.5f;
       auto offsetY = rect.height() * 0.5f;
       rect.offsetTo(startX - offsetX, startY - offsetY);
     } else {
       rect.offset(graphic.speedX, graphic.speedY);
+    }
+    if (graphicType == GraphicType::Text) {
+      glyphRun.positions[i].set(rect.left, rect.top);
     }
   }
 }
@@ -290,6 +346,21 @@ void ParticleBench::DrawStar(tgfx::Canvas* canvas) const {
   canvas->drawRect(startRect, {});
 }
 
+void ParticleBench::DrawText(tgfx::Canvas* canvas) const {
+  const auto& glyphs = glyphRun.glyphs;
+  const auto& positions = glyphRun.positions;
+  auto groupSize = static_cast<int>(drawCount / 3);
+  for (auto i = 0; i < 3; i++) {
+    auto start = i * groupSize;
+    auto end = (i == 2) ? static_cast<int>(drawCount) : (i + 1) * groupSize;
+    auto count = static_cast<size_t>(end - start);
+    auto textBlob = tgfx::TextBlob::MakeFrom(glyphs.data() + start, positions.data() + start, count,
+                                             glyphRun.font);
+    canvas->drawTextBlob(std::move(textBlob), 0.f, 0.f, paints[i]);
+  }
+  canvas->drawRect(startRect, {});
+}
+
 void ParticleBench::DrawGraphics(tgfx::Canvas* canvas) const {
   switch (graphicType) {
     case GraphicType::Rect:
@@ -306,6 +377,9 @@ void ParticleBench::DrawGraphics(tgfx::Canvas* canvas) const {
       break;
     case GraphicType::Star:
       DrawStar(canvas);
+      break;
+    case GraphicType::Text:
+      DrawText(canvas);
       break;
     default:
       DrawRects(canvas);
