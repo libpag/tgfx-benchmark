@@ -120,14 +120,14 @@ static GlyphRunData CreateGlyphRun(const AppHost* host, std::vector<GraphicData>
     return {};
   }
 
-  //auto centerX = static_cast<float>(host->width()) * 0.5f;
-  //auto centerY = static_cast<float>(host->height()) * 0.5f;
-  std::vector<tgfx::GlyphID> glyphIDs = {};
-  std::vector<tgfx::Point> positions = {};
   const auto totalCount = glyphDatas.size();
   const auto sourceGlyphCount = sourceGlyphIDs.size();
+  std::vector<tgfx::GlyphID> glyphIDs = {};
+  std::vector<tgfx::Point> positions = {};
+  glyphIDs.reserve(totalCount);
+  positions.reserve(totalCount);
+
   for (size_t i = 0; i < totalCount; i++) {
-    //glyphDatas[i].rect.offsetTo(centerX, centerY);
     glyphIDs.push_back(sourceGlyphIDs[i % sourceGlyphCount]);
     positions.emplace_back(glyphDatas[i].rect.left, glyphDatas[i].rect.top);
   }
@@ -145,6 +145,7 @@ void ParticleBench::Init(const AppHost* host) {
   status = {};
   drawCount = InitDrawCount;
   maxDrawCountReached = false;
+  textSpawnedCount = 0;
   perfData = {};
   fpsFont = tgfx::Font(host->getTypeface("default"), FONT_SIZE * host->density());
   for (auto i = 0; i < 3; i++) {
@@ -160,6 +161,8 @@ void ParticleBench::Init(const AppHost* host) {
       paints[i].setStyle(tgfx::PaintStyle::Fill);
     }
   }
+  // Soft purple for text
+  textPaint.setColor({0.6f, 0.5f, 0.7f, 1.0f});
 
   startRect = tgfx::Rect::MakeWH(20.f * host->density(), 20.f * host->density());
   graphics.resize(MaxDrawCount);
@@ -212,24 +215,39 @@ void ParticleBench::AnimateRects(const AppHost* host) {
     startY = screenRect.centerY();
   }
   startRect.offsetTo(startX - startRect.width() * 0.5f, startY - startRect.height() * 0.5f);
-  tgfx::Rect border{0, 0, width, height};
-  if (graphicType == GraphicType::Text) {
+  tgfx::Rect respawnBounds{0, 0, width, height};
+  const auto isTextType = graphicType == GraphicType::Text;
+  if (isTextType) {
     // Expand border for text clipping test
-    border.outset(width, height);
+    respawnBounds.outset(width, height);
   }
   for (size_t i = 0; i < drawCount; i++) {
     auto& graphic = graphics[i];
     auto& rect = graphic.rect;
-    if (!tgfx::Rect::Intersects(rect, border)) {
+    bool shouldRespawn;
+    if (isTextType) {
+      // For Text: new particles use screen rect to respawn from mouse position,
+      // already spawned particles use expanded border for clipping test
+      auto isNewParticle = i >= textSpawnedCount;
+      shouldRespawn = isNewParticle ? !tgfx::Rect::Intersects(rect, screenRect)
+                                    : !tgfx::Rect::Intersects(rect, respawnBounds);
+    } else {
+      // For other types: simply check screen border
+      shouldRespawn = !tgfx::Rect::Intersects(rect, respawnBounds);
+    }
+    if (shouldRespawn) {
       auto offsetX = rect.width() * 0.5f;
       auto offsetY = rect.height() * 0.5f;
       rect.offsetTo(startX - offsetX, startY - offsetY);
     } else {
       rect.offset(graphic.speedX, graphic.speedY);
     }
-    if (graphicType == GraphicType::Text) {
+    if (isTextType) {
       glyphRun.positions[i].set(rect.left, rect.top);
     }
+  }
+  if (isTextType) {
+    textSpawnedCount = drawCount;
   }
 }
 
@@ -347,17 +365,9 @@ void ParticleBench::DrawStar(tgfx::Canvas* canvas) const {
 }
 
 void ParticleBench::DrawText(tgfx::Canvas* canvas) const {
-  const auto& glyphs = glyphRun.glyphs;
-  const auto& positions = glyphRun.positions;
-  auto groupSize = static_cast<int>(drawCount / 3);
-  for (auto i = 0; i < 3; i++) {
-    auto start = i * groupSize;
-    auto end = (i == 2) ? static_cast<int>(drawCount) : (i + 1) * groupSize;
-    auto count = static_cast<size_t>(end - start);
-    auto textBlob = tgfx::TextBlob::MakeFrom(glyphs.data() + start, positions.data() + start, count,
-                                             glyphRun.font);
-    canvas->drawTextBlob(std::move(textBlob), 0.f, 0.f, paints[i]);
-  }
+  auto textBlob = tgfx::TextBlob::MakeFrom(glyphRun.glyphs.data(), glyphRun.positions.data(),
+                                           drawCount, glyphRun.font);
+  canvas->drawTextBlob(std::move(textBlob), 0.f, 0.f, textPaint);
   canvas->drawRect(startRect, {});
 }
 

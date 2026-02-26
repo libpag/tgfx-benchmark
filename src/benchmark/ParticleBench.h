@@ -106,13 +106,15 @@ class ParticleBench : public Bench {
   std::vector<GraphicData> graphics = {};
   std::vector<tgfx::Path> paths = {};
   tgfx::Rect startRect = tgfx::Rect::MakeEmpty();
-  tgfx::Paint paints[3];  // red, green, blue solid paints
+  tgfx::Paint paints[3];       // red, green, blue solid paints
+  tgfx::Paint textPaint = {};  // soft purple for text
   int64_t lastFlushTime = -1;
   tgfx::Font fpsFont = {};
   tgfx::Color fpsColor = tgfx::Color::Green();
   std::vector<std::string> status = {};
   GraphicType graphicType = GraphicType::Rect;
   bool maxDrawCountReached = false;
+  size_t textSpawnedCount = 0;  // Track how many glyphs have been initialized from mouse
   PerfData perfData = {};
   GlyphRunData glyphRun = {};
 };
