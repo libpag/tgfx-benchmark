@@ -34,7 +34,7 @@ struct DrawParam {
   size_t startCount = 1;
   size_t stepCount = 600;
   float minFPS = 60.0f;
-  size_t maxCount = 1000000;
+  size_t maxCount = 10000000;
 };
 
 struct PerfData {

@@ -23,5 +23,6 @@
 @interface TGFXWindow : NSObject <NSWindowDelegate>
 
 - (void)open;
+- (void)redraw;
 
 @end

@@ -31,10 +31,19 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
+static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const CVTimeStamp*,
+                                    CVOptionFlags, CVOptionFlags*, void* context) {
+  auto self = (TGFXWindow*)context;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [self redraw];
+  });
+  return kCVReturnSuccess;
+}
+
 @implementation TGFXWindow {
   NSWindow* window;
   NSView* view;
-  std::shared_ptr<tgfx::CGLWindow> cglWindow;
+  std::shared_ptr<tgfx::Window> tgfxWindow;
   std::unique_ptr<benchmark::AppHost> appHost;
   std::unique_ptr<tgfx::Recording> lastRecording;
   int drawIndex;
@@ -57,15 +66,6 @@
 
 - (void)windowDidResize:(NSNotification*)notification {
   [self updateSize];
-}
-
-static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const CVTimeStamp*,
-                                    CVOptionFlags, CVOptionFlags*, void* context) {
-  auto self = (TGFXWindow*)context;
-  dispatch_async(dispatch_get_main_queue(), ^{
-    [self redraw];
-  });
-  return kCVReturnSuccess;
 }
 
 - (void)open {
@@ -133,7 +133,7 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
   if (appHost == nullptr) {
     appHost = std::make_unique<benchmark::AppHost>();
     std::filesystem::path filePath = __FILE__;
-    auto rootPath = filePath.parent_path().parent_path().parent_path().parent_path().string();
+    auto rootPath = filePath.parent_path().parent_path().parent_path().parent_path().parent_path().string();
     auto imagePath = rootPath + R"(/resources/assets/bridge.jpg)";
     auto image = tgfx::Image::MakeFromFile(imagePath);
     appHost->addImage("bridge", image);
@@ -146,8 +146,8 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
   }
   auto contentScale = static_cast<float>(size.height / view.bounds.size.height);
   auto sizeChanged = appHost->updateScreen(width, height, contentScale);
-  if (sizeChanged && cglWindow != nullptr) {
-    cglWindow->invalidSize();
+  if (sizeChanged && tgfxWindow != nullptr) {
+    tgfxWindow->invalidSize();
   }
   for (NSTrackingArea* trackingArea in [view trackingAreas]) {
     [view removeTrackingArea:trackingArea];
@@ -166,18 +166,18 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
   if (appHost->width() <= 0 || appHost->height() <= 0) {
     return;
   }
-  if (cglWindow == nullptr) {
-    cglWindow = tgfx::CGLWindow::MakeFrom(view);
+  if (tgfxWindow == nullptr) {
+    tgfxWindow = tgfx::CGLWindow::MakeFrom(view);
   }
-  if (cglWindow == nullptr) {
+  if (tgfxWindow == nullptr) {
     return;
   }
-  auto device = cglWindow->getDevice();
+  auto device = tgfxWindow->getDevice();
   auto context = device->lockContext();
   if (context == nullptr) {
     return;
   }
-  auto surface = cglWindow->getSurface(context);
+  auto surface = tgfxWindow->getSurface(context);
   if (surface == nullptr) {
     device->unlock();
     return;
@@ -193,7 +193,7 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
   if (recording != nullptr) {
     context->submit(std::move(recording));
   }
-  cglWindow->present(context);
+  tgfxWindow->present(context);
   device->unlock();
   auto drawTime = tgfx::Clock::Now() - currentTime;
   appHost->recordFrame(drawTime);
