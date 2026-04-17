@@ -34,7 +34,7 @@ static size_t InitDrawCount = 1;
 static float TargetFPS = 60.0f;
 static size_t MaxDrawCount = 10000000;
 static size_t IncreaseStep = 1000;
-static bool AntiAliasFlag = false;
+static bool AntiAliasFlag = true;
 static bool StrokeFlag = false;
 static tgfx::LineJoin LineJoinType = tgfx::LineJoin::Miter;
 
