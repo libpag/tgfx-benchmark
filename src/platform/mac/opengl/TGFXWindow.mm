@@ -47,6 +47,7 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
   std::unique_ptr<benchmark::AppHost> appHost;
   std::unique_ptr<tgfx::Recording> lastRecording;
   int drawIndex;
+    std::shared_ptr<tgfx::Surface> surface;
   CVDisplayLinkRef displayLink;
 }
 
@@ -147,7 +148,7 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
   auto contentScale = static_cast<float>(size.height / view.bounds.size.height);
   auto sizeChanged = appHost->updateScreen(width, height, contentScale);
   if (sizeChanged && tgfxWindow != nullptr) {
-    tgfxWindow->invalidSize();
+      surface = nullptr;
   }
   for (NSTrackingArea* trackingArea in [view trackingAreas]) {
     [view removeTrackingArea:trackingArea];
@@ -177,7 +178,9 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
   if (context == nullptr) {
     return;
   }
-  auto surface = tgfxWindow->getSurface(context);
+    if (surface == nullptr) {
+        surface = tgfx::Surface::MakeFrom(context, tgfxWindow);
+    }
   if (surface == nullptr) {
     device->unlock();
     return;
@@ -193,7 +196,6 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
   if (recording != nullptr) {
     context->submit(std::move(recording));
   }
-  tgfxWindow->present(context);
   device->unlock();
   auto drawTime = tgfx::Clock::Now() - currentTime;
   appHost->recordFrame(drawTime);

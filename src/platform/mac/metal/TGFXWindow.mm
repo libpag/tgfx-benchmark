@@ -20,6 +20,7 @@
 #import <MetalKit/MetalKit.h>
 #import <QuartzCore/CADisplayLink.h>
 #include <cmath>
+#include <deque>
 #include <filesystem>
 #include "base/AppHost.h"
 #include "base/Bench.h"
@@ -33,7 +34,7 @@
   MTKView* view;
   std::shared_ptr<tgfx::Window> tgfxWindow;
   std::unique_ptr<benchmark::AppHost> appHost;
-  std::unique_ptr<tgfx::Recording> lastRecording;
+  std::deque<std::unique_ptr<tgfx::Recording>> pendingRecordings;
   int drawIndex;
 }
 
@@ -77,8 +78,6 @@
     CADisplayLink* caDisplayLink = [view displayLinkWithTarget:self selector:@selector(redraw)];
     [caDisplayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSRunLoopCommonModes];
   } else {
-    // MTKView with paused=YES does not drive rendering automatically.
-    // Use a timer as a fallback on macOS < 14 where CADisplayLink is unavailable.
     [NSTimer scheduledTimerWithTimeInterval:1.0 / 60.0
                                     target:self
                                   selector:@selector(redraw)
@@ -133,10 +132,7 @@
     appHost->resetFrames();
   }
   auto contentScale = static_cast<float>(size.height / view.bounds.size.height);
-  auto sizeChanged = appHost->updateScreen(width, height, contentScale);
-  if (sizeChanged && tgfxWindow != nullptr) {
-    tgfxWindow->invalidSize();
-  }
+  appHost->updateScreen(width, height, contentScale);
   for (NSTrackingArea* trackingArea in [view trackingAreas]) {
     [view removeTrackingArea:trackingArea];
   }
@@ -165,7 +161,7 @@
   if (context == nullptr) {
     return;
   }
-  auto surface = tgfxWindow->getSurface(context);
+  auto surface = tgfx::Surface::MakeFrom(context, tgfxWindow);
   if (surface == nullptr) {
     device->unlock();
     return;
@@ -177,11 +173,14 @@
   auto bench = benchmark::Bench::GetByIndex(index);
   bench->draw(canvas, appHost.get());
   auto recording = context->flush();
-  std::swap(lastRecording, recording);
   if (recording != nullptr) {
-    context->submit(std::move(recording));
+    pendingRecordings.push_back(std::move(recording));
   }
-  tgfxWindow->present(context);
+  // Triple buffering: keep 2 recordings in flight, submit the oldest.
+  while (pendingRecordings.size() > 2) {
+    context->submit(std::move(pendingRecordings.front()));
+    pendingRecordings.pop_front();
+  }
   device->unlock();
   auto drawTime = tgfx::Clock::Now() - currentTime;
   appHost->recordFrame(drawTime);

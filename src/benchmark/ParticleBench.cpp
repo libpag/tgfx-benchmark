@@ -34,7 +34,7 @@ static size_t InitDrawCount = 1;
 static float TargetFPS = 60.0f;
 static size_t MaxDrawCount = 10000000;
 static size_t IncreaseStep = 1000;
-static bool AntiAliasFlag = true;
+static bool AntiAliasFlag = false;
 static bool StrokeFlag = false;
 static tgfx::LineJoin LineJoinType = tgfx::LineJoin::Miter;
 
@@ -60,10 +60,26 @@ ParticleBench::ParticleBench(GraphicType type)
 }
 
 void ParticleBench::onDraw(tgfx::Canvas* canvas, const AppHost* host) {
+  auto drawPhaseStart = tgfx::Clock::Now();
+  
   Init(host);
+  auto initTime = tgfx::Clock::Now() - drawPhaseStart;
+  
   AnimateRects(host);
+  auto animateTime = tgfx::Clock::Now() - drawPhaseStart - initTime;
+  
   DrawGraphics(canvas);
+  auto drawGraphicsTime = tgfx::Clock::Now() - drawPhaseStart - initTime - animateTime;
+  
   DrawStatus(canvas, host);
+  auto drawStatusTime = tgfx::Clock::Now() - drawPhaseStart - initTime - animateTime - drawGraphicsTime;
+  
+  auto totalDrawTime = tgfx::Clock::Now() - drawPhaseStart;
+  if (totalDrawTime > 5000 || animateTime > 2000 || drawGraphicsTime > 8000) {
+    printf("DRAW_BREAKDOWN: total=%.2fms (init=%.2fms animate=%.2fms graphics=%.2fms status=%.2fms)\n",
+           totalDrawTime / 1000.0, initTime / 1000.0, animateTime / 1000.0,
+           drawGraphicsTime / 1000.0, drawStatusTime / 1000.0);
+  }
 }
 
 static tgfx::Path CreateStar(const tgfx::Rect& rect) {
