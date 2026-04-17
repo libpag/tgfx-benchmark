@@ -52,6 +52,7 @@ class TGFXWindow {
 #else
   std::shared_ptr<tgfx::WGLWindow> tgfxWindow = nullptr;
 #endif
+  std::shared_ptr<tgfx::Surface> surface = nullptr;
 
   static WNDCLASS RegisterWindowClass();
   static LRESULT CALLBACK WndProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) noexcept;

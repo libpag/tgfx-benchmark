@@ -22,6 +22,7 @@
 #include <shellscalingapi.h>
 #endif
 #include "tgfx/core/Clock.h"
+#include "tgfx/core/Surface.h"
 
 namespace benchmark {
 static constexpr LPCWSTR ClassName = L"TGFXWindow";
@@ -244,7 +245,7 @@ void TGFXWindow::draw() {
   auto pixelRatio = getPixelRatio();
   auto sizeChanged = appHost->updateScreen(width, height, pixelRatio);
   if (sizeChanged) {
-    tgfxWindow->invalidSize();
+    surface = nullptr;
   }
   auto device = tgfxWindow->getDevice();
   if (device == nullptr) {
@@ -254,7 +255,9 @@ void TGFXWindow::draw() {
   if (context == nullptr) {
     return;
   }
-  auto surface = tgfxWindow->getSurface(context);
+  if (surface == nullptr) {
+    surface = tgfx::Surface::MakeFrom(context, tgfxWindow);
+  }
   if (surface == nullptr) {
     device->unlock();
     return;
@@ -272,13 +275,8 @@ void TGFXWindow::draw() {
   if (recording != nullptr) {
     context->submit(std::move(recording));
   }
-
-  auto presentStartTime = tgfx::Clock::Now();
-  // Exclude the present time from the draw time to avoid blocking caused by vsync.
-  tgfxWindow->present(context);
-  auto presentTime = tgfx::Clock::Now() - presentStartTime;
   device->unlock();
-  auto drawTime = tgfx::Clock::Now() - currentTime - presentTime;
+  auto drawTime = tgfx::Clock::Now() - currentTime;
   appHost->recordFrame(drawTime);
 }
 }  // namespace benchmark
