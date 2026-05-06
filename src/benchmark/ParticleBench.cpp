@@ -28,6 +28,9 @@ static constexpr int64_t FLUSH_INTERVAL = 300000;
 static constexpr float FPS_BACKGROUND_HEIGHT = 50.f;
 static constexpr float STATUS_WIDTH = 250.f;
 static constexpr float FONT_SIZE = 40.f;
+static constexpr float NAME_FONT_SIZE = 16.f;
+static constexpr float NAME_LEFT_PADDING = 10.f;
+static constexpr float NAME_MAX_WIDTH = 95.f;
 
 static bool DrawStatusFlag = true;
 static size_t InitDrawCount = 1;
@@ -53,6 +56,28 @@ static std::string ToString(GraphicType type) {
     default:
       return "Unknown";
   }
+}
+
+static std::vector<std::string> WrapText(const std::string& text, const tgfx::Font& font,
+                                        float maxWidth) {
+  std::vector<std::string> lines;
+  std::string current;
+  float currentWidth = 0.f;
+  for (char c : text) {
+    auto glyphID = font.getGlyphID(static_cast<tgfx::Unichar>(c));
+    auto advance = font.getAdvance(glyphID);
+    if (!current.empty() && currentWidth + advance > maxWidth) {
+      lines.push_back(current);
+      current.clear();
+      currentWidth = 0.f;
+    }
+    current.push_back(c);
+    currentWidth += advance;
+  }
+  if (!current.empty()) {
+    lines.push_back(current);
+  }
+  return lines;
 }
 
 ParticleBench::ParticleBench(GraphicType type)
@@ -102,6 +127,7 @@ void ParticleBench::Init(const AppHost* host) {
   maxDrawCountReached = false;
   perfData = {};
   fpsFont = tgfx::Font(host->getTypeface("default"), FONT_SIZE * host->density());
+  nameFont = tgfx::Font(host->getTypeface("default"), NAME_FONT_SIZE * host->density());
   for (auto i = 0; i < 3; i++) {
     tgfx::Color color = tgfx::Color::Black();
     color[i] = 1.f;
@@ -194,10 +220,10 @@ void ParticleBench::DrawStatus(tgfx::Canvas* canvas, const AppHost* host) {
   if (flushInterval > FLUSH_INTERVAL) {
     auto fps = host->currentFPS();
     if (fps > 0.0f) {
-      currentFPS = fps;
+      _currentFPS = fps;
       auto drawTime = host->averageDrawTime();
       if (!maxDrawCountReached) {
-        if ((currentFPS < TargetFPS - 0.5f &&
+        if ((_currentFPS < TargetFPS - 0.5f &&
              drawTime > static_cast<int64_t>(1000000 / TargetFPS) - 2000) ||
             drawCount >= MaxDrawCount) {
           maxDrawCountReached = true;
@@ -205,7 +231,7 @@ void ParticleBench::DrawStatus(tgfx::Canvas* canvas, const AppHost* host) {
       }
       status.clear();
       std::ostringstream oss;
-      oss << std::fixed << std::setprecision(1) << currentFPS;
+      oss << std::fixed << std::setprecision(1) << _currentFPS;
       status.push_back("FPS: " + oss.str());
       oss.str("");
       oss << std::fixed << std::setprecision(1) << static_cast<float>(drawTime) / 1000.f;
@@ -217,9 +243,9 @@ void ParticleBench::DrawStatus(tgfx::Canvas* canvas, const AppHost* host) {
         countInfo = "[" + countInfo + "]";
       }
       status.push_back("Count: " + countInfo);
-      if (currentFPS > 59.f) {
+      if (_currentFPS > 59.f) {
         fpsColor = tgfx::Color::Green();
-      } else if (currentFPS > 29.f) {
+      } else if (_currentFPS > 29.f) {
         fpsColor = tgfx::Color{1.f, 1.f, 0.f, 1.f};
       } else {
         fpsColor = tgfx::Color{0.91f, 0.31f, 0.28f, 1.f};
@@ -227,7 +253,7 @@ void ParticleBench::DrawStatus(tgfx::Canvas* canvas, const AppHost* host) {
       lastFlushTime = currentTime - (flushInterval % FLUSH_INTERVAL);
     }
   }
-  perfData.fps = currentFPS;
+  perfData.fps = _currentFPS;
   perfData.drawTime = static_cast<float>(host->averageDrawTime()) / 1000.f;
   perfData.drawCount = drawCount;
   if (!DrawStatusFlag) {
@@ -240,6 +266,17 @@ void ParticleBench::DrawStatus(tgfx::Canvas* canvas, const AppHost* host) {
       tgfx::Rect::MakeWH(static_cast<float>(width), FPS_BACKGROUND_HEIGHT * host->density());
   canvas->drawRect(backgroundRect, paint);
   auto top = FONT_SIZE * host->density();
+  paint.setColor(tgfx::Color::White());
+  auto nameLines = WrapText(name(), nameFont, NAME_MAX_WIDTH * host->density());
+  const auto lineHeight = NAME_FONT_SIZE * host->density();
+  const auto lineGap = 2.f * host->density();
+  const auto totalHeight = static_cast<float>(nameLines.size()) * lineHeight +
+                           static_cast<float>(nameLines.size() - 1) * lineGap;
+  auto nameTop = (FPS_BACKGROUND_HEIGHT * host->density() - totalHeight) * 0.5f + lineHeight;
+  for (const auto& line : nameLines) {
+    canvas->drawSimpleText(line, NAME_LEFT_PADDING * host->density(), nameTop, nameFont, paint);
+    nameTop += lineHeight + lineGap;
+  }
   paint.setColor(fpsColor);
   float left = STATUS_WIDTH * host->density() / 2;
   for (auto& line : status) {

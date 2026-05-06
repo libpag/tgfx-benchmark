@@ -35,9 +35,12 @@
   NSWindow* window;
   NSView* view;
   std::shared_ptr<tgfx::CGLWindow> cglWindow;
+  std::shared_ptr<tgfx::Surface> surface;
   std::unique_ptr<benchmark::AppHost> appHost;
   std::unique_ptr<tgfx::Recording> lastRecording;
   int drawIndex;
+  size_t lastReportedCount;
+  bool stableReported;
   CVDisplayLinkRef displayLink;
 }
 
@@ -88,6 +91,17 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
   [window makeKeyAndOrderFront:nil];
   [self updateSize];
   drawIndex = 0;
+  lastReportedCount = 0;
+  stableReported = false;
+  if (const char* benchName = std::getenv("BENCH_NAME"); benchName != nullptr && *benchName) {
+    auto& names = benchmark::Bench::Names();
+    for (size_t i = 0; i < names.size(); i++) {
+      if (names[i] == benchName) {
+        drawIndex = static_cast<int>(i);
+        break;
+      }
+    }
+  }
   if (@available(macOS 14, *)) {
     displayLink = nil;
     CADisplayLink* caDisplayLink = [view displayLinkWithTarget:self selector:@selector(redraw)];
@@ -104,6 +118,8 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
     appHost->resetFrames();
   }
   drawIndex++;
+  lastReportedCount = 0;
+  stableReported = false;
 }
 
 - (void)mouseMoved:(NSEvent*)event {
@@ -147,7 +163,7 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
   auto contentScale = static_cast<float>(size.height / view.bounds.size.height);
   auto sizeChanged = appHost->updateScreen(width, height, contentScale);
   if (sizeChanged && cglWindow != nullptr) {
-    cglWindow->invalidSize();
+    surface = nullptr;
   }
   for (NSTrackingArea* trackingArea in [view trackingAreas]) {
     [view removeTrackingArea:trackingArea];
@@ -177,7 +193,9 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
   if (context == nullptr) {
     return;
   }
-  auto surface = cglWindow->getSurface(context);
+  if (surface == nullptr) {
+    surface = tgfx::Surface::MakeFrom(context, cglWindow);
+  }
   if (surface == nullptr) {
     device->unlock();
     return;
@@ -193,10 +211,20 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
   if (recording != nullptr) {
     context->submit(std::move(recording));
   }
-  cglWindow->present(context);
   device->unlock();
   auto drawTime = tgfx::Clock::Now() - currentTime;
   appHost->recordFrame(drawTime);
+  auto drawCount = bench->currentDrawCount();
+  bool stable = bench->isStable();
+  if (drawCount != lastReportedCount || (stable && !stableReported)) {
+    lastReportedCount = drawCount;
+    if (stable) {
+      stableReported = true;
+    }
+    fprintf(stdout, "PERF name=%s fps=%.2f drawCount=%zu stable=%d\n", bench->name().c_str(),
+            bench->currentFPS(), drawCount, stable ? 1 : 0);
+    fflush(stdout);
+  }
 }
 @end
 

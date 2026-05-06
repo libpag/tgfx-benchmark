@@ -57,6 +57,28 @@ class Bench {
    */
   void draw(tgfx::Canvas* canvas, const AppHost* host);
 
+  /**
+   * Returns true if the benchmark has reached a stable state where the draw count no longer
+   * grows. Subclasses without an adaptive draw count should leave the default.
+   */
+  virtual bool isStable() const {
+    return false;
+  }
+
+  /**
+   * Returns the most recent draw count produced by the benchmark, or 0 if not applicable.
+   */
+  virtual size_t currentDrawCount() const {
+    return 0;
+  }
+
+  /**
+   * Returns the most recently sampled FPS, or 0 if not applicable.
+   */
+  virtual float currentFPS() const {
+    return 0.f;
+  }
+
  protected:
   virtual void onDraw(tgfx::Canvas* canvas, const AppHost* host) = 0;
 

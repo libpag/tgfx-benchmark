@@ -31,6 +31,7 @@
 - (void)applicationDidFinishLaunching:(NSNotification*)aNotification {
   window = [[TGFXWindow alloc] init];
   [window open];
+  [NSApp activateIgnoringOtherApps:YES];
 }
 
 - (void)applicationWillTerminate:(NSNotification*)aNotification {
