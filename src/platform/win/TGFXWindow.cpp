@@ -21,7 +21,6 @@
 #if WINVER >= 0x0603  // Windows 8.1
 #include <shellscalingapi.h>
 #endif
-#include "tgfx/core/Clock.h"
 
 namespace benchmark {
 static constexpr LPCWSTR ClassName = L"TGFXWindow";
@@ -85,6 +84,12 @@ LRESULT TGFXWindow::handleMessage(HWND hwnd, UINT message, WPARAM wparam, LPARAM
       destroy();
       PostQuitMessage(0);
       break;
+    case WM_SIZE: {
+      // Drop the cached surface so it will be re-created against the new backbuffer size.
+      surface = nullptr;
+      ::InvalidateRect(windowHandle, nullptr, TRUE);
+      break;
+    }
     case WM_PAINT: {
       // Commented out the next 3 lines to trigger continuous redraw
       //      PAINTSTRUCT ps;
@@ -223,62 +228,5 @@ void TGFXWindow::createAppHost() {
   auto emojiPath = rootPath + R"(\resources\font\NotoColorEmoji.ttf)";
   typeface = tgfx::Typeface::MakeFromPath(emojiPath);
   appHost->addTypeface("emoji", typeface);
-}
-
-void TGFXWindow::draw() {
-  auto currentTime = tgfx::Clock::Now();
-  if (!tgfxWindow) {
-#ifdef TGFX_USE_ANGLE
-    tgfxWindow = tgfx::EGLWindow::MakeFrom(windowHandle);
-#else
-    tgfxWindow = tgfx::WGLWindow::MakeFrom(windowHandle);
-#endif
-  }
-  if (tgfxWindow == nullptr) {
-    return;
-  }
-  RECT rect;
-  GetClientRect(windowHandle, &rect);
-  auto width = static_cast<int>(rect.right - rect.left);
-  auto height = static_cast<int>(rect.bottom - rect.top);
-  auto pixelRatio = getPixelRatio();
-  auto sizeChanged = appHost->updateScreen(width, height, pixelRatio);
-  if (sizeChanged) {
-    tgfxWindow->invalidSize();
-  }
-  auto device = tgfxWindow->getDevice();
-  if (device == nullptr) {
-    return;
-  }
-  auto context = device->lockContext();
-  if (context == nullptr) {
-    return;
-  }
-  auto surface = tgfxWindow->getSurface(context);
-  if (surface == nullptr) {
-    device->unlock();
-    return;
-  }
-  auto canvas = surface->getCanvas();
-  canvas->clear({0.87f, 0.87f, 0.87f, 1.0f});
-  canvas->save();
-  auto numBenches = Bench::Count();
-  auto index = (lastDrawIndex % numBenches);
-  auto bench = Bench::GetByIndex(index);
-  bench->draw(canvas, appHost.get());
-  canvas->restore();
-  auto recording = context->flush();
-  std::swap(lastRecording, recording);
-  if (recording != nullptr) {
-    context->submit(std::move(recording));
-  }
-
-  auto presentStartTime = tgfx::Clock::Now();
-  // Exclude the present time from the draw time to avoid blocking caused by vsync.
-  tgfxWindow->present(context);
-  auto presentTime = tgfx::Clock::Now() - presentStartTime;
-  device->unlock();
-  auto drawTime = tgfx::Clock::Now() - currentTime - presentTime;
-  appHost->recordFrame(drawTime);
 }
 }  // namespace benchmark

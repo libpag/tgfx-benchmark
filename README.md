@@ -37,6 +37,14 @@ option, for example:
 
 Finally, open Xcode and launch the `mac/TGFX-Benchmark.xcodeproj`. You are all set!
 
+By default, the macOS benchmark uses the OpenGL (CGL) backend. You can also build with the
+Metal backend by passing the `TGFX_USE_METAL` option to CMake. For example, in CLion's CMake
+options:
+
+```
+-DTGFX_USE_METAL=ON
+```
+
 ### Windows
 
 To get started, open the root directory in CLion. Then, go to `File->Settings` and navigate to
@@ -63,6 +71,23 @@ cmake -G "Visual Studio 16 2019" -A Win32 -DCMAKE_CONFIGURATION_TYPES="Debug" -B
 
 Finally, open the `Benchmark.sln` file in the `win/Release-x64/` or `win/Debug-x86/` directory, and 
 set the `Benchmark` project as the startup project. You are all set!
+
+By default, the Windows benchmark uses the OpenGL (WGL) backend. You can also build with the
+Direct3D 12 backend by passing the `TGFX_USE_D3D` option to CMake. For example, in CLion's CMake
+options:
+
+```
+-DTGFX_USE_D3D=ON
+```
+
+Or from the Visual Studio command prompt:
+
+```
+cmake -G "Visual Studio 17 2022" -A x64 -DTGFX_USE_D3D=ON -DCMAKE_CONFIGURATION_TYPES="Release" -B ./win/Release-x64-d3d
+```
+
+When `TGFX_USE_D3D` is enabled, the underlying `tgfx` library is built with the D3D12 GPU backend
+(`TGFX_USE_D3D12=ON`) and the OpenGL/WGL/ANGLE paths are disabled.
 
 ### Web
 

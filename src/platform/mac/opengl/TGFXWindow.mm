@@ -44,6 +44,7 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
   NSWindow* window;
   NSView* view;
   std::shared_ptr<tgfx::Window> tgfxWindow;
+  std::shared_ptr<tgfx::Surface> surface;
   std::unique_ptr<benchmark::AppHost> appHost;
   std::unique_ptr<tgfx::Recording> lastRecording;
   int drawIndex;
@@ -146,8 +147,9 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
   }
   auto contentScale = static_cast<float>(size.height / view.bounds.size.height);
   auto sizeChanged = appHost->updateScreen(width, height, contentScale);
-  if (sizeChanged && tgfxWindow != nullptr) {
-    tgfxWindow->invalidSize();
+  if (sizeChanged) {
+    // Drop the cached surface so it will be re-created against the new backbuffer size.
+    surface = nullptr;
   }
   for (NSTrackingArea* trackingArea in [view trackingAreas]) {
     [view removeTrackingArea:trackingArea];
@@ -177,7 +179,12 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
   if (context == nullptr) {
     return;
   }
-  auto surface = tgfxWindow->getSurface(context);
+  if (surface == nullptr) {
+    if (lastRecording != nullptr) {
+      context->submit(std::move(lastRecording));
+    }
+    surface = tgfx::Surface::MakeFrom(context, tgfxWindow);
+  }
   if (surface == nullptr) {
     device->unlock();
     return;
@@ -190,12 +197,17 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
   bench->draw(canvas, appHost.get());
   auto recording = context->flush();
   std::swap(lastRecording, recording);
+  // See win/d3d/TGFXWindow.cpp — Context::lastPresentTime() returns the wall-clock time spent
+  // inside Window::onPresent() during this submit() (instrumented in the bundled tgfx). Subtract
+  // it so any swap-chain wait is excluded from the per-frame draw time, matching the other
+  // backends' measurement.
+  int64_t presentTime = 0;
   if (recording != nullptr) {
     context->submit(std::move(recording));
+    presentTime = context->lastPresentTime();
   }
-  tgfxWindow->present(context);
   device->unlock();
-  auto drawTime = tgfx::Clock::Now() - currentTime;
+  auto drawTime = tgfx::Clock::Now() - currentTime - presentTime;
   appHost->recordFrame(drawTime);
 }
 @end

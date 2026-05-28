@@ -28,11 +28,9 @@
 #include <memory>
 #include <string>
 #include "base/Bench.h"
-#ifdef TGFX_USE_ANGLE
-#include "tgfx/gpu/opengl/egl/EGLWindow.h"
-#else
-#include "tgfx/gpu/opengl/wgl/WGLWindow.h"
-#endif
+#include "tgfx/core/Surface.h"
+#include "tgfx/gpu/Recording.h"
+#include "tgfx/gpu/Window.h"
 
 namespace benchmark {
 class TGFXWindow {
@@ -47,11 +45,8 @@ class TGFXWindow {
   std::unique_ptr<tgfx::Recording> lastRecording = nullptr;
   int lastDrawIndex = 0;
   std::shared_ptr<AppHost> appHost = nullptr;
-#ifdef TGFX_USE_ANGLE
-  std::shared_ptr<tgfx::EGLWindow> tgfxWindow = nullptr;
-#else
-  std::shared_ptr<tgfx::WGLWindow> tgfxWindow = nullptr;
-#endif
+  std::shared_ptr<tgfx::Window> tgfxWindow = nullptr;
+  std::shared_ptr<tgfx::Surface> surface = nullptr;
 
   static WNDCLASS RegisterWindowClass();
   static LRESULT CALLBACK WndProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) noexcept;
@@ -62,6 +57,10 @@ class TGFXWindow {
   void centerAndShow();
   float getPixelRatio();
   void createAppHost();
+
+  // Backend-specific. Implemented separately in win/d3d/TGFXWindow.cpp or
+  // win/opengl/TGFXWindow.cpp.
+  std::shared_ptr<tgfx::Window> createTGFXWindow(HWND hwnd);
   void draw();
 };
 }  // namespace benchmark
