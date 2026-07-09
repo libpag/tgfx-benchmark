@@ -24,6 +24,8 @@ namespace benchmark {
 
 enum class GraphicType { Rect, Circle, Oval, RRect, Star };
 
+enum class ClipState { None, RectAA, RectNonAA, MatrixRect, MatrixRRect, Path };
+
 struct GraphicData {
   tgfx::Rect rect{0, 0, 1, 1};
   float speedX;
@@ -63,6 +65,8 @@ class ParticleBench : public Bench {
   static void SetAntiAlias(bool aa);
 
   static void SetStroke(bool stroke);
+
+  static void SetClipState(ClipState state);
 
   bool isMaxDrawCountReached() const;
 

@@ -20,6 +20,8 @@
 #import <QuartzCore/CADisplayLink.h>
 #include <cmath>
 #include <filesystem>
+#include <type_traits>
+#include <utility>
 #include "base/AppHost.h"
 #include "base/Bench.h"
 #include "tgfx/core/Canvas.h"
@@ -30,6 +32,49 @@
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+
+template <typename WindowT, typename = void>
+struct HasInvalidSize : std::false_type {
+};
+
+template <typename WindowT>
+struct HasInvalidSize<WindowT,
+                      std::void_t<decltype(std::declval<WindowT&>().invalidSize())>>
+    : std::true_type {
+};
+
+template <typename WindowT, typename = void>
+struct HasGetSurface : std::false_type {
+};
+
+template <typename WindowT>
+struct HasGetSurface<
+    WindowT,
+    std::void_t<decltype(std::declval<WindowT&>().getSurface(static_cast<tgfx::Context*>(nullptr)))>>
+    : std::true_type {
+};
+
+template <typename WindowT>
+static void InvalidateSurfaceIfNeeded(const std::shared_ptr<WindowT>& window) {
+  if (window == nullptr) {
+    return;
+  }
+  if constexpr (HasInvalidSize<WindowT>::value) {
+    window->invalidSize();
+  }
+}
+
+template <typename WindowT>
+static std::shared_ptr<tgfx::Surface> CreateWindowSurface(const std::shared_ptr<WindowT>& window,
+                                                          tgfx::Context* context) {
+  if (window == nullptr || context == nullptr) {
+    return nullptr;
+  }
+  if constexpr (HasGetSurface<WindowT>::value) {
+    return window->getSurface(context);
+  }
+  return tgfx::Surface::MakeFrom(context, window);
+}
 
 @implementation TGFXWindow {
   NSWindow* window;
@@ -163,6 +208,7 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
   auto contentScale = static_cast<float>(size.height / view.bounds.size.height);
   auto sizeChanged = appHost->updateScreen(width, height, contentScale);
   if (sizeChanged && cglWindow != nullptr) {
+    InvalidateSurfaceIfNeeded(cglWindow);
     surface = nullptr;
   }
   for (NSTrackingArea* trackingArea in [view trackingAreas]) {
@@ -194,7 +240,7 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
     return;
   }
   if (surface == nullptr) {
-    surface = tgfx::Surface::MakeFrom(context, cglWindow);
+    surface = CreateWindowSurface(cglWindow, context);
   }
   if (surface == nullptr) {
     device->unlock();

@@ -17,6 +17,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "ParticleBench.h"
+#include <algorithm>
 #include <cmath>
 #include <iomanip>
 #include <random>
@@ -40,6 +41,7 @@ static size_t IncreaseStep = 1000;
 static bool AntiAliasFlag = true;
 static bool StrokeFlag = false;
 static tgfx::LineJoin LineJoinType = tgfx::LineJoin::Miter;
+static ClipState CurrentClipState = ClipState::Path;
 
 static std::string ToString(GraphicType type) {
   switch (type) {
@@ -56,6 +58,58 @@ static std::string ToString(GraphicType type) {
     default:
       return "Unknown";
   }
+}
+
+static tgfx::Rect MakeRightHalfRect(const tgfx::Rect& rect) {
+  return tgfx::Rect::MakeLTRB(rect.centerX(), rect.top, rect.right, rect.bottom);
+}
+
+static tgfx::Path MakePentagonPath(const tgfx::Rect& rect) {
+  const auto centerX = rect.centerX();
+  const auto centerY = rect.centerY();
+  const auto radius = std::min(rect.width(), rect.height()) * 0.5f;
+  const auto startAngle = -static_cast<float>(M_PI) * 0.5f;
+  const auto angleStep = static_cast<float>(M_PI) * 2.0f / 5.0f;
+  tgfx::Path path = {};
+  for (int i = 0; i < 5; i++) {
+    const auto angle = startAngle + angleStep * static_cast<float>(i);
+    const auto x = centerX + std::cos(angle) * radius;
+    const auto y = centerY + std::sin(angle) * radius;
+    if (i == 0) {
+      path.moveTo(x, y);
+    } else {
+      path.lineTo(x, y);
+    }
+  }
+  path.close();
+  return path;
+}
+
+static void ApplyClipState(tgfx::Canvas* canvas, ClipState clipState, const tgfx::Rect& clipRect) {
+  if (clipState == ClipState::None) {
+    return;
+  }
+  if (clipState == ClipState::RectAA) {
+    canvas->clipRect(clipRect);
+    return;
+  }
+  if (clipState == ClipState::RectNonAA) {
+    canvas->clipRect(clipRect, false);
+    return;
+  }
+  if (clipState == ClipState::Path) {
+    auto path = MakePentagonPath(clipRect);
+    canvas->clipPath(path);
+    return;
+  }
+  canvas->rotate(30.0f, clipRect.centerX(), clipRect.centerY());
+  if (clipState == ClipState::MatrixRect) {
+    canvas->clipRect(clipRect);
+    return;
+  }
+  tgfx::Path path = {};
+  path.addRoundRect(clipRect, clipRect.width() / 3.0f, clipRect.height() / 3.0f);
+  canvas->clipPath(path);
 }
 
 static std::vector<std::string> WrapText(const std::string& text, const tgfx::Font& font,
@@ -175,7 +229,7 @@ void ParticleBench::AnimateRects(const AppHost* host) {
     if (idleTime > 0) {
       auto factor = static_cast<double>(idleTime > halfDrawInterval ? drawTime : idleTime) /
                     static_cast<double>(halfDrawInterval);
-      auto step = static_cast<int64_t>(IncreaseStep * factor);
+      auto step = static_cast<int64_t>(static_cast<double>(IncreaseStep) * factor);
       if (step < 1) {
         step = 1;
       }
@@ -206,7 +260,18 @@ void ParticleBench::AnimateRects(const AppHost* host) {
 void ParticleBench::DrawRects(tgfx::Canvas* canvas) const {
   for (size_t i = 0; i < drawCount; i++) {
     auto& graphic = graphics[i];
-    canvas->drawRect(graphic.rect, paints[i % 3]);
+    auto paint = paints[i % 3];
+    if (CurrentClipState == ClipState::None) {
+      canvas->drawRect(graphic.rect, paint);
+      continue;
+    }
+    auto clipRect = MakeRightHalfRect(graphic.rect);
+    canvas->save();
+    const auto matrix = canvas->getMatrix();
+    ApplyClipState(canvas, CurrentClipState, clipRect);
+    canvas->setMatrix(matrix);
+    canvas->drawRect(graphic.rect, paint);
+    canvas->restore();
   }
   canvas->drawRect(startRect, {});
 }
@@ -384,5 +449,9 @@ void ParticleBench::SetAntiAlias(bool aa) {
 
 void ParticleBench::SetStroke(bool stroke) {
   StrokeFlag = stroke;
+}
+
+void ParticleBench::SetClipState(ClipState state) {
+  CurrentClipState = state;
 }
 }  // namespace benchmark
