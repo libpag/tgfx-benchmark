@@ -105,7 +105,11 @@ void TGFXBaseView::draw() {
     return;
   }
   if (window == nullptr) {
+#if defined(BENCHMARK_BACKEND_WEBGPU)
+    window = tgfx::WebGPUWindow::MakeFrom(canvasID);
+#else
     window = tgfx::WebGLWindow::MakeFrom(canvasID);
+#endif
   }
   if (window == nullptr) {
     return;

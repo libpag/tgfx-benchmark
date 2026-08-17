@@ -22,7 +22,13 @@
 #include "base/AppHost.h"
 #include "benchmark/ParticleBench.h"
 #include "tgfx/core/Surface.h"
+#if defined(BENCHMARK_BACKEND_WEBGPU)
+#include "tgfx/gpu/webgpu/WebGPUWindow.h"
+#elif defined(BENCHMARK_BACKEND_WEBGL)
 #include "tgfx/gpu/opengl/webgl/WebGLWindow.h"
+#else
+#error Unsupported Web Benchmark backend
+#endif
 namespace benchmark {
 
 class TGFXBaseView {

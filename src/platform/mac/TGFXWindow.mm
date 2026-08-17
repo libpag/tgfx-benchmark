@@ -18,6 +18,9 @@
 
 #import "TGFXWindow.h"
 #import <QuartzCore/CADisplayLink.h>
+#if defined(BENCHMARK_BACKEND_METAL)
+#import <MetalKit/MetalKit.h>
+#endif
 #include <cmath>
 #include <filesystem>
 #include "base/AppHost.h"
@@ -25,8 +28,14 @@
 #include "tgfx/core/Canvas.h"
 #include "tgfx/core/Clock.h"
 #include "tgfx/core/Surface.h"
-#include "tgfx/gpu/opengl/GLDevice.h"
+#include "tgfx/gpu/Window.h"
+#if defined(BENCHMARK_BACKEND_METAL)
+#include "tgfx/gpu/metal/MetalWindow.h"
+#elif defined(BENCHMARK_BACKEND_OPENGL)
 #include "tgfx/gpu/opengl/cgl/CGLWindow.h"
+#else
+#error Unsupported macOS Benchmark backend
+#endif
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
@@ -34,25 +43,43 @@
 @implementation TGFXWindow {
   NSWindow* window;
   NSView* view;
-  std::shared_ptr<tgfx::CGLWindow> cglWindow;
+  std::shared_ptr<tgfx::Window> tgfxWindow;
   std::shared_ptr<tgfx::Surface> surface;
   std::unique_ptr<benchmark::AppHost> appHost;
   std::unique_ptr<tgfx::Recording> lastRecording;
   int drawIndex;
   CVDisplayLinkRef displayLink;
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 140000
+  CADisplayLink* caDisplayLink;
+#endif
 }
 
-- (void)dealloc {
+- (void)stopDisplayLink {
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 140000
+  if (caDisplayLink != nil) {
+    [caDisplayLink invalidate];
+    caDisplayLink = nil;
+  }
+#endif
   if (displayLink != nil) {
     CVDisplayLinkStop(displayLink);
     CVDisplayLinkRelease(displayLink);
+    displayLink = nil;
   }
+}
+
+- (void)dealloc {
+  [self stopDisplayLink];
+  lastRecording = nullptr;
+  surface = nullptr;
+  tgfxWindow = nullptr;
   [window release];
   [view release];
   [super dealloc];
 }
 
 - (void)windowWillClose:(NSNotification*)notification {
+  [self stopDisplayLink];
   [NSApp terminate:self];
 }
 
@@ -77,28 +104,51 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
                                        styleMask:styleMask
                                          backing:NSBackingStoreBuffered
                                            defer:NO];
-  [window setTitle:@"TGFX Benchmark"];
+  [window setReleasedWhenClosed:NO];
+#if defined(BENCHMARK_BACKEND_METAL)
+  [window setTitle:@"TGFX Benchmark - Metal"];
+#else
+  [window setTitle:@"TGFX Benchmark - OpenGL"];
+#endif
   [window setDelegate:self];
+#if defined(BENCHMARK_BACKEND_METAL)
+  auto metalView = [[MTKView alloc] initWithFrame:frame];
+  [metalView setPaused:YES];
+  [metalView setEnableSetNeedsDisplay:NO];
+  view = metalView;
+#else
   view = [[NSView alloc] initWithFrame:frame];
+#endif
   [view setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
-  [view addGestureRecognizer:[[NSClickGestureRecognizer alloc]
-                                 initWithTarget:self
-                                         action:@selector(handleClick:)]];
+  auto clickRecognizer = [[NSClickGestureRecognizer alloc] initWithTarget:self
+                                                                    action:@selector(handleClick:)];
+  [view addGestureRecognizer:clickRecognizer];
+  [clickRecognizer release];
   [window setContentView:view];
   [window center];
   [window makeKeyAndOrderFront:nil];
   [self updateSize];
   drawIndex = 0;
+  displayLink = nil;
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 140000
+  caDisplayLink = nil;
   if (@available(macOS 14, *)) {
-    displayLink = nil;
-    CADisplayLink* caDisplayLink = [view displayLinkWithTarget:self selector:@selector(redraw)];
+    caDisplayLink = [view displayLinkWithTarget:self selector:@selector(displayLinkDidFire:)];
     [caDisplayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSRunLoopCommonModes];
-  } else {
+  } else
+#endif
+  {
     CVDisplayLinkCreateWithActiveCGDisplays(&displayLink);
     CVDisplayLinkSetOutputCallback(displayLink, &displayLinkCallback, self);
     CVDisplayLinkStart(displayLink);
   }
 }
+
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 140000
+- (void)displayLinkDidFire:(CADisplayLink*)sender {
+  [self redraw];
+}
+#endif
 
 - (void)handleClick:(NSClickGestureRecognizer*)gestureRecognizer {
   if (appHost != nullptr) {
@@ -168,13 +218,17 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
   if (appHost->width() <= 0 || appHost->height() <= 0) {
     return;
   }
-  if (cglWindow == nullptr) {
-    cglWindow = tgfx::CGLWindow::MakeFrom(view);
+  if (tgfxWindow == nullptr) {
+#if defined(BENCHMARK_BACKEND_METAL)
+    tgfxWindow = tgfx::MetalWindow::MakeFrom((MTKView*)view);
+#else
+    tgfxWindow = tgfx::CGLWindow::MakeFrom(view);
+#endif
   }
-  if (cglWindow == nullptr) {
+  if (tgfxWindow == nullptr) {
     return;
   }
-  auto device = cglWindow->getDevice();
+  auto device = tgfxWindow->getDevice();
   if (device == nullptr) {
     return;
   }
@@ -186,7 +240,7 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
     if (lastRecording != nullptr) {
       context->submit(std::move(lastRecording));
     }
-    surface = tgfx::Surface::MakeFrom(context, cglWindow);
+    surface = tgfx::Surface::MakeFrom(context, tgfxWindow);
   }
   if (surface == nullptr) {
     device->unlock();

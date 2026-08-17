@@ -11,6 +11,8 @@ endif ()
 
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/BenchmarkBackend.cmake)
+configure_benchmark_backend()
 
 if (NOT TGFX_DIR)
     set(TGFX_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/tgfx)
@@ -28,8 +30,15 @@ file(GLOB_RECURSE BENCHMARK_FILES
 if (DEFINED EMSCRIPTEN)
     add_executable(benchmark ${BENCHMARK_FILES})
     list(APPEND BENCHMARK_COMPILE_OPTIONS -fno-rtti -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0)
+    if (BENCHMARK_BACKEND_RESOLVED STREQUAL "WEBGPU")
+        set(BENCHMARK_GRAPHICS_OPTIONS -sUSE_WEBGPU=1)
+        set(BENCHMARK_RUNTIME_METHODS "-sEXPORTED_RUNTIME_METHODS=['HEAPU8','WebGPU']")
+    else ()
+        set(BENCHMARK_GRAPHICS_OPTIONS -sMAX_WEBGL_VERSION=2)
+        set(BENCHMARK_RUNTIME_METHODS "-sEXPORTED_RUNTIME_METHODS=['GL','HEAPU8']")
+    endif ()
     list(APPEND BENCHMARK_LINK_OPTIONS --no-entry -lembind -fno-rtti -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0 -sEXPORT_NAME='Benchmark' -sWASM=1
-            -sMAX_WEBGL_VERSION=2 -sEXPORTED_RUNTIME_METHODS=['GL','HEAPU8'] -sMODULARIZE=1
+            ${BENCHMARK_GRAPHICS_OPTIONS} ${BENCHMARK_RUNTIME_METHODS} -sMODULARIZE=1
             -sENVIRONMENT=web,worker -sEXPORT_ES6=1)
     set(unsupported_emsdk_versions "4.0.11")
     foreach (unsupported_version IN LISTS unsupported_emsdk_versions)
@@ -56,6 +65,7 @@ else ()
     add_library(benchmark SHARED ${BENCHMARK_FILES})
 endif ()
 
+target_compile_definitions(benchmark PRIVATE BENCHMARK_BACKEND_${BENCHMARK_BACKEND_RESOLVED}=1)
 target_compile_options(benchmark PUBLIC ${BENCHMARK_COMPILE_OPTIONS})
 target_link_options(benchmark PUBLIC ${BENCHMARK_LINK_OPTIONS})
 target_link_libraries(benchmark tgfx)

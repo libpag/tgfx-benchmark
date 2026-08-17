@@ -29,10 +29,19 @@
 #include <string>
 #include "base/Bench.h"
 #include "tgfx/core/Surface.h"
-#ifdef TGFX_USE_ANGLE
+#include "tgfx/gpu/Window.h"
+#if defined(BENCHMARK_BACKEND_ANGLE)
 #include "tgfx/gpu/opengl/egl/EGLWindow.h"
-#else
+#elif defined(BENCHMARK_BACKEND_VULKAN)
+#include "tgfx/gpu/vulkan/VulkanDevice.h"
+#include "tgfx/gpu/vulkan/VulkanWindow.h"
+#elif defined(BENCHMARK_BACKEND_D3D12)
+#include "tgfx/gpu/d3d12/D3D12Device.h"
+#include "tgfx/gpu/d3d12/D3D12Window.h"
+#elif defined(BENCHMARK_BACKEND_OPENGL)
 #include "tgfx/gpu/opengl/wgl/WGLWindow.h"
+#else
+#error Unsupported Windows Benchmark backend
 #endif
 
 namespace benchmark {
@@ -49,11 +58,7 @@ class TGFXWindow {
   std::shared_ptr<tgfx::Surface> surface = nullptr;
   int lastDrawIndex = 0;
   std::shared_ptr<AppHost> appHost = nullptr;
-#ifdef TGFX_USE_ANGLE
-  std::shared_ptr<tgfx::EGLWindow> tgfxWindow = nullptr;
-#else
-  std::shared_ptr<tgfx::WGLWindow> tgfxWindow = nullptr;
-#endif
+  std::shared_ptr<tgfx::Window> tgfxWindow = nullptr;
 
   static WNDCLASS RegisterWindowClass();
   static LRESULT CALLBACK WndProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) noexcept;

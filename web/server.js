@@ -18,7 +18,9 @@ app.get('/', (req, res) => {
 
 const port = 8061;
 const args = process.argv.slice(2);
-var fileName = args.includes('wasm-mt') ? 'index': 'index-st';
+const fileName = args.includes('webgpu')
+  ? (args.includes('wasm-mt') ? 'index-webgpu' : 'index-webgpu-st')
+  : (args.includes('wasm-mt') ? 'index' : 'index-st');
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 
