@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.13)
 project(TGFX-Benchmark)
 
+if (APPLE)
+    enable_language(OBJC)
+    enable_language(OBJCXX)
+endif ()
+
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 include(./third_party/vendor_tools/vendor.cmake)
 
