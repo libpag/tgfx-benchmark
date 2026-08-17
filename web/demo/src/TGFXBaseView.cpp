@@ -81,9 +81,8 @@ void TGFXBaseView::updateSize(float devicePixelRatio) {
     int width = 0;
     int height = 0;
     emscripten_get_canvas_element_size(canvasID.c_str(), &width, &height);
-    auto sizeChanged = appHost->updateScreen(width, height, devicePixelRatio);
-    if (sizeChanged && window) {
-      window->invalidSize();
+    if (appHost->updateScreen(width, height, devicePixelRatio)) {
+      surface = nullptr;
     }
   }
 }
@@ -112,11 +111,19 @@ void TGFXBaseView::draw() {
     return;
   }
   auto device = window->getDevice();
+  if (device == nullptr) {
+    return;
+  }
   auto context = device->lockContext();
   if (context == nullptr) {
     return;
   }
-  auto surface = window->getSurface(context);
+  if (surface == nullptr) {
+    if (lastRecording != nullptr) {
+      context->submit(std::move(lastRecording));
+    }
+    surface = tgfx::Surface::MakeFrom(context, window);
+  }
   if (surface == nullptr) {
     device->unlock();
     return;
@@ -137,7 +144,6 @@ void TGFXBaseView::draw() {
   if (recording != nullptr) {
     context->submit(std::move(recording));
   }
-  window->present(context);
   device->unlock();
   auto drawTime = tgfx::Clock::Now() - currentTime;
   appHost->recordFrame(drawTime);

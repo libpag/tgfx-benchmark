@@ -28,6 +28,7 @@
 #include <memory>
 #include <string>
 #include "base/Bench.h"
+#include "tgfx/core/Surface.h"
 #ifdef TGFX_USE_ANGLE
 #include "tgfx/gpu/opengl/egl/EGLWindow.h"
 #else
@@ -45,6 +46,7 @@ class TGFXWindow {
  private:
   HWND windowHandle = nullptr;
   std::unique_ptr<tgfx::Recording> lastRecording = nullptr;
+  std::shared_ptr<tgfx::Surface> surface = nullptr;
   int lastDrawIndex = 0;
   std::shared_ptr<AppHost> appHost = nullptr;
 #ifdef TGFX_USE_ANGLE

@@ -65,10 +65,6 @@ elseif (WIN32)
     if (TGFX_USE_ANGLE)
         add_definitions(-DTGFX_USE_ANGLE)
         list(APPEND BENCH_INCLUDES ${TGFX_DIR}/vendor/angle/include)
-        file(REMOVE ${CMAKE_CURRENT_BINARY_DIR}/libEGL.dll)
-        file(COPY ${TGFX_DIR}/vendor/angle/win/${ARCH}/libEGL.dll DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-        file(REMOVE ${CMAKE_CURRENT_BINARY_DIR}/libGLESv2.dll)
-        file(COPY ${TGFX_DIR}/vendor/angle/win/${ARCH}/libGLESv2.dll DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
     endif ()
 endif ()
 
@@ -82,3 +78,11 @@ add_dependencies(Benchmark tgfx)
 target_include_directories(Benchmark PRIVATE ${BENCH_INCLUDES})
 target_compile_options(Benchmark PUBLIC ${BENCH_COMPILE_OPTIONS})
 target_link_libraries(Benchmark tgfx ${BENCHMARK_LIBS})
+
+if (WIN32 AND TGFX_USE_ANGLE)
+    add_custom_command(TARGET Benchmark POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${TGFX_DIR}/vendor/angle/win/${ARCH}/libEGL.dll
+            ${TGFX_DIR}/vendor/angle/win/${ARCH}/libGLESv2.dll
+            $<TARGET_FILE_DIR:Benchmark>)
+endif ()

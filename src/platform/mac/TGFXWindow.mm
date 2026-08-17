@@ -35,6 +35,7 @@
   NSWindow* window;
   NSView* view;
   std::shared_ptr<tgfx::CGLWindow> cglWindow;
+  std::shared_ptr<tgfx::Surface> surface;
   std::unique_ptr<benchmark::AppHost> appHost;
   std::unique_ptr<tgfx::Recording> lastRecording;
   int drawIndex;
@@ -144,10 +145,11 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
   } else {
     appHost->resetFrames();
   }
-  auto contentScale = static_cast<float>(size.height / view.bounds.size.height);
-  auto sizeChanged = appHost->updateScreen(width, height, contentScale);
-  if (sizeChanged && cglWindow != nullptr) {
-    cglWindow->invalidSize();
+  if (width > 0 && height > 0 && view.bounds.size.height > 0) {
+    auto contentScale = static_cast<float>(size.height / view.bounds.size.height);
+    if (appHost->updateScreen(width, height, contentScale)) {
+      surface = nullptr;
+    }
   }
   for (NSTrackingArea* trackingArea in [view trackingAreas]) {
     [view removeTrackingArea:trackingArea];
@@ -173,11 +175,19 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
     return;
   }
   auto device = cglWindow->getDevice();
+  if (device == nullptr) {
+    return;
+  }
   auto context = device->lockContext();
   if (context == nullptr) {
     return;
   }
-  auto surface = cglWindow->getSurface(context);
+  if (surface == nullptr) {
+    if (lastRecording != nullptr) {
+      context->submit(std::move(lastRecording));
+    }
+    surface = tgfx::Surface::MakeFrom(context, cglWindow);
+  }
   if (surface == nullptr) {
     device->unlock();
     return;
@@ -193,7 +203,6 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
   if (recording != nullptr) {
     context->submit(std::move(recording));
   }
-  cglWindow->present(context);
   device->unlock();
   auto drawTime = tgfx::Clock::Now() - currentTime;
   appHost->recordFrame(drawTime);

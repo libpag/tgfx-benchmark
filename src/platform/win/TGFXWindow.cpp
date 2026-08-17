@@ -241,10 +241,12 @@ void TGFXWindow::draw() {
   GetClientRect(windowHandle, &rect);
   auto width = static_cast<int>(rect.right - rect.left);
   auto height = static_cast<int>(rect.bottom - rect.top);
+  if (width <= 0 || height <= 0) {
+    return;
+  }
   auto pixelRatio = getPixelRatio();
-  auto sizeChanged = appHost->updateScreen(width, height, pixelRatio);
-  if (sizeChanged) {
-    tgfxWindow->invalidSize();
+  if (appHost->updateScreen(width, height, pixelRatio)) {
+    surface = nullptr;
   }
   auto device = tgfxWindow->getDevice();
   if (device == nullptr) {
@@ -254,7 +256,12 @@ void TGFXWindow::draw() {
   if (context == nullptr) {
     return;
   }
-  auto surface = tgfxWindow->getSurface(context);
+  if (surface == nullptr) {
+    if (lastRecording != nullptr) {
+      context->submit(std::move(lastRecording));
+    }
+    surface = tgfx::Surface::MakeFrom(context, tgfxWindow);
+  }
   if (surface == nullptr) {
     device->unlock();
     return;
@@ -272,13 +279,8 @@ void TGFXWindow::draw() {
   if (recording != nullptr) {
     context->submit(std::move(recording));
   }
-
-  auto presentStartTime = tgfx::Clock::Now();
-  // Exclude the present time from the draw time to avoid blocking caused by vsync.
-  tgfxWindow->present(context);
-  auto presentTime = tgfx::Clock::Now() - presentStartTime;
   device->unlock();
-  auto drawTime = tgfx::Clock::Now() - currentTime - presentTime;
+  auto drawTime = tgfx::Clock::Now() - currentTime;
   appHost->recordFrame(drawTime);
 }
 }  // namespace benchmark
