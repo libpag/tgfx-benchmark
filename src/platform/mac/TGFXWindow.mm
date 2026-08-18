@@ -17,7 +17,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 #import "TGFXWindow.h"
-#import <QuartzCore/CADisplayLink.h>
+#import <CoreVideo/CoreVideo.h>
 #if defined(BENCHMARK_BACKEND_METAL)
 #import <MetalKit/MetalKit.h>
 #endif
@@ -48,21 +48,14 @@
   std::unique_ptr<benchmark::AppHost> appHost;
   std::unique_ptr<tgfx::Recording> lastRecording;
   int drawIndex;
+  bool closing;
   CVDisplayLinkRef displayLink;
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 140000
-  CADisplayLink* caDisplayLink;
-#endif
 }
 
 - (void)stopDisplayLink {
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 140000
-  if (caDisplayLink != nil) {
-    [caDisplayLink invalidate];
-    caDisplayLink = nil;
-  }
-#endif
   if (displayLink != nil) {
     CVDisplayLinkStop(displayLink);
+    CVDisplayLinkSetOutputCallback(displayLink, nullptr, nullptr);
     CVDisplayLinkRelease(displayLink);
     displayLink = nil;
   }
@@ -79,19 +72,33 @@
 }
 
 - (void)windowWillClose:(NSNotification*)notification {
-  [self stopDisplayLink];
-  [NSApp terminate:self];
+  closing = true;
+  // Let AppKit finish the close notification before stopping the Core Video callback thread and
+  // terminating the application. Already queued redraw blocks are ignored once closing is true.
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [self stopDisplayLink];
+    [NSApp terminate:self];
+  });
 }
 
 - (void)windowDidResize:(NSNotification*)notification {
   [self updateSize];
 }
 
-static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const CVTimeStamp*,
-                                    CVOptionFlags, CVOptionFlags*, void* context) {
+- (BOOL)isActiveDisplayLink:(CVDisplayLinkRef)link {
+  return !closing && displayLink == link;
+}
+
+static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp*,
+                                    const CVTimeStamp*, CVOptionFlags, CVOptionFlags*,
+                                    void* context) {
   auto self = (TGFXWindow*)context;
   dispatch_async(dispatch_get_main_queue(), ^{
-    [self redraw];
+    // The display link may have been stopped/released between scheduling and running this block.
+    // Only redraw while the link that scheduled us is still the active one.
+    if ([self isActiveDisplayLink:displayLink]) {
+      [self redraw];
+    }
   });
   return kCVReturnSuccess;
 }
@@ -129,26 +136,19 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
   [window makeKeyAndOrderFront:nil];
   [self updateSize];
   drawIndex = 0;
+  closing = false;
   displayLink = nil;
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 140000
-  caDisplayLink = nil;
-  if (@available(macOS 14, *)) {
-    caDisplayLink = [view displayLinkWithTarget:self selector:@selector(displayLinkDidFire:)];
-    [caDisplayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSRunLoopCommonModes];
-  } else
-#endif
-  {
-    CVDisplayLinkCreateWithActiveCGDisplays(&displayLink);
-    CVDisplayLinkSetOutputCallback(displayLink, &displayLinkCallback, self);
-    CVDisplayLinkStart(displayLink);
+  auto result = CVDisplayLinkCreateWithActiveCGDisplays(&displayLink);
+  if (result == kCVReturnSuccess && displayLink != nil) {
+    result = CVDisplayLinkSetOutputCallback(displayLink, &displayLinkCallback, self);
+  }
+  if (result == kCVReturnSuccess && displayLink != nil) {
+    result = CVDisplayLinkStart(displayLink);
+  }
+  if (result != kCVReturnSuccess) {
+    [self stopDisplayLink];
   }
 }
-
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 140000
-- (void)displayLinkDidFire:(CADisplayLink*)sender {
-  [self redraw];
-}
-#endif
 
 - (void)handleClick:(NSClickGestureRecognizer*)gestureRecognizer {
   if (appHost != nullptr) {
