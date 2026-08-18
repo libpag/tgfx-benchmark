@@ -18,6 +18,7 @@
 
 #include "TGFXWindow.h"
 #include <filesystem>
+#include "TGFXWindowBackend.h"
 #if WINVER >= 0x0603  // Windows 8.1
 #include <shellscalingapi.h>
 #endif
@@ -25,30 +26,6 @@
 
 namespace benchmark {
 static constexpr LPCWSTR ClassName = L"TGFXWindow";
-
-#if defined(BENCHMARK_BACKEND_ANGLE)
-static constexpr LPCWSTR WindowTitle = L"TGFX Benchmark - ANGLE";
-#elif defined(BENCHMARK_BACKEND_VULKAN)
-static constexpr LPCWSTR WindowTitle = L"TGFX Benchmark - Vulkan";
-#elif defined(BENCHMARK_BACKEND_D3D12)
-static constexpr LPCWSTR WindowTitle = L"TGFX Benchmark - D3D12";
-#else
-static constexpr LPCWSTR WindowTitle = L"TGFX Benchmark - OpenGL";
-#endif
-
-static std::shared_ptr<tgfx::Window> MakeTGFXWindow(HWND windowHandle) {
-#if defined(BENCHMARK_BACKEND_ANGLE)
-  return tgfx::EGLWindow::MakeFrom(windowHandle);
-#elif defined(BENCHMARK_BACKEND_VULKAN)
-  auto device = tgfx::VulkanDevice::Make();
-  return device == nullptr ? nullptr : tgfx::VulkanWindow::MakeFrom(windowHandle, device);
-#elif defined(BENCHMARK_BACKEND_D3D12)
-  auto device = tgfx::D3D12Device::Make();
-  return device == nullptr ? nullptr : tgfx::D3D12Window::MakeFrom(windowHandle, device);
-#else
-  return tgfx::WGLWindow::MakeFrom(windowHandle);
-#endif
-}
 
 TGFXWindow::TGFXWindow() {
   createAppHost();
@@ -64,7 +41,7 @@ bool TGFXWindow::open() {
   auto pixelRatio = getPixelRatio();
   int initWidth = static_cast<int>(pixelRatio * 1024);
   int initHeight = static_cast<int>(pixelRatio * 720);
-  windowHandle = CreateWindowEx(WS_EX_APPWINDOW, windowClass.lpszClassName, WindowTitle,
+  windowHandle = CreateWindowEx(WS_EX_APPWINDOW, windowClass.lpszClassName, GetBackendWindowTitle(),
                                 WS_OVERLAPPEDWINDOW, 0, 0, initWidth, initHeight, nullptr, nullptr,
                                 windowClass.hInstance, this);
 

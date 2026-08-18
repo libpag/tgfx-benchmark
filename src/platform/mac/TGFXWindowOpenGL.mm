@@ -16,46 +16,19 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-
-#ifndef UNICODE
-#define UNICODE
-#endif
-
-#include <Windows.h>
-#include <Windowsx.h>
-#include <functional>
-#include <memory>
-#include <string>
-#include "base/Bench.h"
-#include "tgfx/core/Surface.h"
-#include "tgfx/gpu/Window.h"
+#import "TGFXWindowBackend.h"
+#include "tgfx/gpu/opengl/cgl/CGLWindow.h"
 
 namespace benchmark {
-class TGFXWindow {
- public:
-  TGFXWindow();
-  virtual ~TGFXWindow();
+NSString* GetBackendWindowTitle() {
+  return @"TGFX Benchmark - OpenGL";
+}
 
-  bool open();
+NSView* MakeBackendView(NSRect frame) {
+  return [[NSView alloc] initWithFrame:frame];
+}
 
- private:
-  HWND windowHandle = nullptr;
-  std::unique_ptr<tgfx::Recording> lastRecording = nullptr;
-  std::shared_ptr<tgfx::Surface> surface = nullptr;
-  int lastDrawIndex = 0;
-  std::shared_ptr<AppHost> appHost = nullptr;
-  std::shared_ptr<tgfx::Window> tgfxWindow = nullptr;
-
-  static WNDCLASS RegisterWindowClass();
-  static LRESULT CALLBACK WndProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) noexcept;
-
-  LRESULT handleMessage(HWND window, UINT message, WPARAM wparam, LPARAM lparam) noexcept;
-
-  void destroy();
-  void centerAndShow();
-  float getPixelRatio();
-  void createAppHost();
-  void draw();
-};
+std::shared_ptr<tgfx::Window> MakeTGFXWindow(NSView* view) {
+  return tgfx::CGLWindow::MakeFrom(view);
+}
 }  // namespace benchmark

@@ -18,44 +18,15 @@
 
 #pragma once
 
-#ifndef UNICODE
-#define UNICODE
-#endif
-
-#include <Windows.h>
-#include <Windowsx.h>
-#include <functional>
+#import <Cocoa/Cocoa.h>
 #include <memory>
-#include <string>
-#include "base/Bench.h"
-#include "tgfx/core/Surface.h"
-#include "tgfx/gpu/Window.h"
+
+namespace tgfx {
+class Window;
+}
 
 namespace benchmark {
-class TGFXWindow {
- public:
-  TGFXWindow();
-  virtual ~TGFXWindow();
-
-  bool open();
-
- private:
-  HWND windowHandle = nullptr;
-  std::unique_ptr<tgfx::Recording> lastRecording = nullptr;
-  std::shared_ptr<tgfx::Surface> surface = nullptr;
-  int lastDrawIndex = 0;
-  std::shared_ptr<AppHost> appHost = nullptr;
-  std::shared_ptr<tgfx::Window> tgfxWindow = nullptr;
-
-  static WNDCLASS RegisterWindowClass();
-  static LRESULT CALLBACK WndProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) noexcept;
-
-  LRESULT handleMessage(HWND window, UINT message, WPARAM wparam, LPARAM lparam) noexcept;
-
-  void destroy();
-  void centerAndShow();
-  float getPixelRatio();
-  void createAppHost();
-  void draw();
-};
+NSString* GetBackendWindowTitle();
+NSView* MakeBackendView(NSRect frame);
+std::shared_ptr<tgfx::Window> MakeTGFXWindow(NSView* view);
 }  // namespace benchmark

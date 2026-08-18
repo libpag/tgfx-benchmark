@@ -18,24 +18,15 @@
 
 #import "TGFXWindow.h"
 #import <CoreVideo/CoreVideo.h>
-#if defined(BENCHMARK_BACKEND_METAL)
-#import <MetalKit/MetalKit.h>
-#endif
 #include <cmath>
 #include <filesystem>
+#import "TGFXWindowBackend.h"
 #include "base/AppHost.h"
 #include "base/Bench.h"
 #include "tgfx/core/Canvas.h"
 #include "tgfx/core/Clock.h"
 #include "tgfx/core/Surface.h"
 #include "tgfx/gpu/Window.h"
-#if defined(BENCHMARK_BACKEND_METAL)
-#include "tgfx/gpu/metal/MetalWindow.h"
-#elif defined(BENCHMARK_BACKEND_OPENGL)
-#include "tgfx/gpu/opengl/cgl/CGLWindow.h"
-#else
-#error Unsupported macOS Benchmark backend
-#endif
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
@@ -112,23 +103,12 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeSt
                                          backing:NSBackingStoreBuffered
                                            defer:NO];
   [window setReleasedWhenClosed:NO];
-#if defined(BENCHMARK_BACKEND_METAL)
-  [window setTitle:@"TGFX Benchmark - Metal"];
-#else
-  [window setTitle:@"TGFX Benchmark - OpenGL"];
-#endif
+  [window setTitle:benchmark::GetBackendWindowTitle()];
   [window setDelegate:self];
-#if defined(BENCHMARK_BACKEND_METAL)
-  auto metalView = [[MTKView alloc] initWithFrame:frame];
-  [metalView setPaused:YES];
-  [metalView setEnableSetNeedsDisplay:NO];
-  view = metalView;
-#else
-  view = [[NSView alloc] initWithFrame:frame];
-#endif
+  view = benchmark::MakeBackendView(frame);
   [view setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
   auto clickRecognizer = [[NSClickGestureRecognizer alloc] initWithTarget:self
-                                                                    action:@selector(handleClick:)];
+                                                                   action:@selector(handleClick:)];
   [view addGestureRecognizer:clickRecognizer];
   [clickRecognizer release];
   [window setContentView:view];
@@ -219,11 +199,7 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeSt
     return;
   }
   if (tgfxWindow == nullptr) {
-#if defined(BENCHMARK_BACKEND_METAL)
-    tgfxWindow = tgfx::MetalWindow::MakeFrom((MTKView*)view);
-#else
-    tgfxWindow = tgfx::CGLWindow::MakeFrom(view);
-#endif
+    tgfxWindow = benchmark::MakeTGFXWindow(view);
   }
   if (tgfxWindow == nullptr) {
     return;
