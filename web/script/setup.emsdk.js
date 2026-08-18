@@ -7,6 +7,8 @@ process.env.PATH = process.platform === 'win32'
     ? `${emsdkPath};${emscriptenPath};${process.env.PATH}`
     : `${emsdkPath}:${emscriptenPath}:${process.env.PATH}`;
 
+// The vendored emsdk checkout must be at (or after) this tag; otherwise emsdk_manifest.json
+// won't know this SDK version and `emsdk install` fails with "tool or SDK not found".
 const emscriptenVersion = "4.0.15";
 Utils.exec(`emsdk install ${emscriptenVersion}`, emsdkPath);
 Utils.exec(`emsdk activate ${emscriptenVersion}`, emsdkPath);

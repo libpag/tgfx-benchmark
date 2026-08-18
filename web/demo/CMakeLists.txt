@@ -39,7 +39,7 @@ if (DEFINED EMSCRIPTEN)
     endif ()
     list(APPEND BENCHMARK_LINK_OPTIONS --no-entry -lembind -fno-rtti -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0 -sEXPORT_NAME='Benchmark' -sWASM=1
             ${BENCHMARK_GRAPHICS_OPTIONS} ${BENCHMARK_RUNTIME_METHODS} -sMODULARIZE=1
-            -sENVIRONMENT=web,worker -sEXPORT_ES6=1)
+            -sENVIRONMENT=web,worker -sEXPORT_ES6=1 -sSTACK_SIZE=1MB)
     set(unsupported_emsdk_versions "4.0.11")
     foreach (unsupported_version IN LISTS unsupported_emsdk_versions)
         if (${EMSCRIPTEN_VERSION} VERSION_EQUAL ${unsupported_version})
