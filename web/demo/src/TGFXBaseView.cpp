@@ -20,6 +20,7 @@
 #include <emscripten/html5.h>
 #include <emscripten/val.h>
 #include <iostream>
+#include "TGFXWindowBackend.h"
 #include "base/Bench.h"
 #include "tgfx/core/Clock.h"
 
@@ -105,11 +106,7 @@ void TGFXBaseView::draw() {
     return;
   }
   if (window == nullptr) {
-#if defined(BENCHMARK_BACKEND_WEBGPU)
-    window = tgfx::WebGPUWindow::MakeFrom(canvasID);
-#else
-    window = tgfx::WebGLWindow::MakeFrom(canvasID);
-#endif
+    window = MakeTGFXWindow(canvasID);
   }
   if (window == nullptr) {
     return;

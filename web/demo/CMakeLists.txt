@@ -24,8 +24,17 @@ add_subdirectory(${TGFX_DIR} ./tgfx)
 
 file(GLOB_RECURSE BENCHMARK_FILES
         ../../src/base/*.*
-        ../../src/benchmark/*.*
-        src/*.*)
+        ../../src/benchmark/*.*)
+list(APPEND BENCHMARK_FILES
+        src/TGFXBaseView.cpp
+        src/TGFXBaseView.h
+        src/TGFXThreadsView.cpp
+        src/TGFXWindowBackend.h)
+if (BENCHMARK_BACKEND_RESOLVED STREQUAL "WEBGPU")
+    list(APPEND BENCHMARK_FILES src/TGFXWindowWebGPU.cpp)
+else ()
+    list(APPEND BENCHMARK_FILES src/TGFXWindowWebGL.cpp)
+endif ()
 
 if (DEFINED EMSCRIPTEN)
     add_executable(benchmark ${BENCHMARK_FILES})
@@ -65,7 +74,6 @@ else ()
     add_library(benchmark SHARED ${BENCHMARK_FILES})
 endif ()
 
-target_compile_definitions(benchmark PRIVATE BENCHMARK_BACKEND_${BENCHMARK_BACKEND_RESOLVED}=1)
 target_compile_options(benchmark PUBLIC ${BENCHMARK_COMPILE_OPTIONS})
 target_link_options(benchmark PUBLIC ${BENCHMARK_LINK_OPTIONS})
 target_link_libraries(benchmark tgfx)
