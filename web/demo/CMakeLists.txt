@@ -26,9 +26,13 @@ file(GLOB_RECURSE BENCHMARK_FILES
         ../../src/base/*.*
         ../../src/benchmark/*.*)
 list(APPEND BENCHMARK_FILES
+        src/binding.cpp
         src/TGFXBaseView.cpp
         src/TGFXBaseView.h
         src/TGFXThreadsView.cpp
+        src/TGFXThreadsView.h
+        src/TGFXView.cpp
+        src/TGFXView.h
         src/TGFXWindowBackend.h)
 if (BENCHMARK_BACKEND_RESOLVED STREQUAL "WEBGPU")
     list(APPEND BENCHMARK_FILES src/TGFXWindowWebGPU.cpp)
