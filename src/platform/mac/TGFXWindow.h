@@ -19,9 +19,24 @@
 #pragma once
 
 #import <Cocoa/Cocoa.h>
+#include <memory>
+
+namespace tgfx {
+class Window;
+}
 
 @interface TGFXWindow : NSObject <NSWindowDelegate>
 
 - (void)open;
+
+@end
+
+// Backend-specific factory methods. Each is implemented in its own per-backend source file
+// (MetalWindow.mm / CGLWindow.mm ...), selected by CMake according to BENCHMARK_BACKEND.
+@interface TGFXWindow (Backend)
+
++ (NSString*)backendTitle;
++ (NSView*)makeBackendView:(NSRect)frame;
++ (std::shared_ptr<tgfx::Window>)makeTGFXWindow:(NSView*)view;
 
 @end

@@ -32,12 +32,11 @@ list(APPEND BENCHMARK_FILES
         src/TGFXThreadsView.cpp
         src/TGFXThreadsView.h
         src/TGFXView.cpp
-        src/TGFXView.h
-        src/TGFXWindowBackend.h)
+        src/TGFXView.h)
 if (BENCHMARK_BACKEND_RESOLVED STREQUAL "WEBGPU")
-    list(APPEND BENCHMARK_FILES src/TGFXWindowWebGPU.cpp)
+    list(APPEND BENCHMARK_FILES src/WebGPUWindow.cpp)
 else ()
-    list(APPEND BENCHMARK_FILES src/TGFXWindowWebGL.cpp)
+    list(APPEND BENCHMARK_FILES src/WebGLWindow.cpp)
 endif ()
 
 if (DEFINED EMSCRIPTEN)

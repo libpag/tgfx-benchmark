@@ -16,15 +16,21 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include "TGFXWindowBackend.h"
-#include "tgfx/gpu/opengl/egl/EGLWindow.h"
+#import "TGFXWindow.h"
+#include "tgfx/gpu/opengl/cgl/CGLWindow.h"
 
-namespace benchmark {
-LPCWSTR GetBackendWindowTitle() {
-  return L"TGFX Benchmark - ANGLE";
+@implementation TGFXWindow (Backend)
+
++ (NSString*)backendTitle {
+  return @"TGFX Benchmark - OpenGL";
 }
 
-std::shared_ptr<tgfx::Window> MakeTGFXWindow(HWND windowHandle) {
-  return tgfx::EGLWindow::MakeFrom(windowHandle);
++ (NSView*)makeBackendView:(NSRect)frame {
+  return [[NSView alloc] initWithFrame:frame];
 }
-}  // namespace benchmark
+
++ (std::shared_ptr<tgfx::Window>)makeTGFXWindow:(NSView*)view {
+  return tgfx::CGLWindow::MakeFrom(view);
+}
+
+@end

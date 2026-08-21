@@ -16,17 +16,25 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include "TGFXWindowBackend.h"
-#include "tgfx/gpu/vulkan/VulkanDevice.h"
-#include "tgfx/gpu/vulkan/VulkanWindow.h"
+#import <MetalKit/MetalKit.h>
+#import "TGFXWindow.h"
+#include "tgfx/gpu/metal/MetalWindow.h"
 
-namespace benchmark {
-LPCWSTR GetBackendWindowTitle() {
-  return L"TGFX Benchmark - Vulkan";
+@implementation TGFXWindow (Backend)
+
++ (NSString*)backendTitle {
+  return @"TGFX Benchmark - Metal";
 }
 
-std::shared_ptr<tgfx::Window> MakeTGFXWindow(HWND windowHandle) {
-  auto device = tgfx::VulkanDevice::Make();
-  return device == nullptr ? nullptr : tgfx::VulkanWindow::MakeFrom(windowHandle, device);
++ (NSView*)makeBackendView:(NSRect)frame {
+  auto view = [[MTKView alloc] initWithFrame:frame];
+  [view setPaused:YES];
+  [view setEnableSetNeedsDisplay:NO];
+  return view;
 }
-}  // namespace benchmark
+
++ (std::shared_ptr<tgfx::Window>)makeTGFXWindow:(NSView*)view {
+  return tgfx::MetalWindow::MakeFrom((MTKView*)view);
+}
+
+@end

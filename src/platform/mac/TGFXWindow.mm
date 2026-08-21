@@ -20,7 +20,6 @@
 #import <CoreVideo/CoreVideo.h>
 #include <cmath>
 #include <filesystem>
-#import "TGFXWindowBackend.h"
 #include "base/AppHost.h"
 #include "base/Bench.h"
 #include "tgfx/core/Canvas.h"
@@ -103,9 +102,9 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeSt
                                          backing:NSBackingStoreBuffered
                                            defer:NO];
   [window setReleasedWhenClosed:NO];
-  [window setTitle:benchmark::GetBackendWindowTitle()];
+  [window setTitle:[TGFXWindow backendTitle]];
   [window setDelegate:self];
-  view = benchmark::MakeBackendView(frame);
+  view = [TGFXWindow makeBackendView:frame];
   [view setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
   auto clickRecognizer = [[NSClickGestureRecognizer alloc] initWithTarget:self
                                                                    action:@selector(handleClick:)];
@@ -199,7 +198,7 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeSt
     return;
   }
   if (tgfxWindow == nullptr) {
-    tgfxWindow = benchmark::MakeTGFXWindow(view);
+    tgfxWindow = [TGFXWindow makeTGFXWindow:view];
   }
   if (tgfxWindow == nullptr) {
     return;

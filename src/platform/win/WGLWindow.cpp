@@ -16,11 +16,15 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include "TGFXWindowBackend.h"
-#include "tgfx/gpu/webgpu/WebGPUWindow.h"
+#include "TGFXWindow.h"
+#include "tgfx/gpu/opengl/wgl/WGLWindow.h"
 
 namespace benchmark {
-std::shared_ptr<tgfx::Window> MakeTGFXWindow(const std::string& canvasID) {
-  return tgfx::WebGPUWindow::MakeFrom(canvasID);
+LPCWSTR TGFXWindow::BackendTitle() {
+  return L"TGFX Benchmark - OpenGL";
+}
+
+std::shared_ptr<tgfx::Window> TGFXWindow::MakeTGFXWindow(HWND windowHandle) {
+  return tgfx::WGLWindow::MakeFrom(windowHandle);
 }
 }  // namespace benchmark

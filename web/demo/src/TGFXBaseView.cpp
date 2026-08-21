@@ -20,7 +20,6 @@
 #include <emscripten/html5.h>
 #include <emscripten/val.h>
 #include <iostream>
-#include "TGFXWindowBackend.h"
 #include "base/Bench.h"
 #include "tgfx/core/Clock.h"
 

@@ -59,6 +59,10 @@ class TGFXBaseView {
   bool showPerfDataFlag = true;
 
  private:
+  // Backend-specific factory. Implemented in its own per-backend source file
+  // (WebGLWindow.cpp / WebGPUWindow.cpp), selected by CMake according to BENCHMARK_BACKEND.
+  static std::shared_ptr<tgfx::Window> MakeTGFXWindow(const std::string& canvasID);
+
   std::shared_ptr<tgfx::Window> window = nullptr;
   std::shared_ptr<tgfx::Surface> surface = nullptr;
   std::string canvasID = "";

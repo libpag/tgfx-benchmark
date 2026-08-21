@@ -18,7 +18,10 @@ macro(configure_benchmark_backend)
         if (_option_is_cached)
             message(FATAL_ERROR
                     "${_option} is not a supported Benchmark configuration entry. "
-                    "Use -DBENCHMARK_BACKEND=<backend> instead.")
+                    "Use -DBENCHMARK_BACKEND=<backend> instead. "
+                    "If this is a stale entry from a previous configuration, remove it from the "
+                    "CMake cache (delete CMakeCache.txt or use a fresh build directory) and "
+                    "reconfigure.")
         endif ()
     endforeach ()
     get_property(_warp_is_cached CACHE TGFX_D3D12_USE_WARP PROPERTY TYPE SET)
@@ -27,7 +30,10 @@ macro(configure_benchmark_backend)
         if (_warp_value)
             message(FATAL_ERROR
                     "TGFX_D3D12_USE_WARP is not a supported Benchmark configuration entry. "
-                    "Use -DBENCHMARK_BACKEND=D3D12 instead.")
+                    "Use -DBENCHMARK_BACKEND=D3D12 instead. "
+                    "If this is a stale entry from a previous configuration, remove it from the "
+                    "CMake cache (delete CMakeCache.txt or use a fresh build directory) and "
+                    "reconfigure.")
         endif ()
     endif ()
 

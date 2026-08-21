@@ -18,7 +18,6 @@
 
 #include "TGFXWindow.h"
 #include <filesystem>
-#include "TGFXWindowBackend.h"
 #if WINVER >= 0x0603  // Windows 8.1
 #include <shellscalingapi.h>
 #endif
@@ -41,7 +40,7 @@ bool TGFXWindow::open() {
   auto pixelRatio = getPixelRatio();
   int initWidth = static_cast<int>(pixelRatio * 1024);
   int initHeight = static_cast<int>(pixelRatio * 720);
-  windowHandle = CreateWindowEx(WS_EX_APPWINDOW, windowClass.lpszClassName, GetBackendWindowTitle(),
+  windowHandle = CreateWindowEx(WS_EX_APPWINDOW, windowClass.lpszClassName, BackendTitle(),
                                 WS_OVERLAPPEDWINDOW, 0, 0, initWidth, initHeight, nullptr, nullptr,
                                 windowClass.hInstance, this);
 
@@ -83,6 +82,8 @@ LRESULT TGFXWindow::handleMessage(HWND hwnd, UINT message, WPARAM wparam, LPARAM
   LRESULT result = 0;
   switch (message) {
     case WM_DESTROY:
+      // Release GPU resources on the normal close path (WM_CLOSE -> DestroyWindow -> WM_DESTROY),
+      // which does not go through destroy(). destroy() covers the reopen/destructor paths.
       lastRecording = nullptr;
       surface = nullptr;
       tgfxWindow = nullptr;

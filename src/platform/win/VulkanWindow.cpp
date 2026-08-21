@@ -16,15 +16,19 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-
-#include <memory>
-#include <string>
-
-namespace tgfx {
-class Window;
-}
+#include "TGFXWindow.h"
+#include "tgfx/gpu/vulkan/VulkanDevice.h"
+#include "tgfx/gpu/vulkan/VulkanWindow.h"
 
 namespace benchmark {
-std::shared_ptr<tgfx::Window> MakeTGFXWindow(const std::string& canvasID);
+LPCWSTR TGFXWindow::BackendTitle() {
+  return L"TGFX Benchmark - Vulkan";
+}
+
+std::shared_ptr<tgfx::Window> TGFXWindow::MakeTGFXWindow(HWND windowHandle) {
+  // Cache the device so a machine without a Vulkan driver does not retry the full instance
+  // creation on every frame (the window repaints continuously).
+  static auto device = tgfx::VulkanDevice::Make();
+  return device == nullptr ? nullptr : tgfx::VulkanWindow::MakeFrom(windowHandle, device);
+}
 }  // namespace benchmark

@@ -16,23 +16,19 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-#import <MetalKit/MetalKit.h>
-#import "TGFXWindowBackend.h"
-#include "tgfx/gpu/metal/MetalWindow.h"
+#include "TGFXWindow.h"
+#include "tgfx/gpu/d3d12/D3D12Device.h"
+#include "tgfx/gpu/d3d12/D3D12Window.h"
 
 namespace benchmark {
-NSString* GetBackendWindowTitle() {
-  return @"TGFX Benchmark - Metal";
+LPCWSTR TGFXWindow::BackendTitle() {
+  return L"TGFX Benchmark - D3D12";
 }
 
-NSView* MakeBackendView(NSRect frame) {
-  auto view = [[MTKView alloc] initWithFrame:frame];
-  [view setPaused:YES];
-  [view setEnableSetNeedsDisplay:NO];
-  return view;
-}
-
-std::shared_ptr<tgfx::Window> MakeTGFXWindow(NSView* view) {
-  return tgfx::MetalWindow::MakeFrom((MTKView*)view);
+std::shared_ptr<tgfx::Window> TGFXWindow::MakeTGFXWindow(HWND windowHandle) {
+  // Cache the device so a machine without a D3D12 driver does not retry the full device
+  // creation on every frame (the window repaints continuously).
+  static auto device = tgfx::D3D12Device::Make();
+  return device == nullptr ? nullptr : tgfx::D3D12Window::MakeFrom(windowHandle, device);
 }
 }  // namespace benchmark

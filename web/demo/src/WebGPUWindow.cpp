@@ -16,16 +16,11 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-
-#include <Windows.h>
-#include <memory>
-
-namespace tgfx {
-class Window;
-}
+#include "TGFXBaseView.h"
+#include "tgfx/gpu/webgpu/WebGPUWindow.h"
 
 namespace benchmark {
-LPCWSTR GetBackendWindowTitle();
-std::shared_ptr<tgfx::Window> MakeTGFXWindow(HWND windowHandle);
+std::shared_ptr<tgfx::Window> TGFXBaseView::MakeTGFXWindow(const std::string& canvasID) {
+  return tgfx::WebGPUWindow::MakeFrom(canvasID);
+}
 }  // namespace benchmark

@@ -50,6 +50,12 @@ class TGFXWindow {
   static WNDCLASS RegisterWindowClass();
   static LRESULT CALLBACK WndProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) noexcept;
 
+  // Backend-specific factory methods. Each is implemented in its own per-backend source file
+  // (WGLWindow.cpp / EGLWindow.cpp / VulkanWindow.cpp / D3D12Window.cpp), selected by CMake
+  // according to BENCHMARK_BACKEND.
+  static LPCWSTR BackendTitle();
+  static std::shared_ptr<tgfx::Window> MakeTGFXWindow(HWND windowHandle);
+
   LRESULT handleMessage(HWND window, UINT message, WPARAM wparam, LPARAM lparam) noexcept;
 
   void destroy();
