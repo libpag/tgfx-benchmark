@@ -22,18 +22,18 @@
 
 @implementation TGFXWindow (Backend)
 
-+ (NSString*)backendTitle {
++ (NSString*)BackendTitle {
   return @"TGFX Benchmark - Metal";
 }
 
-+ (NSView*)makeBackendView:(NSRect)frame {
++ (NSView*)MakeBackendView:(NSRect)frame {
   auto view = [[MTKView alloc] initWithFrame:frame];
   [view setPaused:YES];
   [view setEnableSetNeedsDisplay:NO];
   return view;
 }
 
-+ (std::shared_ptr<tgfx::Window>)makeTGFXWindow:(NSView*)view {
++ (std::shared_ptr<tgfx::Window>)MakeTGFXWindow:(NSView*)view {
   return tgfx::MetalWindow::MakeFrom((MTKView*)view);
 }
 

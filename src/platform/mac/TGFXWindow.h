@@ -35,8 +35,8 @@ class Window;
 // (MetalWindow.mm / CGLWindow.mm ...), selected by CMake according to BENCHMARK_BACKEND.
 @interface TGFXWindow (Backend)
 
-+ (NSString*)backendTitle;
-+ (NSView*)makeBackendView:(NSRect)frame;
-+ (std::shared_ptr<tgfx::Window>)makeTGFXWindow:(NSView*)view;
++ (NSString*)BackendTitle;
++ (NSView*)MakeBackendView:(NSRect)frame;
++ (std::shared_ptr<tgfx::Window>)MakeTGFXWindow:(NSView*)view;
 
 @end

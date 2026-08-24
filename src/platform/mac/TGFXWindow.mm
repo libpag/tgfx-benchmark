@@ -102,9 +102,9 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeSt
                                          backing:NSBackingStoreBuffered
                                            defer:NO];
   [window setReleasedWhenClosed:NO];
-  [window setTitle:[TGFXWindow backendTitle]];
+  [window setTitle:[TGFXWindow BackendTitle]];
   [window setDelegate:self];
-  view = [TGFXWindow makeBackendView:frame];
+  view = [TGFXWindow MakeBackendView:frame];
   [view setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
   auto clickRecognizer = [[NSClickGestureRecognizer alloc] initWithTarget:self
                                                                    action:@selector(handleClick:)];
@@ -198,7 +198,7 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeSt
     return;
   }
   if (tgfxWindow == nullptr) {
-    tgfxWindow = [TGFXWindow makeTGFXWindow:view];
+    tgfxWindow = [TGFXWindow MakeTGFXWindow:view];
   }
   if (tgfxWindow == nullptr) {
     return;
