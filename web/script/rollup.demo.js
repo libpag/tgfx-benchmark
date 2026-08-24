@@ -11,8 +11,10 @@ const banner = readFileSync(fileHeaderPath, 'utf-8');
 const arch = process.env.ARCH;
 const backend = process.env.BACKEND || 'webgl';
 const archDir = (arch === 'wasm-mt' ? 'wasm-mt' : 'wasm');
-// Keep WebGL and WebGPU artifacts in separate directories so they no longer overwrite each other.
-const filePath = backend === 'webgpu' ? `${archDir}-webgpu` : archDir;
+// Each backend lives under its own top-level directory (demo/webgl or demo/webgpu) so the WebGL
+// and WebGPU artifacts never share a directory.
+const backendDir = backend === 'webgpu' ? 'webgpu' : 'webgl';
+const filePath = `${backendDir}/${archDir}`;
 const fileName = backend === 'webgpu'
     ? (arch === 'wasm-mt' ? 'index-webgpu' : 'index-webgpu-st')
     : (arch === 'wasm-mt' ? 'index' : 'index-st');

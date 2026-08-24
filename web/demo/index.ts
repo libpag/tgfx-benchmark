@@ -17,7 +17,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 import {TGFXBind} from '../lib/tgfx';
-import Benchmark from './wasm-mt/benchmark';
+import Benchmark from './webgl/wasm-mt/benchmark';
 import {ShareData, updateSize, onresizeEvent, startDraw, setCanvasDefaultSize, setupCoordinateConversion} from "./common";
 
 let shareData: ShareData = new ShareData();
@@ -27,8 +27,8 @@ if (typeof window !== 'undefined') {
         try {
             setupCoordinateConversion('benchmark');
             shareData.BenchmarkModule = await Benchmark({
-                locateFile: (file: string) => './wasm-mt/' + file,
-                mainScriptUrlOrBlob: './wasm-mt/benchmark.js',
+                locateFile: (file: string) => './webgl/wasm-mt/' + file,
+                mainScriptUrlOrBlob: './webgl/wasm-mt/benchmark.js',
             });
             TGFXBind(shareData.BenchmarkModule);
 

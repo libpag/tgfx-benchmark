@@ -17,7 +17,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 import {TGFXBind} from '../lib/tgfx';
-import Benchmark from './wasm-webgpu/benchmark';
+import Benchmark from './webgpu/wasm/benchmark';
 import {ShareData, updateSize, onresizeEvent, startDraw, setCanvasDefaultSize, setupCoordinateConversion} from "./common";
 
 let shareData: ShareData = new ShareData();
@@ -36,7 +36,7 @@ if (typeof window !== 'undefined') {
 
             setupCoordinateConversion('benchmark');
             shareData.BenchmarkModule = await Benchmark({
-                locateFile: (file: string) => './wasm-webgpu/' + file,
+                locateFile: (file: string) => './webgpu/wasm/' + file,
                 preinitializedWebGPUDevice: device,
             });
             TGFXBind(shareData.BenchmarkModule);

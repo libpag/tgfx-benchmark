@@ -3,13 +3,9 @@ lib
 types
 *.js.map
 demo/*.js
-demo/wasm
-demo/wasm-mt
-demo/wasm-webgpu
-demo/wasm-mt-webgpu
-demo/build-benchmark
-demo/.benchmark.wasm.md5
-demo/.benchmark.wasm-mt.md5
+demo/*.md5
+demo/webgl
+demo/webgpu
 src/wasm
 emsdk/
 
