@@ -16,53 +16,96 @@ Before building the projects, please carefully follow the instructions in the
 and [**Dependencies**](https://github.com/Tencent/tgfx?tab=readme-ov-file#dependencies) sections.
 These will guide you through the necessary steps to set up your development environment.
 
+The GPU backend is selected at CMake configure time with `BENCHMARK_BACKEND`. Use a separate build
+directory for each backend. If the option is omitted or set to `AUTO`, the existing defaults are used:
+OpenGL on Windows and macOS, and WebGL on Web.
+
+| Platform | Supported backends |
+| --- | --- |
+| Windows | `OPENGL`, `ANGLE`, `VULKAN`, `D3D12` |
+| macOS | `OPENGL`, `METAL` |
+| Web | `WEBGL`, `WEBGPU` |
+
+Only `BENCHMARK_BACKEND` is accepted as the backend selection entry. Do not pass TGFX internal
+backend options such as `TGFX_USE_ANGLE` or `TGFX_USE_VULKAN`.
+
 ### macOS
-To get started, open the root directory in CLion. Then, build and run the `Benchmark` target using the
-Release configuration.
 
-If you prefer using XCode IDE, go to the root directory, run the following command or double-click
-it:
-
-```
-./gen_mac
-```
-
-This will generate a project for the native architecture, such as `arm64` for Apple Silicon Macs or
-`x64` for Intel Macs. If you want to generate a project for a specific architecture, use the `-a`
-option, for example:
+macOS supports the `OPENGL` and `METAL` backends. OpenGL is the default. In CLion, add one of the
+following CMake options to the profile, then build and run the `Benchmark` target using the Release
+configuration:
 
 ```
-./gen_mac -a x64
+-DBENCHMARK_BACKEND=OPENGL
+-DBENCHMARK_BACKEND=METAL
 ```
 
-Finally, open Xcode and launch the `mac/TGFX-Benchmark.xcodeproj`. You are all set!
+If you prefer Xcode, generate the project from the repository root. For OpenGL, run:
+
+```
+./gen_mac -DBENCHMARK_BACKEND=OPENGL
+```
+
+For Metal, run:
+
+```
+./gen_mac -DBENCHMARK_BACKEND=METAL
+```
+
+The script generates a project for the native architecture, such as `arm64` for Apple Silicon Macs or
+`x64` for Intel Macs. To select a specific architecture, add the `-a` option:
+
+```
+./gen_mac -a x64 -DBENCHMARK_BACKEND=METAL
+```
+
+The generated project is written to `mac/TGFX-Benchmark.xcodeproj`. Regenerate it when switching
+backends, then open it in Xcode and launch the `Benchmark` target. The application title displays the
+selected backend.
 
 ### Windows
 
-To get started, open the root directory in CLion. Then, go to `File->Settings` and navigate to
-`Build, Execution, Deployment->ToolChains`. Set the toolchain to `Visual Studio` with either `amd64`
-(recommended) or `x86` architecture. It's also recommended to use the `Ninja` generator for CMake to
-speed up the build process. You can set this in `Build, Execution, Deployment->CMake` by choosing
-`Ninja` in the `Generator` row. Once done, build and run the `Benchmark` target using the Release
-configuration.
+Windows supports the `OPENGL`, `ANGLE`, `VULKAN`, and `D3D12` backends. OpenGL is the default.
 
-If you prefer using Visual Studio IDE, open the `x64 Native Tools Command Prompt for VS 2019` and
-run the following command in the root directory:
+To use CLion, open the repository root and go to `File->Settings` >
+`Build, Execution, Deployment->ToolChains`. Select the Visual Studio toolchain with either `amd64`
+(recommended) or `x86`. In `Build, Execution, Deployment->CMake`, select the Ninja generator and add
+one backend option to the CMake profile, for example:
 
 ```
-cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_CONFIGURATION_TYPES="Release" -B ./win/Release-x64
+-DBENCHMARK_BACKEND=D3D12
 ```
 
-This will generate a project for the `x64` architecture with the `Release` configuration. To generate
-a project for the `x86` architecture with the `Debug` configuration, open the
-`x86 Native Tools Command Prompt for VS 2019` and run the following command:
+Use a separate CLion profile and build directory for each backend, then build and run the `Benchmark`
+target using the Release configuration.
+
+To use Visual Studio, open the `x64 Native Tools Command Prompt for VS 2019` and configure the desired
+backend in its own directory:
 
 ```
-cmake -G "Visual Studio 16 2019" -A Win32 -DCMAKE_CONFIGURATION_TYPES="Debug" -B ./win/Debug-x86
+cmake -S . -B ./win/Release-x64-opengl -G "Visual Studio 16 2019" -A x64 -DCMAKE_CONFIGURATION_TYPES="Release" -DBENCHMARK_BACKEND=OPENGL
+cmake -S . -B ./win/Release-x64-angle -G "Visual Studio 16 2019" -A x64 -DCMAKE_CONFIGURATION_TYPES="Release" -DBENCHMARK_BACKEND=ANGLE
+cmake -S . -B ./win/Release-x64-vulkan -G "Visual Studio 16 2019" -A x64 -DCMAKE_CONFIGURATION_TYPES="Release" -DBENCHMARK_BACKEND=VULKAN
+cmake -S . -B ./win/Release-x64-d3d12 -G "Visual Studio 16 2019" -A x64 -DCMAKE_CONFIGURATION_TYPES="Release" -DBENCHMARK_BACKEND=D3D12
 ```
 
-Finally, open the `Benchmark.sln` file in the `win/Release-x64/` or `win/Debug-x86/` directory, and 
-set the `Benchmark` project as the startup project. You are all set!
+Build a configured backend from the command line with:
+
+```
+cmake --build ./win/Release-x64-d3d12 --config Release --target Benchmark
+```
+
+To generate an `x86` Debug project, open the `x86 Native Tools Command Prompt for VS 2019` and use a
+separate output directory:
+
+```
+cmake -S . -B ./win/Debug-x86-opengl -G "Visual Studio 16 2019" -A Win32 -DCMAKE_CONFIGURATION_TYPES="Debug" -DBENCHMARK_BACKEND=OPENGL
+```
+
+Open the `Benchmark.sln` file from the selected output directory and set `Benchmark` as the startup
+project. ANGLE builds automatically copy `libEGL.dll` and `libGLESv2.dll` next to `Benchmark.exe`.
+Vulkan requires a Vulkan-capable driver and loader. The application title displays the selected
+backend.
 
 ### Web
 
@@ -79,15 +122,26 @@ Then, in the `web/` directory, run the following command to build the demo proje
 npm run build
 ```
 
-This will generate the `benchmark.js` and `benchmark.wasm` files in the `web/demo/wasm` directory.
-Next, you can start an HTTP server by running the following command:
+This builds the default WebGL multithreaded version and generates `benchmark.js` and
+`benchmark.wasm` in the `web/demo/wasm-mt` directory. Next, you can start an HTTP server by running
+the following command:
 
 ```
 npm run server
 ```
 
-This will open [http://localhost:8061/web/demo/index.html](http://localhost:8061/web/demo/index.html)
-in your default browser. You can also open it manually to view the demo.
+This will open [http://localhost:8061/index.html](http://localhost:8061/index.html) in your default
+browser. You can also open it manually to view the demo.
+
+To build and run the WebGPU multithreaded version, use:
+
+```
+npm run build:webgpu
+npm run server:webgpu
+```
+
+The build script installs and activates Emscripten `4.0.15`. The WebGPU page requires a browser
+with WebGPU support and must be opened from `localhost` or HTTPS.
 
 To debug the C++ code, install the browser plugin:
 [**C/C++ DevTools Support (DWARF)**](https://chromewebstore.google.com/detail/cc++-devtools-support-dwa/pdcpmagijalfljmkmjngeonclgbbannb).
@@ -128,12 +182,15 @@ After modification:
     });
 ```
 
-To build a single-threaded version, just add the suffix ":st" to each command. For example:
+To build a single-threaded version, add the suffix `:st` to the commands:
 
 ```
 npm run build:st
 npm run build:st:debug
-npm run serser:st
+npm run server:st
+npm run build:webgpu:st
+npm run build:webgpu:st:debug
+npm run server:webgpu:st
 ``` 
 
 To build the demo project in CLion, open the `Settings` panel and go to `Build, Execution, Deployment` > `CMake`.

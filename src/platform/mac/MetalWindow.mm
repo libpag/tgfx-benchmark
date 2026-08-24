@@ -1,8 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Tencent is pleased to support the open source community by making tgfx-benchmark available.
+//  Tencent is pleased to support the open source community by making tgfx available.
 //
-//  Copyright (C) ${YEAR} Tencent. All rights reserved.
+//  Copyright (C) 2026 Tencent. All rights reserved.
 //
 //  Licensed under the BSD 3-Clause License (the "License"); you may not use this file except
 //  in compliance with the License. You may obtain a copy of the License at
@@ -15,3 +15,26 @@
 //  and limitations under the license.
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
+
+#import <MetalKit/MetalKit.h>
+#import "TGFXWindow.h"
+#include "tgfx/gpu/metal/MetalWindow.h"
+
+@implementation TGFXWindow (Backend)
+
++ (NSString*)BackendTitle {
+  return @"TGFX Benchmark - Metal";
+}
+
++ (NSView*)MakeBackendView:(NSRect)frame {
+  auto view = [[MTKView alloc] initWithFrame:frame];
+  [view setPaused:YES];
+  [view setEnableSetNeedsDisplay:NO];
+  return view;
+}
+
++ (std::shared_ptr<tgfx::Window>)MakeTGFXWindow:(NSView*)view {
+  return tgfx::MetalWindow::MakeFrom((MTKView*)view);
+}
+
+@end

@@ -6,11 +6,18 @@ import path from "path";
 import {readFileSync} from "node:fs";
 
 const fileHeaderPath = path.resolve(__dirname, '../../.idea/fileTemplates/includes/tgfx-benchmark File Header.h');
-const banner = readFileSync(fileHeaderPath, 'utf-8');
+const banner = readFileSync(fileHeaderPath, 'utf-8').replace(/\$\{YEAR\}/g, new Date().getFullYear());
 
 const arch = process.env.ARCH;
-var fileName = (arch === 'wasm-mt'? 'index': 'index-st');
-var filePath = (arch === 'wasm-mt'? 'wasm-mt': 'wasm');
+const backend = process.env.BACKEND || 'webgl';
+const archDir = (arch === 'wasm-mt' ? 'wasm-mt' : 'wasm');
+// Each backend lives under its own top-level directory (demo/webgl or demo/webgpu) so the WebGL
+// and WebGPU artifacts never share a directory.
+const backendDir = backend === 'webgpu' ? 'webgpu' : 'webgl';
+const filePath = `${backendDir}/${archDir}`;
+const fileName = backend === 'webgpu'
+    ? (arch === 'wasm-mt' ? 'index-webgpu' : 'index-webgpu-st')
+    : (arch === 'wasm-mt' ? 'index' : 'index-st');
 
 const plugins = [
     esbuild({tsconfig: "tsconfig.json", minify: false}),

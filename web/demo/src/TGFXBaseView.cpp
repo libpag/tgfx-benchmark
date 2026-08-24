@@ -105,7 +105,7 @@ void TGFXBaseView::draw() {
     return;
   }
   if (window == nullptr) {
-    window = tgfx::WebGLWindow::MakeFrom(canvasID);
+    window = MakeTGFXWindow(canvasID);
   }
   if (window == nullptr) {
     return;

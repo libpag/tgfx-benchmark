@@ -83,7 +83,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
   ForceHighPerformanceCore();
 
   benchmark::TGFXWindow tgfxWindow = {};
-  tgfxWindow.open();
+  if (!tgfxWindow.open()) {
+    return EXIT_FAILURE;
+  }
 
   MSG msg = {};
   while (GetMessage(&msg, nullptr, 0, 0) > 0) {

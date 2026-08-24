@@ -13,7 +13,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 cmake_policy(SET CMP0063 NEW)
 
-option(TGFX_USE_ANGLE "Allow build with the ANGLE library" OFF)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/BenchmarkBackend.cmake)
+configure_benchmark_backend()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     list(APPEND BENCH_COMPILE_OPTIONS -Werror -Wall -Wextra -Weffc++ -Wconversion -pedantic -Werror=return-type -Wno-unused-command-line-argument)
@@ -49,11 +50,33 @@ elseif (ANDROID)
     file(GLOB_RECURSE PLATFORM_FILES src/platform/android/*.cpp)
     list(APPEND SRC_FILES ${PLATFORM_FILES})
 elseif (MACOS)
-    file(GLOB_RECURSE PLATFORM_FILES src/platform/mac/*.mm)
-    list(APPEND SRC_FILES ${PLATFORM_FILES})
+    list(APPEND SRC_FILES
+            src/platform/mac/AppDelegate.mm
+            src/platform/mac/main.mm
+            src/platform/mac/TGFXWindow.mm)
+    if (BENCHMARK_BACKEND_RESOLVED STREQUAL "METAL")
+        list(APPEND SRC_FILES src/platform/mac/MetalWindow.mm)
+        find_library(METALKIT_LIB MetalKit)
+        if (NOT METALKIT_LIB)
+            message(FATAL_ERROR "MetalKit framework was not found.")
+        endif ()
+        list(APPEND BENCHMARK_LIBS ${METALKIT_LIB})
+    else ()
+        list(APPEND SRC_FILES src/platform/mac/CGLWindow.mm)
+    endif ()
 elseif (WIN32)
-    file(GLOB_RECURSE PLATFORM_FILES src/platform/win/*.cpp)
-    list(APPEND SRC_FILES ${PLATFORM_FILES})
+    list(APPEND SRC_FILES
+            src/platform/win/main.cpp
+            src/platform/win/TGFXWindow.cpp)
+    if (BENCHMARK_BACKEND_RESOLVED STREQUAL "ANGLE")
+        list(APPEND SRC_FILES src/platform/win/EGLWindow.cpp)
+    elseif (BENCHMARK_BACKEND_RESOLVED STREQUAL "VULKAN")
+        list(APPEND SRC_FILES src/platform/win/VulkanWindow.cpp)
+    elseif (BENCHMARK_BACKEND_RESOLVED STREQUAL "D3D12")
+        list(APPEND SRC_FILES src/platform/win/D3D12Window.cpp)
+    else ()
+        list(APPEND SRC_FILES src/platform/win/WGLWindow.cpp)
+    endif ()
     add_compile_definitions(NOMINMAX)
     add_compile_definitions(_USE_MATH_DEFINES)
 
@@ -67,8 +90,7 @@ elseif (WIN32)
         list(APPEND BENCHMARK_LIBS ${USER32})
     endif ()
 
-    if (TGFX_USE_ANGLE)
-        add_definitions(-DTGFX_USE_ANGLE)
+    if (BENCHMARK_BACKEND_RESOLVED STREQUAL "ANGLE")
         list(APPEND BENCH_INCLUDES ${TGFX_DIR}/vendor/angle/include)
     endif ()
 endif ()
@@ -84,7 +106,7 @@ target_include_directories(Benchmark PRIVATE ${BENCH_INCLUDES})
 target_compile_options(Benchmark PUBLIC ${BENCH_COMPILE_OPTIONS})
 target_link_libraries(Benchmark tgfx ${BENCHMARK_LIBS})
 
-if (WIN32 AND TGFX_USE_ANGLE)
+if (WIN32 AND BENCHMARK_BACKEND_RESOLVED STREQUAL "ANGLE")
     add_custom_command(TARGET Benchmark POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
             ${TGFX_DIR}/vendor/angle/win/${ARCH}/libEGL.dll

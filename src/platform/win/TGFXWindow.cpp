@@ -40,7 +40,7 @@ bool TGFXWindow::open() {
   auto pixelRatio = getPixelRatio();
   int initWidth = static_cast<int>(pixelRatio * 1024);
   int initHeight = static_cast<int>(pixelRatio * 720);
-  windowHandle = CreateWindowEx(WS_EX_APPWINDOW, windowClass.lpszClassName, L"TGFX Benchmark",
+  windowHandle = CreateWindowEx(WS_EX_APPWINDOW, windowClass.lpszClassName, BackendTitle(),
                                 WS_OVERLAPPEDWINDOW, 0, 0, initWidth, initHeight, nullptr, nullptr,
                                 windowClass.hInstance, this);
 
@@ -57,7 +57,7 @@ WNDCLASS TGFXWindow::RegisterWindowClass() {
   WNDCLASS windowClass{};
   windowClass.hCursor = LoadCursor(nullptr, IDC_ARROW);
   windowClass.lpszClassName = ClassName;
-  windowClass.style = CS_HREDRAW | CS_VREDRAW;
+  windowClass.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
   windowClass.cbClsExtra = 0;
   windowClass.cbWndExtra = 0;
   windowClass.hInstance = hInstance;
@@ -82,8 +82,19 @@ LRESULT TGFXWindow::handleMessage(HWND hwnd, UINT message, WPARAM wparam, LPARAM
   LRESULT result = 0;
   switch (message) {
     case WM_DESTROY:
-      destroy();
+      // Release GPU resources on the normal close path (WM_CLOSE -> DestroyWindow -> WM_DESTROY),
+      // which does not go through destroy(). destroy() covers the reopen/destructor paths.
+      lastRecording = nullptr;
+      surface = nullptr;
+      tgfxWindow = nullptr;
       PostQuitMessage(0);
+      break;
+    case WM_NCDESTROY:
+      SetWindowLongPtr(hwnd, GWLP_USERDATA, 0);
+      windowHandle = nullptr;
+      return DefWindowProc(hwnd, message, wparam, lparam);
+    case WM_SIZE:
+      surface = nullptr;
       break;
     case WM_PAINT: {
       // Commented out the next 3 lines to trigger continuous redraw
@@ -123,15 +134,19 @@ LRESULT TGFXWindow::handleMessage(HWND hwnd, UINT message, WPARAM wparam, LPARAM
       break;
     }
     default:
-      result = DefWindowProc(windowHandle, message, wparam, lparam);
+      result = DefWindowProc(hwnd, message, wparam, lparam);
       break;
   }
   return result;
 }
 
 void TGFXWindow::destroy() {
+  lastRecording = nullptr;
+  surface = nullptr;
+  tgfxWindow = nullptr;
   if (windowHandle) {
-    DestroyWindow(windowHandle);
+    auto handle = windowHandle;
+    DestroyWindow(handle);
     windowHandle = nullptr;
     UnregisterClass(ClassName, nullptr);
   }
@@ -228,11 +243,7 @@ void TGFXWindow::createAppHost() {
 void TGFXWindow::draw() {
   auto currentTime = tgfx::Clock::Now();
   if (!tgfxWindow) {
-#ifdef TGFX_USE_ANGLE
-    tgfxWindow = tgfx::EGLWindow::MakeFrom(windowHandle);
-#else
-    tgfxWindow = tgfx::WGLWindow::MakeFrom(windowHandle);
-#endif
+    tgfxWindow = MakeTGFXWindow(windowHandle);
   }
   if (tgfxWindow == nullptr) {
     return;
