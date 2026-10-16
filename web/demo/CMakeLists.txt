@@ -11,6 +11,8 @@ endif ()
 
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/BenchmarkBackend.cmake)
+configure_benchmark_backend()
 
 if (NOT TGFX_DIR)
     set(TGFX_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/tgfx)
@@ -22,15 +24,34 @@ add_subdirectory(${TGFX_DIR} ./tgfx)
 
 file(GLOB_RECURSE BENCHMARK_FILES
         ../../src/base/*.*
-        ../../src/benchmark/*.*
-        src/*.*)
+        ../../src/benchmark/*.*)
+list(APPEND BENCHMARK_FILES
+        src/binding.cpp
+        src/TGFXBaseView.cpp
+        src/TGFXBaseView.h
+        src/TGFXThreadsView.cpp
+        src/TGFXThreadsView.h
+        src/TGFXView.cpp
+        src/TGFXView.h)
+if (BENCHMARK_BACKEND_RESOLVED STREQUAL "WEBGPU")
+    list(APPEND BENCHMARK_FILES src/WebGPUWindow.cpp)
+else ()
+    list(APPEND BENCHMARK_FILES src/WebGLWindow.cpp)
+endif ()
 
 if (DEFINED EMSCRIPTEN)
     add_executable(benchmark ${BENCHMARK_FILES})
     list(APPEND BENCHMARK_COMPILE_OPTIONS -fno-rtti -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0)
+    if (BENCHMARK_BACKEND_RESOLVED STREQUAL "WEBGPU")
+        set(BENCHMARK_GRAPHICS_OPTIONS -sUSE_WEBGPU=1)
+        set(BENCHMARK_RUNTIME_METHODS "-sEXPORTED_RUNTIME_METHODS=['HEAPU8','WebGPU']")
+    else ()
+        set(BENCHMARK_GRAPHICS_OPTIONS -sMAX_WEBGL_VERSION=2)
+        set(BENCHMARK_RUNTIME_METHODS "-sEXPORTED_RUNTIME_METHODS=['GL','HEAPU8']")
+    endif ()
     list(APPEND BENCHMARK_LINK_OPTIONS --no-entry -lembind -fno-rtti -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0 -sEXPORT_NAME='Benchmark' -sWASM=1
-            -sMAX_WEBGL_VERSION=2 -sEXPORTED_RUNTIME_METHODS=['GL','HEAPU8'] -sMODULARIZE=1
-            -sENVIRONMENT=web,worker -sEXPORT_ES6=1)
+            ${BENCHMARK_GRAPHICS_OPTIONS} ${BENCHMARK_RUNTIME_METHODS} -sMODULARIZE=1
+            -sENVIRONMENT=web,worker -sEXPORT_ES6=1 -sSTACK_SIZE=1MB)
     set(unsupported_emsdk_versions "4.0.11")
     foreach (unsupported_version IN LISTS unsupported_emsdk_versions)
         if (${EMSCRIPTEN_VERSION} VERSION_EQUAL ${unsupported_version})

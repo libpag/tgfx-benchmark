@@ -28,11 +28,8 @@
 #include <memory>
 #include <string>
 #include "base/Bench.h"
-#ifdef TGFX_USE_ANGLE
-#include "tgfx/gpu/opengl/egl/EGLWindow.h"
-#else
-#include "tgfx/gpu/opengl/wgl/WGLWindow.h"
-#endif
+#include "tgfx/core/Surface.h"
+#include "tgfx/gpu/Window.h"
 
 namespace benchmark {
 class TGFXWindow {
@@ -45,16 +42,19 @@ class TGFXWindow {
  private:
   HWND windowHandle = nullptr;
   std::unique_ptr<tgfx::Recording> lastRecording = nullptr;
+  std::shared_ptr<tgfx::Surface> surface = nullptr;
   int lastDrawIndex = 0;
   std::shared_ptr<AppHost> appHost = nullptr;
-#ifdef TGFX_USE_ANGLE
-  std::shared_ptr<tgfx::EGLWindow> tgfxWindow = nullptr;
-#else
-  std::shared_ptr<tgfx::WGLWindow> tgfxWindow = nullptr;
-#endif
+  std::shared_ptr<tgfx::Window> tgfxWindow = nullptr;
 
   static WNDCLASS RegisterWindowClass();
   static LRESULT CALLBACK WndProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) noexcept;
+
+  // Backend-specific factory methods. Each is implemented in its own per-backend source file
+  // (WGLWindow.cpp / EGLWindow.cpp / VulkanWindow.cpp / D3D12Window.cpp), selected by CMake
+  // according to BENCHMARK_BACKEND.
+  static LPCWSTR BackendTitle();
+  static std::shared_ptr<tgfx::Window> MakeTGFXWindow(HWND windowHandle);
 
   LRESULT handleMessage(HWND window, UINT message, WPARAM wparam, LPARAM lparam) noexcept;
 

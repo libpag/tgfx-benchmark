@@ -7,7 +7,7 @@ import path from "path";
 import {readFileSync} from "node:fs";
 
 const fileHeaderPath = path.resolve(__dirname, '../../.idea/fileTemplates/includes/tgfx-benchmark File Header.h');
-const banner = readFileSync(fileHeaderPath, 'utf-8');
+const banner = readFileSync(fileHeaderPath, 'utf-8').replace(/\$\{YEAR\}/g, new Date().getFullYear());
 
 
 const plugins=[

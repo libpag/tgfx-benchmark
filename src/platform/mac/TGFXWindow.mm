@@ -17,6 +17,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 #import "TGFXWindow.h"
+#import <CoreVideo/CoreVideo.h>
 #import <QuartzCore/CADisplayLink.h>
 #include <cmath>
 #include <filesystem>
@@ -27,8 +28,7 @@
 #include "tgfx/core/Canvas.h"
 #include "tgfx/core/Clock.h"
 #include "tgfx/core/Surface.h"
-#include "tgfx/gpu/opengl/GLDevice.h"
-#include "tgfx/gpu/opengl/cgl/CGLWindow.h"
+#include "tgfx/gpu/Window.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
@@ -79,39 +79,64 @@ static std::shared_ptr<tgfx::Surface> CreateWindowSurface(const std::shared_ptr<
 @implementation TGFXWindow {
   NSWindow* window;
   NSView* view;
-  std::shared_ptr<tgfx::CGLWindow> cglWindow;
+  std::shared_ptr<tgfx::Window> tgfxWindow;
   std::shared_ptr<tgfx::Surface> surface;
   std::unique_ptr<benchmark::AppHost> appHost;
   std::unique_ptr<tgfx::Recording> lastRecording;
   int drawIndex;
   size_t lastReportedCount;
   bool stableReported;
+  bool closing;
   CVDisplayLinkRef displayLink;
 }
 
-- (void)dealloc {
+- (void)stopDisplayLink {
   if (displayLink != nil) {
     CVDisplayLinkStop(displayLink);
+    CVDisplayLinkSetOutputCallback(displayLink, nullptr, nullptr);
     CVDisplayLinkRelease(displayLink);
+    displayLink = nil;
   }
+}
+
+- (void)dealloc {
+  [self stopDisplayLink];
+  lastRecording = nullptr;
+  surface = nullptr;
+  tgfxWindow = nullptr;
   [window release];
   [view release];
   [super dealloc];
 }
 
 - (void)windowWillClose:(NSNotification*)notification {
-  [NSApp terminate:self];
+  closing = true;
+  // Let AppKit finish the close notification before stopping the Core Video callback thread and
+  // terminating the application. Already queued redraw blocks are ignored once closing is true.
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [self stopDisplayLink];
+    [NSApp terminate:self];
+  });
 }
 
 - (void)windowDidResize:(NSNotification*)notification {
   [self updateSize];
 }
 
-static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const CVTimeStamp*,
-                                    CVOptionFlags, CVOptionFlags*, void* context) {
+- (BOOL)isActiveDisplayLink:(CVDisplayLinkRef)link {
+  return !closing && displayLink == link;
+}
+
+static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp*,
+                                    const CVTimeStamp*, CVOptionFlags, CVOptionFlags*,
+                                    void* context) {
   auto self = (TGFXWindow*)context;
   dispatch_async(dispatch_get_main_queue(), ^{
-    [self redraw];
+    // The display link may have been stopped/released between scheduling and running this block.
+    // Only redraw while the link that scheduled us is still the active one.
+    if ([self isActiveDisplayLink:displayLink]) {
+      [self redraw];
+    }
   });
   return kCVReturnSuccess;
 }
@@ -124,13 +149,15 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
                                        styleMask:styleMask
                                          backing:NSBackingStoreBuffered
                                            defer:NO];
-  [window setTitle:@"TGFX Benchmark"];
+  [window setReleasedWhenClosed:NO];
+  [window setTitle:[TGFXWindow BackendTitle]];
   [window setDelegate:self];
-  view = [[NSView alloc] initWithFrame:frame];
+  view = [TGFXWindow MakeBackendView:frame];
   [view setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
-  [view addGestureRecognizer:[[NSClickGestureRecognizer alloc]
-                                 initWithTarget:self
-                                         action:@selector(handleClick:)]];
+  auto clickRecognizer = [[NSClickGestureRecognizer alloc] initWithTarget:self
+                                                                   action:@selector(handleClick:)];
+  [view addGestureRecognizer:clickRecognizer];
+  [clickRecognizer release];
   [window setContentView:view];
   [window center];
   [window makeKeyAndOrderFront:nil];
@@ -138,6 +165,7 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
   drawIndex = 0;
   lastReportedCount = 0;
   stableReported = false;
+  closing = false;
   if (const char* benchName = std::getenv("BENCH_NAME"); benchName != nullptr && *benchName) {
     auto& names = benchmark::Bench::Names();
     for (size_t i = 0; i < names.size(); i++) {
@@ -147,14 +175,21 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
       }
     }
   }
+  displayLink = nil;
   if (@available(macOS 14, *)) {
-    displayLink = nil;
     CADisplayLink* caDisplayLink = [view displayLinkWithTarget:self selector:@selector(redraw)];
     [caDisplayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSRunLoopCommonModes];
   } else {
-    CVDisplayLinkCreateWithActiveCGDisplays(&displayLink);
-    CVDisplayLinkSetOutputCallback(displayLink, &displayLinkCallback, self);
-    CVDisplayLinkStart(displayLink);
+    auto result = CVDisplayLinkCreateWithActiveCGDisplays(&displayLink);
+    if (result == kCVReturnSuccess && displayLink != nil) {
+      result = CVDisplayLinkSetOutputCallback(displayLink, &displayLinkCallback, self);
+    }
+    if (result == kCVReturnSuccess && displayLink != nil) {
+      result = CVDisplayLinkStart(displayLink);
+    }
+    if (result != kCVReturnSuccess) {
+      [self stopDisplayLink];
+    }
   }
 }
 
@@ -205,11 +240,13 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
   } else {
     appHost->resetFrames();
   }
-  auto contentScale = static_cast<float>(size.height / view.bounds.size.height);
-  auto sizeChanged = appHost->updateScreen(width, height, contentScale);
-  if (sizeChanged && cglWindow != nullptr) {
-    InvalidateSurfaceIfNeeded(cglWindow);
-    surface = nullptr;
+  if (width > 0 && height > 0 && view.bounds.size.height > 0) {
+    auto contentScale = static_cast<float>(size.height / view.bounds.size.height);
+    auto sizeChanged = appHost->updateScreen(width, height, contentScale);
+    if (sizeChanged && tgfxWindow != nullptr) {
+      InvalidateSurfaceIfNeeded(tgfxWindow);
+      surface = nullptr;
+    }
   }
   for (NSTrackingArea* trackingArea in [view trackingAreas]) {
     [view removeTrackingArea:trackingArea];
@@ -228,19 +265,25 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const 
   if (appHost->width() <= 0 || appHost->height() <= 0) {
     return;
   }
-  if (cglWindow == nullptr) {
-    cglWindow = tgfx::CGLWindow::MakeFrom(view);
+  if (tgfxWindow == nullptr) {
+    tgfxWindow = [TGFXWindow MakeTGFXWindow:view];
   }
-  if (cglWindow == nullptr) {
+  if (tgfxWindow == nullptr) {
     return;
   }
-  auto device = cglWindow->getDevice();
+  auto device = tgfxWindow->getDevice();
+  if (device == nullptr) {
+    return;
+  }
   auto context = device->lockContext();
   if (context == nullptr) {
     return;
   }
   if (surface == nullptr) {
-    surface = CreateWindowSurface(cglWindow, context);
+    if (lastRecording != nullptr) {
+      context->submit(std::move(lastRecording));
+    }
+    surface = CreateWindowSurface(tgfxWindow, context);
   }
   if (surface == nullptr) {
     device->unlock();

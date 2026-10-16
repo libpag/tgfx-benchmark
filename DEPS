@@ -12,12 +12,12 @@
       },
       {
         "url": "${PAG_GROUP}/tgfx.git",
-        "commit": "8d1c38fcb221ba282c371823c4e2e10de48984be",
+        "commit": "4d5949b1979f008fdd804f483aa4d0f23d583035",
         "dir": "third_party/tgfx"
       },
       {
         "url": "https://github.com/emscripten-core/emsdk.git",
-        "commit": "c69d433d8509c5c64564c2f0d054bf102a5cf67e",
+        "commit": "389a68bc35dcff7ebae4614e1615099dafda00d1",
         "dir": "third_party/emsdk"
       }
     ]
