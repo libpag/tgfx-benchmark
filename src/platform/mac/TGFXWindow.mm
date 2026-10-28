@@ -38,6 +38,7 @@
   std::unique_ptr<benchmark::AppHost> appHost;
   std::unique_ptr<tgfx::Recording> lastRecording;
   int drawIndex;
+  int64_t lastPerfLogTime;
   bool closing;
   CVDisplayLinkRef displayLink;
 }
@@ -125,6 +126,7 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeSt
     }
   }
   closing = false;
+  lastPerfLogTime = 0;
   displayLink = nil;
   auto result = CVDisplayLinkCreateWithActiveCGDisplays(&displayLink);
   if (result == kCVReturnSuccess && displayLink != nil) {
@@ -244,7 +246,8 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeSt
   device->unlock();
   auto drawTime = tgfx::Clock::Now() - currentTime;
   appHost->recordFrame(drawTime);
-  if (bench->isMaxDrawCountReached()) {
+  if (bench->isMaxDrawCountReached() && currentTime - lastPerfLogTime >= 500000) {
+    lastPerfLogTime = currentTime;
     fprintf(stdout, "PERF name=%s fps=%.2f drawCount=%zu stable=1\n", bench->name().c_str(),
             bench->currentFPS(), bench->currentDrawCount());
     fflush(stdout);
