@@ -4,7 +4,7 @@
 
 本次测试用于对比裁剪区优化前后在 `ParticleBench-Rect` 场景下的性能差异。
 
-- 测试对象：`python3 tools/run_bench.py ParticleBench-Rect`
+- 测试对象：`python3 tools/bench_clip.py ParticleBench-Rect`
 - 统计方式：每个 case 连续运行 10 轮，使用脚本输出的平均值（`fps`、`count`）
 - 分支顺序：先测 Main，再切换 TGFX 到 Feature 分支后复测
 - 数据规则：如果某个 case 被要求“重新测试”，则废弃第一次数据，只保留第二次数据
