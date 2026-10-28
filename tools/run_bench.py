@@ -48,6 +48,8 @@ ALL_TYPES = [
     "ParticleBench-Circle",
     "ParticleBench-Oval",
     "ParticleBench-RRect",
+    "LayerBench-DropShadow",
+    "LayerBench-InnerShadow",
 ]
 
 

@@ -22,6 +22,20 @@
 #include "tgfx/core/Canvas.h"
 
 namespace benchmark {
+
+struct DrawParam {
+  size_t startCount = 1;
+  size_t stepCount = 600;
+  float minFPS = 60.0f;
+  size_t maxCount = 1000000;
+};
+
+struct PerfData {
+  float fps = 0.0f;
+  float drawTime = 0.0f;
+  size_t drawCount = 0;
+};
+
 class Bench {
  public:
   /**
@@ -58,10 +72,9 @@ class Bench {
   void draw(tgfx::Canvas* canvas, const AppHost* host);
 
   /**
-   * Returns true if the benchmark has reached a stable state where the draw count no longer
-   * grows. Subclasses without an adaptive draw count should leave the default.
+   * Returns true if the draw count has reached its maximum.
    */
-  virtual bool isStable() const {
+  virtual bool isMaxDrawCountReached() const {
     return false;
   }
 
@@ -77,6 +90,13 @@ class Bench {
    */
   virtual float currentFPS() const {
     return 0.f;
+  }
+
+  /**
+   * Returns the current performance data.
+   */
+  virtual PerfData getPerfData() const {
+    return {};
   }
 
  protected:

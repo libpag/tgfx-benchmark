@@ -32,19 +32,6 @@ struct GraphicData {
   float speedY;
 };
 
-struct DrawParam {
-  size_t startCount = 1;
-  size_t stepCount = 600;
-  float minFPS = 60.0f;
-  size_t maxCount = 1000000;
-};
-
-struct PerfData {
-  float fps = 0.0f;
-  float drawTime = 0.0f;
-  size_t drawCount = 0;
-};
-
 class ParticleBench : public Bench {
  public:
   ParticleBench() : Bench("ParticleBench") {
@@ -68,13 +55,9 @@ class ParticleBench : public Bench {
 
   static void SetClipState(ClipState state);
 
-  bool isMaxDrawCountReached() const;
+  bool isMaxDrawCountReached() const override;
 
-  PerfData getPerfData() const;
-
-  bool isStable() const override {
-    return maxDrawCountReached;
-  }
+  PerfData getPerfData() const override;
 
   size_t currentDrawCount() const override {
     return drawCount;

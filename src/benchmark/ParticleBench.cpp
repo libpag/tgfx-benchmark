@@ -41,7 +41,7 @@ static size_t IncreaseStep = 1000;
 static bool AntiAliasFlag = true;
 static bool StrokeFlag = false;
 static tgfx::LineJoin LineJoinType = tgfx::LineJoin::Miter;
-static ClipState CurrentClipState = ClipState::Path;
+static ClipState CurrentClipState = ClipState::None;
 
 static std::string ToString(GraphicType type) {
   switch (type) {

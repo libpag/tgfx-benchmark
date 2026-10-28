@@ -18,11 +18,8 @@
 
 #import "TGFXWindow.h"
 #import <CoreVideo/CoreVideo.h>
-#import <QuartzCore/CADisplayLink.h>
 #include <cmath>
 #include <filesystem>
-#include <type_traits>
-#include <utility>
 #include "base/AppHost.h"
 #include "base/Bench.h"
 #include "tgfx/core/Canvas.h"
@@ -33,49 +30,6 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
-template <typename WindowT, typename = void>
-struct HasInvalidSize : std::false_type {
-};
-
-template <typename WindowT>
-struct HasInvalidSize<WindowT,
-                      std::void_t<decltype(std::declval<WindowT&>().invalidSize())>>
-    : std::true_type {
-};
-
-template <typename WindowT, typename = void>
-struct HasGetSurface : std::false_type {
-};
-
-template <typename WindowT>
-struct HasGetSurface<
-    WindowT,
-    std::void_t<decltype(std::declval<WindowT&>().getSurface(static_cast<tgfx::Context*>(nullptr)))>>
-    : std::true_type {
-};
-
-template <typename WindowT>
-static void InvalidateSurfaceIfNeeded(const std::shared_ptr<WindowT>& window) {
-  if (window == nullptr) {
-    return;
-  }
-  if constexpr (HasInvalidSize<WindowT>::value) {
-    window->invalidSize();
-  }
-}
-
-template <typename WindowT>
-static std::shared_ptr<tgfx::Surface> CreateWindowSurface(const std::shared_ptr<WindowT>& window,
-                                                          tgfx::Context* context) {
-  if (window == nullptr || context == nullptr) {
-    return nullptr;
-  }
-  if constexpr (HasGetSurface<WindowT>::value) {
-    return window->getSurface(context);
-  }
-  return tgfx::Surface::MakeFrom(context, window);
-}
-
 @implementation TGFXWindow {
   NSWindow* window;
   NSView* view;
@@ -84,8 +38,6 @@ static std::shared_ptr<tgfx::Surface> CreateWindowSurface(const std::shared_ptr<
   std::unique_ptr<benchmark::AppHost> appHost;
   std::unique_ptr<tgfx::Recording> lastRecording;
   int drawIndex;
-  size_t lastReportedCount;
-  bool stableReported;
   bool closing;
   CVDisplayLinkRef displayLink;
 }
@@ -163,9 +115,6 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeSt
   [window makeKeyAndOrderFront:nil];
   [self updateSize];
   drawIndex = 0;
-  lastReportedCount = 0;
-  stableReported = false;
-  closing = false;
   if (const char* benchName = std::getenv("BENCH_NAME"); benchName != nullptr && *benchName) {
     auto& names = benchmark::Bench::Names();
     for (size_t i = 0; i < names.size(); i++) {
@@ -175,21 +124,17 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeSt
       }
     }
   }
+  closing = false;
   displayLink = nil;
-  if (@available(macOS 14, *)) {
-    CADisplayLink* caDisplayLink = [view displayLinkWithTarget:self selector:@selector(redraw)];
-    [caDisplayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSRunLoopCommonModes];
-  } else {
-    auto result = CVDisplayLinkCreateWithActiveCGDisplays(&displayLink);
-    if (result == kCVReturnSuccess && displayLink != nil) {
-      result = CVDisplayLinkSetOutputCallback(displayLink, &displayLinkCallback, self);
-    }
-    if (result == kCVReturnSuccess && displayLink != nil) {
-      result = CVDisplayLinkStart(displayLink);
-    }
-    if (result != kCVReturnSuccess) {
-      [self stopDisplayLink];
-    }
+  auto result = CVDisplayLinkCreateWithActiveCGDisplays(&displayLink);
+  if (result == kCVReturnSuccess && displayLink != nil) {
+    result = CVDisplayLinkSetOutputCallback(displayLink, &displayLinkCallback, self);
+  }
+  if (result == kCVReturnSuccess && displayLink != nil) {
+    result = CVDisplayLinkStart(displayLink);
+  }
+  if (result != kCVReturnSuccess) {
+    [self stopDisplayLink];
   }
 }
 
@@ -198,8 +143,6 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeSt
     appHost->resetFrames();
   }
   drawIndex++;
-  lastReportedCount = 0;
-  stableReported = false;
 }
 
 - (void)mouseMoved:(NSEvent*)event {
@@ -242,9 +185,7 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeSt
   }
   if (width > 0 && height > 0 && view.bounds.size.height > 0) {
     auto contentScale = static_cast<float>(size.height / view.bounds.size.height);
-    auto sizeChanged = appHost->updateScreen(width, height, contentScale);
-    if (sizeChanged && tgfxWindow != nullptr) {
-      InvalidateSurfaceIfNeeded(tgfxWindow);
+    if (appHost->updateScreen(width, height, contentScale)) {
       surface = nullptr;
     }
   }
@@ -283,7 +224,7 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeSt
     if (lastRecording != nullptr) {
       context->submit(std::move(lastRecording));
     }
-    surface = CreateWindowSurface(tgfxWindow, context);
+    surface = tgfx::Surface::MakeFrom(context, tgfxWindow);
   }
   if (surface == nullptr) {
     device->unlock();
@@ -303,15 +244,9 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeSt
   device->unlock();
   auto drawTime = tgfx::Clock::Now() - currentTime;
   appHost->recordFrame(drawTime);
-  auto drawCount = bench->currentDrawCount();
-  bool stable = bench->isStable();
-  if (drawCount != lastReportedCount || (stable && !stableReported)) {
-    lastReportedCount = drawCount;
-    if (stable) {
-      stableReported = true;
-    }
-    fprintf(stdout, "PERF name=%s fps=%.2f drawCount=%zu stable=%d\n", bench->name().c_str(),
-            bench->currentFPS(), drawCount, stable ? 1 : 0);
+  if (bench->isMaxDrawCountReached()) {
+    fprintf(stdout, "PERF name=%s fps=%.2f drawCount=%zu stable=1\n", bench->name().c_str(),
+            bench->currentFPS(), bench->currentDrawCount());
     fflush(stdout);
   }
 }

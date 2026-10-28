@@ -18,6 +18,8 @@
 
 #include "TGFXBaseView.h"
 #include <emscripten/html5.h>
+#include "benchmark/LayerBench.h"
+#include "benchmark/ParticleBench.h"
 #include <emscripten/val.h>
 #include <iostream>
 #include "base/Bench.h"
@@ -89,6 +91,7 @@ void TGFXBaseView::updateSize(float devicePixelRatio) {
 
 void TGFXBaseView::startDraw() {
   ParticleBench::ShowPerfData(showPerfDataFlag);
+  LayerBench::ShowPerfData(showPerfDataFlag);
   emscripten_request_animation_frame_loop(RequestFrameCallback, this);
 }
 
@@ -134,10 +137,9 @@ void TGFXBaseView::draw() {
   auto index = (drawIndex % numBenches);
   auto bench = benchmark::Bench::GetByIndex(index);
   bench->draw(canvas, appHost.get());
-  const auto particleBench = static_cast<benchmark::ParticleBench*>(bench);
 
   if (!showPerfDataFlag) {
-    updatePerfInfo(particleBench->getPerfData());
+    updatePerfInfo(bench->getPerfData());
   }
   auto recording = context->flush();
   std::swap(lastRecording, recording);
@@ -180,6 +182,10 @@ void TGFXBaseView::updateDrawParam(const DrawParam& drawParam) const {
   ParticleBench::SetStepDrawCount(drawParam.stepCount);
   ParticleBench::SetMaxDrawCount(drawParam.maxCount);
   ParticleBench::SetTargetFPS(drawParam.minFPS);
+  LayerBench::SetInitDrawCount(drawParam.startCount);
+  LayerBench::SetStepDrawCount(drawParam.stepCount);
+  LayerBench::SetMaxDrawCount(drawParam.maxCount);
+  LayerBench::SetTargetFPS(drawParam.minFPS);
   appHost->resetFrames();
 }
 
@@ -188,11 +194,10 @@ void TGFXBaseView::updateGraphicType(int type) {
   appHost->resetFrames();
 }
 
-ParticleBench* TGFXBaseView::getBenchByIndex() const {
+Bench* TGFXBaseView::getBenchByIndex() const {
   const auto numBenches = benchmark::Bench::Count();
   const auto index = (drawIndex % numBenches);
-  const auto bench = benchmark::Bench::GetByIndex(index);
-  return static_cast<ParticleBench*>(bench);
+  return benchmark::Bench::GetByIndex(index);
 }
 
 void TGFXBaseView::showPerfData(bool show) {
@@ -206,6 +211,11 @@ void TGFXBaseView::setAntiAlias(bool aa) {
 
 void TGFXBaseView::setStroke(bool stroke) {
   ParticleBench::SetStroke(stroke);
+  appHost->resetFrames();
+}
+
+void TGFXBaseView::setClipState(int state) {
+  ParticleBench::SetClipState(static_cast<ClipState>(state));
   appHost->resetFrames();
 }
 

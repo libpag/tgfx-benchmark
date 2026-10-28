@@ -20,7 +20,7 @@
 
 #include <emscripten/bind.h>
 #include "base/AppHost.h"
-#include "benchmark/ParticleBench.h"
+#include "base/Bench.h"
 #include "tgfx/core/Surface.h"
 #include "tgfx/gpu/Window.h"
 namespace benchmark {
@@ -45,13 +45,15 @@ class TGFXBaseView {
 
   void updateGraphicType(int type);
 
-  ParticleBench* getBenchByIndex() const;
+  Bench* getBenchByIndex() const;
 
   void showPerfData(bool show);
 
   void setAntiAlias(bool aa);
 
   void setStroke(bool stroke);
+
+  void setClipState(int state);
 
   int drawIndex = 0;
   std::unique_ptr<tgfx::Recording> lastRecording = nullptr;

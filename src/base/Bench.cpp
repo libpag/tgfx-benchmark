@@ -18,13 +18,16 @@
 
 #include "base/Bench.h"
 #include <unordered_map>
+#include "benchmark/LayerBench.h"
 #include "benchmark/ParticleBench.h"
 #include "tgfx/platform/Print.h"
 
 namespace benchmark {
 static std::vector<Bench*> drawers = {
     new ParticleBench(GraphicType::Rect), new ParticleBench(GraphicType::Circle),
-    new ParticleBench(GraphicType::Oval), new ParticleBench(GraphicType::RRect)};
+    new ParticleBench(GraphicType::Oval), new ParticleBench(GraphicType::RRect),
+    new LayerBench(LayerBenchType::DropShadow), new LayerBench(LayerBenchType::InnerShadow),
+};
 
 static std::vector<std::string> GetDrawerNames() {
   std::vector<std::string> names;
