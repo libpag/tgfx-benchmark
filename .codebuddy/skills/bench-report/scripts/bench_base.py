@@ -33,7 +33,10 @@ import sys
 import threading
 import time
 
-PROJECT_ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+# scripts/ -> bench-report/ -> skills/ -> .codebuddy/ -> <repo root>
+PROJECT_ROOT = os.path.normpath(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", "..")
+)
 
 STABLE_TIMEOUT_SEC = 30.0
 SAMPLE_AFTER_STABLE_SEC = 5.0

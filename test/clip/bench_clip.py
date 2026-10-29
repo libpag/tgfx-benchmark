@@ -22,7 +22,8 @@ import os
 import sys
 import time
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..",
+                 ".codebuddy", "skills", "bench-report", "scripts"))
 import bench_base
 
 BENCH_BIN = os.path.join(bench_base.PROJECT_ROOT, "cmake-build-releaselocal", "Benchmark")

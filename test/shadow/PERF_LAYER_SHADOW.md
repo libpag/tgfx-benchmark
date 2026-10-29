@@ -16,6 +16,13 @@
 | LayerBench-DropShadow | 56.37 | 59.23 | +2.87 (+5.08%) | 173 | 433 | +259.60 (+149.88%) |
 | LayerBench-InnerShadow | 56.11 | 58.94 | +2.84 (+5.05%) | 141 | 375 | +234.20 (+166.10%) |
 
+RenderTarget 指标（每配置每用例 5 轮均值；rtAlive = 稳定时存活的 RenderTarget 数（含缓存中未使用的实例），每帧新建 = 稳定期每帧新建的 RenderTarget 数）：
+
+| 用例 | baseline<br>rtAlive | candidate<br>rtAlive | rtAlive<br>变化 | baseline<br>rtAlive/图层 | candidate<br>rtAlive/图层 | rtAlive/图层<br>变化 | baseline<br>每帧新建 | candidate<br>每帧新建 | 每帧新建<br>变化 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| LayerBench-DropShadow | 908 | 743 | -165.00 (-18.17%) | 5.428 | 1.675 | -3.75 (-69.14%) | 3.20 | 3.12 | -0.08 (-2.50%) |
+| LayerBench-InnerShadow | 1205 | 1021 | -184.00 (-15.27%) | 8.992 | 2.764 | -6.23 (-69.26%) | 3.23 | 3.25 | +0.02 (+0.62%) |
+
 ## 3 详细数据
 
 ### 3.1 baseline（TGFX_DIR=../tgfx）
