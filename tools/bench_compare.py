@@ -39,10 +39,10 @@ def index_results(document):
 
 
 def effect_values(result, metric):
-    """Values used for the effect size. Blocks are stable but correlated."""
+    """Values used for the effect size. One independent sample per repeat keeps the effect size
+    and the hypothesis test on the same data instead of mixing two noisy estimators."""
     if metric == "throughput_ms":
-        values = (result.get("throughput_ms", {}).get("blocks") or
-                  result.get("throughput_ms", {}).get("per_repeat") or [])
+        values = result.get("throughput_ms", {}).get("per_repeat") or []
         if not values:
             median = result.get("throughput_ms", {}).get("median", 0.0)
             values = [median] if median else []
@@ -112,6 +112,63 @@ def permutation_p_value(base, head, samples=20000, seed=7):
         if abs(median(right) - median(left)) >= observed - tolerance:
             count += 1
     return (count + 1) / (samples + 1)
+
+
+def paired_permutation_p_value(base, head, samples=20000, seed=3):
+    """Sign flip test on the mean of paired differences.
+
+    Runs that were interleaved round by round share the same machine state within a round, so the
+    difference between the two sides is the quantity of interest and its sign is exchangeable
+    under the null hypothesis.
+    """
+    count = min(len(base), len(head))
+    differences = [head[i] - base[i] for i in range(count)]
+    if not differences:
+        return 1.0
+    observed = abs(sum(differences) / count)
+    if observed == 0.0:
+        return 1.0
+    tolerance = 1e-12
+    if count <= 16:
+        hits = 0
+        total = 0
+        for mask in range(1 << count):
+            total_value = 0.0
+            for index, difference in enumerate(differences):
+                total_value += difference if (mask >> index) & 1 else -difference
+            total += 1
+            if abs(total_value / count) >= observed - tolerance:
+                hits += 1
+        return hits / total
+
+    generator = random.Random(seed)
+    hits = 0
+    for _ in range(samples):
+        total_value = 0.0
+        for difference in differences:
+            total_value += difference if generator.random() < 0.5 else -difference
+        if abs(total_value / count) >= observed - tolerance:
+            hits += 1
+    return (hits + 1) / (samples + 1)
+
+
+def paired_ratio_ci(base, head, samples=4000, seed=5, alpha=0.05):
+    count = min(len(base), len(head))
+    generator = random.Random(seed)
+    ratios = []
+    for _ in range(samples):
+        indices = [generator.randrange(count) for _ in range(count)]
+        left = [base[index] for index in indices]
+        right = [head[index] for index in indices]
+        left_median = median(left)
+        if left_median > 0.0:
+            ratios.append(median(right) / left_median)
+    if not ratios:
+        return (0.0, 0.0)
+    ratios.sort()
+    low = ratios[int((alpha / 2.0) * len(ratios))]
+    high = ratios[min(len(ratios) - 1, int((1.0 - alpha / 2.0) * len(ratios)))]
+    return (low, high)
 
 
 def bootstrap_ratio_ci(base, head, samples=2000, seed=11, alpha=0.05):
@@ -233,6 +290,9 @@ def main():
 
     base_document = load_result(arguments.base)
     head_document = load_result(arguments.head)
+    base_rounds = base_document.get("config", {}).get("interleaved_rounds")
+    head_rounds = head_document.get("config", {}).get("interleaved_rounds")
+    paired_rounds = base_rounds if base_rounds and base_rounds == head_rounds else None
     base_index = index_results(base_document)
     head_index = index_results(head_document)
 
@@ -296,8 +356,14 @@ def main():
             continue
 
         ratio = head_median / base_median
-        low, high = bootstrap_ratio_ci(base_sig, head_sig)
-        p_value = permutation_p_value(base_sig, head_sig)
+        paired = (paired_rounds is not None and
+                  len(base_sig) == len(head_sig) and len(base_sig) >= 4)
+        if paired:
+            low, high = paired_ratio_ci(base_sig, head_sig)
+            p_value = paired_permutation_p_value(base_sig, head_sig)
+        else:
+            low, high = bootstrap_ratio_ci(base_sig, head_sig)
+            p_value = permutation_p_value(base_sig, head_sig)
         row["ratio"] = ratio
         row["low"] = low
         row["high"] = high
