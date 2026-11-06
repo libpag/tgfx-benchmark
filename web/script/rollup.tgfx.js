@@ -8,6 +8,10 @@ import {readFileSync} from "node:fs";
 
 const fileHeaderPath = path.resolve(__dirname, '../../.idea/fileTemplates/includes/tgfx-benchmark File Header.h');
 const banner = readFileSync(fileHeaderPath, 'utf-8').replace(/\$\{YEAR\}/g, new Date().getFullYear());
+const tgfxRoot = process.env.TGFX_ROOT
+    ? path.resolve(process.env.TGFX_ROOT)
+    : path.resolve(__dirname, '../../third_party/tgfx');
+const tgfxBinding = path.join(tgfxRoot, 'web/src/binding.ts');
 
 
 const plugins=[
@@ -31,7 +35,7 @@ const plugins=[
 ];
 
 const umdConfig = {
-    input: '../third_party/tgfx/web/src/binding.ts',
+    input: tgfxBinding,
     output: [
         {
             name: 'tgfx',
@@ -46,7 +50,7 @@ const umdConfig = {
 };
 
 const umdMinConfig = {
-    input: '../third_party/tgfx/web/src/binding.ts',
+    input: tgfxBinding,
     output: [
         {
             name: 'tgfx',
@@ -67,7 +71,7 @@ export default [
     umdConfig,
     umdMinConfig,
     {
-        input: '../third_party/tgfx/web/src/binding.ts',
+        input: tgfxBinding,
         output: [
             {banner, file: 'lib/tgfx.esm.js', format: 'esm', sourcemap: true},
             {banner, file: 'lib/tgfx.cjs.js', format: 'cjs', exports: 'auto', sourcemap: true},

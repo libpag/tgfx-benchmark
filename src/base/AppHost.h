@@ -103,6 +103,10 @@ class AppHost {
    */
   std::shared_ptr<tgfx::Image> getImage(const std::string& name) const;
 
+  size_t imageCount() const {
+    return images.size();
+  }
+
   /**
    * Returns a typeface with the given name.
    */

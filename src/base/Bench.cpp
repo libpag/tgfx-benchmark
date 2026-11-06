@@ -17,14 +17,33 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "base/Bench.h"
+#include <algorithm>
 #include <unordered_map>
 #include "benchmark/ParticleBench.h"
+#include "benchmark/MotionMarkBenches.h"
+#include "tgfx/core/Clock.h"
 #include "tgfx/platform/Print.h"
 
 namespace benchmark {
+static ParticleBench rectParticles(GraphicType::Rect);
+static ParticleBench circleParticles(GraphicType::Circle);
+static ParticleBench ovalParticles(GraphicType::Oval);
+static ParticleBench rrectParticles(GraphicType::RRect);
+static ParticleBench starParticles(GraphicType::Star);
+static MultiplyBench multiplyBench;
+static CanvasArcsBench canvasArcsBench;
+static LeavesBench leavesBench;
+static CanvasLinesBench canvasLinesBench;
+static ImagesBench imagesBench;
+static DesignBench designBench;
+static SuitsBench suitsBench;
+static ShaderMixBench shaderMixBench;
+
 static std::vector<Bench*> drawers = {
-    new ParticleBench(GraphicType::Rect), new ParticleBench(GraphicType::Circle),
-    new ParticleBench(GraphicType::Oval), new ParticleBench(GraphicType::RRect)};
+    &rectParticles, &circleParticles, &ovalParticles, &rrectParticles, &starParticles,
+    &multiplyBench, &canvasArcsBench, &leavesBench,
+    &canvasLinesBench, &imagesBench, &designBench, &suitsBench,
+    &shaderMixBench};
 
 static std::vector<std::string> GetDrawerNames() {
   std::vector<std::string> names;
@@ -39,6 +58,24 @@ static std::unordered_map<std::string, Bench*> GetDrawerMap() {
   for (const auto& drawer : drawers) {
     map[drawer->name()] = drawer;
   }
+  return map;
+}
+
+static std::unordered_map<std::string, Bench*> GetStableIdMap() {
+  std::unordered_map<std::string, Bench*> map;
+  map["legacy.particles-rect"] = drawers[static_cast<size_t>(GraphicType::Rect)];
+  map["legacy.particles-circle"] = drawers[static_cast<size_t>(GraphicType::Circle)];
+  map["legacy.particles-oval"] = drawers[static_cast<size_t>(GraphicType::Oval)];
+  map["legacy.particles-rrect"] = drawers[static_cast<size_t>(GraphicType::RRect)];
+  map["legacy.particles-star"] = &starParticles;
+  map["motionmark.multiply"] = &multiplyBench;
+  map["motionmark.canvas-arcs"] = &canvasArcsBench;
+  map["motionmark.leaves"] = &leavesBench;
+  map["motionmark.canvas-lines"] = &canvasLinesBench;
+  map["motionmark.images"] = &imagesBench;
+  map["motionmark.design"] = &designBench;
+  map["motionmark.suits"] = &suitsBench;
+  map["coldstart.shader-mix"] = &shaderMixBench;
   return map;
 }
 
@@ -67,6 +104,20 @@ Bench* Bench::GetByName(const std::string& name) {
   return it->second;
 }
 
+Bench* Bench::GetByStableId(const std::string& stableId) {
+  static auto stableIdMap = GetStableIdMap();
+  auto it = stableIdMap.find(stableId);
+  if (it == stableIdMap.end()) {
+    return nullptr;
+  }
+  return it->second;
+}
+
+Bench* Bench::Resolve(const std::string& identifier) {
+  auto bench = GetByStableId(identifier);
+  return bench != nullptr ? bench : GetByName(identifier);
+}
+
 Bench::Bench(std::string name) : _name(std::move(name)) {
 }
 
@@ -80,6 +131,12 @@ void Bench::draw(tgfx::Canvas* canvas, const AppHost* host) {
     return;
   }
   canvas->save();
+  const auto nowUs = tgfx::Clock::Now();
+  animationDelta = lastAnimationUs == 0 ? 1.0f
+      : static_cast<float>(std::clamp<int64_t>(nowUs - lastAnimationUs, 0, 100000)) * 0.00006f;
+  lastAnimationUs = nowUs;
+  animationFrame += animationDelta;
+  ++frame;
   onDraw(canvas, host);
   canvas->restore();
 }

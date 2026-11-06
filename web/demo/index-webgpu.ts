@@ -18,7 +18,21 @@
 
 import {TGFXBind} from '../lib/tgfx';
 import Benchmark from './webgpu/wasm-mt/benchmark';
-import {ShareData, updateSize, onresizeEvent, startDraw, setCanvasDefaultSize, setupCoordinateConversion} from "./common";
+import {
+    ShareData,
+    appendRunNonce,
+    configureBenchmarkFromQuery,
+    configureBenchmarkRunFromQuery,
+    configureRuntimeEnvironment,
+    installBenchmarkMeasurement,
+    loadBenchmarkImage,
+    updateSize,
+    onresizeEvent,
+    startDraw,
+    setCanvasDefaultSize
+} from "./common";
+
+installBenchmarkMeasurement();
 
 let shareData: ShareData = new ShareData();
 
@@ -34,31 +48,57 @@ if (typeof window !== 'undefined') {
             }
             const device = await adapter.requestDevice();
 
-            setupCoordinateConversion('benchmark');
+            configureRuntimeEnvironment();
             shareData.BenchmarkModule = await Benchmark({
-                locateFile: (file: string) => './webgpu/wasm-mt/' + file,
-                mainScriptUrlOrBlob: './webgpu/wasm-mt/benchmark.js',
+                locateFile: (file: string) => appendRunNonce('./webgpu/wasm-mt/' + file),
+                mainScriptUrlOrBlob: appendRunNonce('./webgpu/wasm-mt/benchmark.js'),
                 preinitializedWebGPUDevice: device,
             });
             TGFXBind(shareData.BenchmarkModule);
 
             let tgfxView = shareData.BenchmarkModule.TGFXThreadsView.MakeFrom('#benchmark');
             shareData.tgfxBaseView = tgfxView;
-            var imagePath = "../../resources/assets/bridge.jpg";
-            await tgfxView.setImagePath(imagePath);
+            await loadBenchmarkImage(shareData);
 
             var fontPath = "../../resources/font/NotoSansSC-Regular.otf";
-            const fontBuffer = await fetch(fontPath).then((response) => response.arrayBuffer());
+            const fontBuffer = await fetch(appendRunNonce(fontPath)).then((response) => response.arrayBuffer());
             const fontUIntArray = new Uint8Array(fontBuffer);
             var emojiFontPath = "../../resources/font/NotoColorEmoji.ttf";
-            const emojiFontBuffer = await fetch(emojiFontPath).then((response) => response.arrayBuffer());
+            const emojiFontBuffer = await fetch(appendRunNonce(emojiFontPath)).then((response) => response.arrayBuffer());
             const emojiFontUIntArray = new Uint8Array(emojiFontBuffer);
             tgfxView.registerFonts(fontUIntArray, emojiFontUIntArray);
-            setCanvasDefaultSize(shareData);
+            configureBenchmarkFromQuery(shareData);
+            const benchmarkRun = configureBenchmarkRunFromQuery(shareData);
+            setCanvasDefaultSize(
+                shareData,
+                benchmarkRun?.viewportWidth ?? Number(new URLSearchParams(location.search).get('width') || 2048),
+                benchmarkRun?.viewportHeight ?? Number(new URLSearchParams(location.search).get('height') || 1440),
+            );
+            if (benchmarkRun !== null) {
+                if (benchmarkRun.testIntent === 'cold-start') {
+                    (window as any).__tgfxBenchmarkColdStartStartedAt = performance.now();
+                    shareData.tgfxBaseView.startColdStartBenchmarkRun(
+                        benchmarkRun.coldStartInitialWindowFrames,
+                    );
+                } else if (benchmarkRun.adaptive) {
+                    shareData.tgfxBaseView.startAdaptiveBenchmarkRun(
+                        benchmarkRun.stableWindowMs * 1000,
+                        benchmarkRun.targetFps,
+                    );
+                } else if (benchmarkRun.manual) {
+                    shareData.tgfxBaseView.startManualBenchmarkRun();
+                } else {
+                    shareData.tgfxBaseView.startBenchmarkRun(
+                        benchmarkRun.measurementMs * 1000,
+                    );
+                }
+            }
             startDraw(shareData);
+            (window as any).__tgfxBenchmarkReady?.();
         } catch (error) {
+            (window as any).__tgfxBenchmarkInitializationFailed?.(error);
             console.error(error);
-            throw new Error("Benchmark WebGPU initialization failed.");
+            throw error;
         }
     };
 

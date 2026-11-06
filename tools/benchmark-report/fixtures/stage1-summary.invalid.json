@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "tgfx-benchmark.summary.v1",
+  "executionStatus": "completed",
+  "sampleCount": 2,
+  "overflowed": false,
+  "firstSubmitUs": 17000,
+  "drainAfterMeasurementUs": 400,
+  "samples": [
+    {
+      "frameId": 1,
+      "recordingId": 1,
+      "submittedFrameId": 0,
+      "callbackBeginUs": 1000,
+      "callbackEndUs": 15000,
+      "sceneDrawUs": 9000,
+      "flushUs": 2000,
+      "submitUs": 0
+    },
+    {
+      "frameId": 2,
+      "recordingId": 2,
+      "submittedFrameId": 1,
+      "callbackBeginUs": 17000,
+      "callbackEndUs": 31000,
+      "sceneDrawUs": 8000,
+      "flushUs": 1800,
+      "submitUs": 1200
+    },
+    {
+      "frameId": 3,
+      "recordingId": 3,
+      "submittedFrameId": 2,
+      "callbackBeginUs": 33000,
+      "callbackEndUs": 47000,
+      "sceneDrawUs": 8500,
+      "flushUs": 1900,
+      "submitUs": 1100
+    }
+  ]
+}

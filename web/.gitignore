@@ -1,11 +1,13 @@
 package-lock.json
+.tgfx-root
+tsconfig.tgfx.generated.json
 lib
 types
 *.js.map
 demo/*.js
+!demo/benchmark-ui.js
 demo/*.md5
 demo/webgl
 demo/webgpu
 src/wasm
 emsdk/
-

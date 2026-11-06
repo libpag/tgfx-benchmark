@@ -44,23 +44,45 @@ class Bench {
    */
   static Bench* GetByName(const std::string& name);
 
+  /**
+   * Returns the drawer with the given stable benchmark scene ID.
+   */
+  static Bench* GetByStableId(const std::string& stableId);
+
+  /**
+   * Resolves a stable scene ID or a display name.
+   */
+  static Bench* Resolve(const std::string& identifier);
+
   explicit Bench(std::string name);
 
   virtual ~Bench() = default;
+
+  virtual void setCount(size_t) {
+  }
+
+  virtual size_t getCount() const {
+    return 0;
+  }
+
+  /**
+   * Draws one frame and advances the scene animation clock.
+   */
+  void draw(tgfx::Canvas* canvas, const AppHost* host);
 
   std::string name() const {
     return _name;
   }
 
-  /**
-   * Draws the contents to the given canvas.
-   */
-  void draw(tgfx::Canvas* canvas, const AppHost* host);
-
  protected:
+  uint64_t frame = 0;
+  double animationFrame = 0;
+  float animationDelta = 1.0f;
+
   virtual void onDraw(tgfx::Canvas* canvas, const AppHost* host) = 0;
 
  private:
   std::string _name;
+  int64_t lastAnimationUs = 0;
 };
 }  // namespace benchmark

@@ -1,0 +1,25 @@
+diff --git a/src/gpu/shaders/ShaderPermutation.h b/src/gpu/shaders/ShaderPermutation.h
+index dc267c3d6..98be673b6 100644
+--- a/src/gpu/shaders/ShaderPermutation.h
++++ b/src/gpu/shaders/ShaderPermutation.h
+@@ -99,6 +99,10 @@ class PermutationEnum {
+       : defineName(defineName), valueNames(valueNames) {
+   }
+
++  PermutationEnum(const char* defineName, const std::vector<const char*>& valueNames)
++      : defineName(defineName), valueNames(valueNames) {
++  }
++
+   int valueCount() const {
+     return static_cast<int>(valueNames.size());
+   }
+@@ -158,7 +162,8 @@ class PermutationBoolDim {
+ template <typename Dims>
+ class PermutationIntDim {
+  public:
+-  PermutationIntDim(const char* defineName, int count) : defineName(defineName), count(count) {
++  constexpr PermutationIntDim(const char* defineName, int count)
++      : defineName(defineName), count(count) {
+   }
+
+   operator PermutationInt() const {

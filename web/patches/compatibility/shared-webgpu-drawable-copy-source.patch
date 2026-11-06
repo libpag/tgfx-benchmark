@@ -1,0 +1,23 @@
+diff --git a/src/gpu/webgpu/WebGPUWindow.cpp b/src/gpu/webgpu/WebGPUWindow.cpp
+--- a/src/gpu/webgpu/WebGPUWindow.cpp
++++ b/src/gpu/webgpu/WebGPUWindow.cpp
+@@ -150,7 +150,8 @@ std::shared_ptr<WebGPUWindow> WebGPUWindow::MakeFromCanvas(emscripten::val canvas
+   WGPUSurfaceConfiguration config = {};
+   config.device = wgpuDevice;
+   config.format = WGPUTextureFormat_BGRA8Unorm;
+-  config.usage = WGPUTextureUsage_RenderAttachment;
++  // WebGPU lacks framebuffer fetch, so blending copies the current drawable into a texture.
++  config.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_CopySrc;
+   config.width = static_cast<uint32_t>(canvasWidth);
+   config.height = static_cast<uint32_t>(canvasHeight);
+   // Browser canvas presentation only supports Fifo; Immediate (vsync off) is a native-only
+@@ -248,7 +249,8 @@ std::shared_ptr<RenderTargetProxy> WebGPUWindow::onCreateRenderTarget(Context* co
+     WGPUSurfaceConfiguration config = {};
+     config.device = wgpuDevice;
+     config.format = WGPUTextureFormat_BGRA8Unorm;
+-    config.usage = WGPUTextureUsage_RenderAttachment;
++    // Keep the canvas copyable after a resize for the same blending path.
++    config.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_CopySrc;
+     config.width = static_cast<uint32_t>(_width);
+     config.height = static_cast<uint32_t>(_height);
+     config.presentMode = WGPUPresentMode_Fifo;

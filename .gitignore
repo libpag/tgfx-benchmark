@@ -64,6 +64,7 @@ Adobe After Effects Auto-Save/
 .vs
 QTCMAKE.cfg
 /result
+/results
 .vscode
 /ios
 /mac

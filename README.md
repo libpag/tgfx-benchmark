@@ -2,6 +2,23 @@
  A benchmark project for the [TGFX](https://github.com/Tencent/tgfx) graphics library. It is used to 
  test the performance of the TGFX graphics library on different platforms.
 
+The current Web benchmark candidate is documented in:
+
+- [`docs/BENCHMARK_SCOPE.md`](docs/BENCHMARK_SCOPE.md)
+- [`docs/BENCHMARK_CASES.md`](docs/BENCHMARK_CASES.md)
+- [`docs/BENCHMARK_USAGE.md`](docs/BENCHMARK_USAGE.md)
+- [`docs/BENCHMARK_LICENSES.md`](docs/BENCHMARK_LICENSES.md)
+
+It supports WebGL and WebGPU, a benchmark UI, seven MotionMark Master Suite
+workload categories, one bounded Shader Mix cold-start workload, five original
+TGFX particle workloads, fixed-load runs, cold-start and steady-state test
+intents, bracketed adaptive search, preflight artifact checks, and offline
+report generation. The original particle group keeps its own antialias and
+fill/stroke settings and historical baseline.
+
+The first native reference backend is Metal on macOS. See
+[`docs/BENCHMARK_STAGE8.md`](docs/BENCHMARK_STAGE8.md) for build and run instructions.
+
 There is also a related project, [skia-benchmark](https://github.com/libpag/skia-benchmark), which
 tests the performance of the [Skia](https://skia.org/) graphics library using the same benchmark cases.
 
@@ -119,25 +136,40 @@ npm install
 Then, in the `web/` directory, run the following command to build the demo project:
 
 ```
-npm run build
+npm run build:packages
 ```
 
-This builds the default WebGL multithreaded version and generates `benchmark.js` and
-`benchmark.wasm` in the `web/demo/wasm-mt` directory. Next, you can start an HTTP server by running
-the following command:
+This builds the four benchmark packages used by the UI:
+
+- `packages/aot-webgl`
+- `packages/aot-webgpu`
+- `packages/jit-webgl`
+- `packages/jit-webgpu`
+
+AOT packages use the `sources/tgfx-aot` alias to the current
+`feature/shenxianfei_aot_simplify` snapshot;
+JIT packages use the current TGFX `main` snapshot. Each package records its full
+TGFX commit, codegen mode, backend, dirty state, and artifact hashes in
+`tgfx-build.json`. The build fails rather than silently packaging a stale or dirty
+snapshot.
+
+Next, start the HTTP server:
 
 ```
-npm run server
+NO_OPEN=1 node server.js
 ```
 
-This will open [http://localhost:8061/index.html](http://localhost:8061/index.html) in your default
-browser. You can also open it manually to view the demo.
+Open [http://localhost:8061/benchmark-ui.html](http://localhost:8061/benchmark-ui.html).
+The AOT/JIT and WebGL/WebGPU controls switch the iframe among the four packages,
+and the UI and exported report show the selected TGFX commit.
 
-To build and run the WebGPU multithreaded version, use:
+To rebuild one package:
 
 ```
-npm run build:webgpu
-npm run server:webgpu
+npm run build:package:aot-webgl
+npm run build:package:aot-webgpu
+npm run build:package:jit-webgl
+npm run build:package:jit-webgpu
 ```
 
 The build script installs and activates Emscripten `4.0.15`. The WebGPU page requires a browser
@@ -156,7 +188,9 @@ npm run build:debug
 
 With these steps completed, you can debug C++ files directly in Chrome DevTools.
 
-The above commands build and run a multithreaded version.
+The four package commands build the single-thread Release benchmark profile. The
+debug command below is a legacy multithreaded demo path and is not one of the four
+comparison packages.
 
 >**⚠️** In the multithreaded version, if you modify the filename of the compiled output benchmark.js, you need to search for
 > the keyword "benchmark.js" within the benchmark.js file and replace all occurrences of "benchmark.js" with the new filename.

@@ -17,9 +17,17 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 #import <Cocoa/Cocoa.h>
+#include <cstdio>
+#include <cstdlib>
 #import "AppDelegate.h"
+#include "base/Bench.h"
 
 int main(int, const char*[]) {
+  const char* scene = std::getenv("TGFX_BENCH_SCENE");
+  if (scene != nullptr && benchmark::Bench::Resolve(scene) == nullptr) {
+    std::fprintf(stderr, "Unknown TGFX_BENCH_SCENE: %s\n", scene);
+    return EXIT_FAILURE;
+  }
   @autoreleasepool {
     [NSApplication sharedApplication];
     [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];

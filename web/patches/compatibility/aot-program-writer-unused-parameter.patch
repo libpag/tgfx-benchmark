@@ -1,0 +1,11 @@
+diff --git a/src/gpu/ProgramWriter.cpp b/src/gpu/ProgramWriter.cpp
+--- a/src/gpu/ProgramWriter.cpp
++++ b/src/gpu/ProgramWriter.cpp
+@@ -525,6 +525,6 @@
+   }
+ }
+
+-void ChainProgramWriter::writeSamplers(const ProgramInfo& info, Program* program,
++void ChainProgramWriter::writeSamplers(const ProgramInfo& info, Program* /*program*/,
+                                        RenderPass* renderPass,
+                                        const FragmentProcessor* /*expression*/) const {

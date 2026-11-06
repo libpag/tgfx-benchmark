@@ -1,0 +1,52 @@
+diff --git a/src/gpu/PrecompiledProgramCreator.cpp b/src/gpu/PrecompiledProgramCreator.cpp
+index 5c74439a7..8f154c6fe 100644
+--- a/src/gpu/PrecompiledProgramCreator.cpp
++++ b/src/gpu/PrecompiledProgramCreator.cpp
+@@ -18,6 +18,7 @@
+ /////////////////////////////////////////////////////////////////////////////////////////////////
+
+ #include "PrecompiledProgramCreator.h"
++#include <algorithm>
+ #include <cerrno>
+ #include <climits>
+ #include <cstdlib>
+@@ -416,17 +417,38 @@ std::shared_ptr<Program> PrecompiledProgramCreator::CreateProgram(Context* conte
+   // binding them explicitly keeps the pipeline and the shader in agreement.
+   if (!vertBlob->vertexInputs.empty()) {
+-    if (vertBlob->vertexInputs.size() != vertexLayout.attributes.size()) {
++    if (vertBlob->vertexInputs.size() > vertexLayout.attributes.size()) {
+       cache->recordFailure(PrecompiledFallbackReason::VertexLayoutMismatch,
+                            MakeFallbackRecord(cache, programInfo, &*matchResult));
+       LOGE(
+           "PrecompiledProgramCreator: vertex interface mismatch for %s[vert=%u]: %zu reflected "
+           "inputs vs %zu runtime attributes",
+           matchResult->shaderName.c_str(), matchResult->vertPermutationIndex,
+           vertBlob->vertexInputs.size(), vertexLayout.attributes.size());
+       return nullptr;
+     }
++    vertexLayout.shaderLocations.reserve(vertexLayout.attributes.size());
+     for (const auto& input : vertBlob->vertexInputs) {
++      if (std::find(vertexLayout.shaderLocations.begin(), vertexLayout.shaderLocations.end(),
++                    input.location) != vertexLayout.shaderLocations.end()) {
++        cache->recordFailure(PrecompiledFallbackReason::VertexLayoutMismatch,
++                             MakeFallbackRecord(cache, programInfo, &*matchResult));
++        LOGE("PrecompiledProgramCreator: duplicate reflected vertex location %u for %s[vert=%u]",
++             input.location, matchResult->shaderName.c_str(),
++             matchResult->vertPermutationIndex);
++        return nullptr;
++      }
+       vertexLayout.shaderLocations.push_back(input.location);
+     }
++    // A shader may legally read a prefix (or a sparse subset) of the runtime attributes. Assign
++    // every unused runtime attribute an otherwise-unused location so the pipeline descriptor still
++    // covers the full interleaved vertex buffer without shadowing a slot the shader reads.
++    uint32_t nextLocation = 0;
++    while (vertexLayout.shaderLocations.size() < vertexLayout.attributes.size()) {
++      while (std::find(vertexLayout.shaderLocations.begin(), vertexLayout.shaderLocations.end(),
++                       nextLocation) != vertexLayout.shaderLocations.end()) {
++        ++nextLocation;
++      }
++      vertexLayout.shaderLocations.push_back(nextLocation++);
++    }
+   }
+   descriptor.vertex.bufferLayouts = {vertexLayout};

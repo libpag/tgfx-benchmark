@@ -1,0 +1,35 @@
+diff --git a/src/gpu/shaders/PrecompiledShader.cpp b/src/gpu/shaders/PrecompiledShader.cpp
+index 3aec05267..57f2cde14 100644
+--- a/src/gpu/shaders/PrecompiledShader.cpp
++++ b/src/gpu/shaders/PrecompiledShader.cpp
+@@ -122,9 +122,29 @@ void ShaderRegistry::Register(Factory factory, Enumerator enumerator) {
+     // The header of a family is included, and registers it again, in every translation unit that
+     // uses it. A repeat must declare the same family, so compare the declaration and the shared
+     // enumerator, not the factory pointer.
+-    if (existing->second.enumerator != enumerator || !SameShaderInfo(existing->second.info, info)) {
++    // Function addresses for an inline Reachable() are not guaranteed to merge across object
++    // files. The declaration is the stable identity; a duplicate with the same declaration must
++    // stay valid even when the linker gives each instantiation a distinct address.
++    const auto sameInfo = SameShaderInfo(existing->second.info, info);
++    const auto sameEnumeration = !sameInfo || existing->second.enumerator == enumerator ||
++                                 existing->second.enumerator() == enumerator();
++    if (!sameInfo || !sameEnumeration) {
++      const auto& existingInfo = existing->second.info;
+       std::fprintf(stderr, "ShaderRegistry: conflicting declaration or enumerator for '%s'\n",
+                    info.name.c_str());
++      std::fprintf(stderr,
++                   "  existing files=%s/%s gp=%s textureReads=%u domains=%zu/%zu counts=%u/%u\n",
++                   existingInfo.vertexFile.c_str(), existingInfo.fragmentFile.c_str(),
++                   existingInfo.gpClassName.c_str(), existingInfo.textureReads,
++                   existingInfo.vertDomain.getDimensions().size(),
++                   existingInfo.fragDomain.getDimensions().size(),
++                   existingInfo.vertDomain.totalCount(), existingInfo.fragDomain.totalCount());
++      std::fprintf(stderr,
++                   "  incoming files=%s/%s gp=%s textureReads=%u domains=%zu/%zu counts=%u/%u\n",
++                   info.vertexFile.c_str(), info.fragmentFile.c_str(), info.gpClassName.c_str(),
++                   info.textureReads, info.vertDomain.getDimensions().size(),
++                   info.fragDomain.getDimensions().size(), info.vertDomain.totalCount(),
++                   info.fragDomain.totalCount());
+       std::abort();
+     }
+     return;

@@ -97,6 +97,7 @@ void ParticleBench::Init(const AppHost* host) {
   }
   width = hostWidth;
   height = hostHeight;
+  density = host->density();
   status = {};
   drawCount = InitDrawCount;
   maxDrawCountReached = false;
@@ -117,13 +118,35 @@ void ParticleBench::Init(const AppHost* host) {
   }
 
   startRect = tgfx::Rect::MakeWH(20.f * host->density(), 20.f * host->density());
-  graphics.resize(MaxDrawCount);
-  std::mt19937 rectRng(18);
-  std::mt19937 speedRng(36);
-  std::uniform_real_distribution<float> rectDistribution(0, 1);
-  std::uniform_real_distribution<float> speedDistribution(-1, 1);
-  for (size_t i = 0; i < MaxDrawCount; i++) {
-    const auto size = (4.f + rectDistribution(rectRng) * 10.f) * host->density();
+  resetGraphics(density);
+  ensureGraphicCapacity(drawCount);
+}
+
+void ParticleBench::resetGraphics(float newDensity) {
+  density = newDensity;
+  rectRng.seed(18);
+  speedRng.seed(36);
+  graphics.clear();
+  paths.clear();
+}
+
+void ParticleBench::ensureGraphicCapacity(size_t count) {
+  if (graphics.size() >= count) {
+    return;
+  }
+  if (graphics.capacity() < count) {
+    graphics.reserve(std::max(count, graphics.capacity() * 2));
+  }
+  const auto previousSize = graphics.size();
+  graphics.resize(count);
+  if (graphicType == GraphicType::Star) {
+    if (paths.capacity() < count) {
+      paths.reserve(std::max(count, paths.capacity() * 2));
+    }
+    paths.resize(count);
+  }
+  for (size_t i = previousSize; i < count; i++) {
+    const auto size = (4.f + rectDistribution(rectRng) * 10.f) * density;
     auto& graphic = graphics[i];
     if (graphicType == GraphicType::Oval) {
       graphic.rect.setXYWH(-size, -size, size, 0.8f * size);
@@ -132,11 +155,10 @@ void ParticleBench::Init(const AppHost* host) {
     }
     graphic.speedX = speedDistribution(speedRng) * 5.0f;
     graphic.speedY = speedDistribution(speedRng) * 5.0f;
-  }
-  if (graphicType == GraphicType::Star) {
-    paths.resize(MaxDrawCount);
-    for (size_t i = 0; i < MaxDrawCount; i++) {
-      paths[i] = CreateStar(graphics[i].rect);
+    graphic.initialPhase = static_cast<float>(
+        std::fmod((static_cast<double>(i) + 1.0) * 0.6180339887498949, 1.0));
+    if (graphicType == GraphicType::Star) {
+      paths[i] = CreateStar(tgfx::Rect::MakeXYWH(-size * 0.5f, -size * 0.5f, size, size));
     }
   }
 }
@@ -149,11 +171,13 @@ void ParticleBench::AnimateRects(const AppHost* host) {
     if (idleTime > 0) {
       auto factor = static_cast<double>(idleTime > halfDrawInterval ? drawTime : idleTime) /
                     static_cast<double>(halfDrawInterval);
-      auto step = static_cast<int64_t>(IncreaseStep * factor);
+      auto step = static_cast<int64_t>(static_cast<double>(IncreaseStep) * factor);
       if (step < 1) {
         step = 1;
       }
-      drawCount = std::min(drawCount + static_cast<size_t>(step), MaxDrawCount);
+      const auto nextCount = std::min(drawCount + static_cast<size_t>(step), MaxDrawCount);
+      ensureGraphicCapacity(nextCount);
+      drawCount = nextCount;
     }
   }
   auto startX = host->mouseX();
@@ -167,12 +191,26 @@ void ParticleBench::AnimateRects(const AppHost* host) {
   for (size_t i = 0; i < drawCount; i++) {
     auto& graphic = graphics[i];
     auto& rect = graphic.rect;
+    if (!graphic.initialized) {
+      // Stagger first emission along each trajectory instead of spawning a synchronized burst.
+      const auto vx = graphic.speedX * density;
+      const auto vy = graphic.speedY * density;
+      const auto tx = std::abs(vx) < 0.001f ? 10000.0f
+          : (vx > 0 ? width - startX : startX) / std::abs(vx);
+      const auto ty = std::abs(vy) < 0.001f ? 10000.0f
+          : (vy > 0 ? height - startY : startY) / std::abs(vy);
+      const auto age = graphic.initialPhase * std::min(tx, ty);
+      rect.offsetTo(startX - rect.width() * 0.5f + vx * age,
+                    startY - rect.height() * 0.5f + vy * age);
+      graphic.initialized = true;
+    }
     if (rect.right <= 0 || rect.left >= width || rect.bottom <= 0 || rect.top >= height) {
       auto offsetX = rect.width() * 0.5f;
       auto offsetY = rect.height() * 0.5f;
       rect.offsetTo(startX - offsetX, startY - offsetY);
     } else {
-      rect.offset(graphic.speedX, graphic.speedY);
+      rect.offset(graphic.speedX * density * animationDelta,
+                  graphic.speedY * density * animationDelta);
     }
   }
 }
@@ -339,6 +377,27 @@ bool ParticleBench::isMaxDrawCountReached() const {
 
 PerfData ParticleBench::getPerfData() const {
   return perfData;
+}
+
+size_t ParticleBench::getDrawCount() const {
+  return drawCount;
+}
+
+size_t ParticleBench::getCount() const {
+  return drawCount;
+}
+
+void ParticleBench::setCount(size_t count) {
+  count = std::max<size_t>(1, count);
+  SetInitDrawCount(count);
+  SetMaxDrawCount(count);
+  SetStepDrawCount(0);
+  maxDrawCountReached = false;
+  drawCount = count;
+  perfData.drawCount = count;
+  if (width > 0 && height > 0) {
+    ensureGraphicCapacity(count);
+  }
 }
 
 void ParticleBench::SetAntiAlias(bool aa) {

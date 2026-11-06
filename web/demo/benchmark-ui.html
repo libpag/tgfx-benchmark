@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TGFX Benchmark</title>
+  <link rel="stylesheet" href="./benchmark-ui.css" />
+</head>
+<body>
+  <main class="app">
+    <aside class="sidebar">
+      <header class="sidebar-header">
+        <h1><span class="brand">TGFX</span><span class="product">Benchmark</span></h1>
+        <span id="status-state" class="state">预览</span>
+      </header>
+      <div class="segmented views" role="tablist" aria-label="视图">
+        <button type="button" class="segment" data-view="scene" role="tab" aria-selected="true">
+          <svg class="icon" aria-hidden="true"><use href="./static/icon/benchmark-tools.svg#layout-grid" /></svg>场景
+        </button>
+        <button type="button" class="segment" data-view="report" role="tab" aria-selected="false">
+          <svg class="icon" aria-hidden="true"><use href="./static/icon/benchmark-tools.svg#chart" /></svg>报告
+        </button>
+      </div>
+      <div class="sidebar-scroll">
+      <section class="settings intent-settings">
+        <h2>测试目的</h2>
+        <div class="segmented" role="group" aria-label="测试目的">
+          <button type="button" class="measure-mode" data-test-intent="steady-state"
+            aria-pressed="true">稳态测量</button>
+          <button type="button" class="measure-mode" data-test-intent="cold-start"
+            aria-pressed="false">首帧测试</button>
+        </div>
+      </section>
+      <section class="settings execution-settings">
+        <h2>运行设置</h2>
+        <div class="input-pair">
+          <div>
+            <label for="backend">后端</label>
+            <select id="backend"><option value="webgl">WebGL</option><option value="webgpu">WebGPU</option></select>
+          </div>
+          <div>
+            <label id="engine-mode-label">执行路径</label>
+            <div id="engine-mode" class="segmented" role="group" aria-labelledby="engine-mode-label">
+              <button type="button" data-engine-mode="aot" aria-pressed="true">AOT</button>
+              <button type="button" data-engine-mode="jit" aria-pressed="false">JIT</button>
+            </div>
+          </div>
+        </div>
+        <label for="package-source">运行包</label>
+        <div class="package-row">
+          <select id="package-source" aria-label="运行包">
+            <option value="">正在读取运行包…</option>
+          </select>
+          <button id="refresh-packages" type="button" class="icon-button" aria-label="刷新运行包" title="刷新运行包" data-tooltip="刷新运行包">
+            <svg class="icon" aria-hidden="true"><use href="./static/icon/benchmark-tools.svg#refresh" /></svg>
+          </button>
+        </div>
+        <p id="engine-identity" class="hint" aria-live="polite">正在读取 TGFX 包信息…</p>
+        <label for="count" id="objects-label">初始对象数</label>
+        <input id="count" type="number" min="1" step="1" value="512" />
+        <details class="scene-details"><summary>负载说明</summary><p id="scene-hint" class="hint"></p></details>
+      </section>
+      <section class="settings scene-settings">
+        <h2>测试场景</h2>
+        <label for="scene">场景</label>
+        <select id="scene">
+          <optgroup label="首帧测试">
+            <option value="coldstart.shader-mix">Shader Mix · 混合绘制</option>
+          </optgroup>
+          <optgroup label="MotionMark Master Suite">
+            <option value="motionmark.multiply" selected>Multiply</option>
+            <option value="motionmark.canvas-arcs">Canvas Arcs</option>
+            <option value="motionmark.leaves">Leaves</option>
+            <option value="motionmark.canvas-lines">Canvas Lines</option>
+            <option value="motionmark.images">Images</option>
+            <option value="motionmark.design">Design</option>
+            <option value="motionmark.suits">Suits</option>
+          </optgroup>
+          <optgroup label="原版 TGFX">
+            <option value="legacy.particles-rect">矩形粒子</option>
+            <option value="legacy.particles-circle">圆形粒子</option>
+            <option value="legacy.particles-oval">椭圆粒子</option>
+            <option value="legacy.particles-rrect">圆角矩形粒子</option>
+            <option value="legacy.particles-star">星形粒子</option>
+          </optgroup>
+        </select>
+        <div class="scene-gallery" aria-label="场景快捷选择">
+          <div class="gallery-group gallery-steady gallery-legacy">
+            <h3>原版 TGFX 粒子</h3>
+            <div class="scene-tiles">
+              <button type="button" class="scene-tile" data-scene="legacy.particles-rect" aria-pressed="false">
+                <span class="scene-swatch scene-swatch-rect" aria-hidden="true"></span>
+                <span>矩形粒子</span>
+              </button>
+              <button type="button" class="scene-tile" data-scene="legacy.particles-circle" aria-pressed="false">
+                <span class="scene-swatch scene-swatch-circle" aria-hidden="true"></span>
+                <span>圆形粒子</span>
+              </button>
+              <button type="button" class="scene-tile" data-scene="legacy.particles-oval" aria-pressed="false">
+                <span class="scene-swatch scene-swatch-oval" aria-hidden="true"></span>
+                <span>椭圆粒子</span>
+              </button>
+              <button type="button" class="scene-tile" data-scene="legacy.particles-rrect" aria-pressed="false">
+                <span class="scene-swatch scene-swatch-rrect" aria-hidden="true"></span>
+                <span>圆角矩形粒子</span>
+              </button>
+              <button type="button" class="scene-tile" data-scene="legacy.particles-star" aria-pressed="false">
+                <span class="scene-swatch scene-swatch-star" aria-hidden="true"></span>
+                <span>星形粒子</span>
+              </button>
+            </div>
+          </div>
+          <div class="gallery-group gallery-steady">
+            <h3>图形与路径</h3>
+            <div class="scene-tiles">
+              <button type="button" class="scene-tile" data-scene="motionmark.multiply" aria-pressed="true">
+                <img src="./static/image/scenes/multiply.webp" alt="" width="160" height="96" />
+                <span>Multiply</span>
+              </button>
+              <button type="button" class="scene-tile" data-scene="motionmark.canvas-arcs" aria-pressed="false">
+                <img src="./static/image/scenes/canvas-arcs.webp" alt="" width="160" height="96" />
+                <span>Canvas Arcs</span>
+              </button>
+              <button type="button" class="scene-tile" data-scene="motionmark.canvas-lines" aria-pressed="false">
+                <img src="./static/image/scenes/canvas-lines.webp" alt="" width="160" height="96" />
+                <span>Canvas Lines</span>
+              </button>
+              <button type="button" class="scene-tile" data-scene="motionmark.suits" aria-pressed="false">
+                <img src="./static/image/scenes/suits.webp" alt="" width="160" height="96" />
+                <span>Suits</span>
+              </button>
+            </div>
+          </div>
+          <div class="gallery-group gallery-steady">
+            <h3>图像与文字</h3>
+            <div class="scene-tiles">
+              <button type="button" class="scene-tile" data-scene="motionmark.leaves" aria-pressed="false">
+                <img src="./static/image/scenes/leaves.webp" alt="" width="160" height="96" />
+                <span>Leaves</span>
+              </button>
+              <button type="button" class="scene-tile" data-scene="motionmark.images" aria-pressed="false">
+                <img src="./static/image/scenes/images.webp" alt="" width="160" height="96" />
+                <span>Images</span>
+              </button>
+              <button type="button" class="scene-tile" data-scene="motionmark.design" aria-pressed="false">
+                <img src="./static/image/scenes/design.webp" alt="" width="160" height="96" />
+                <span>Design</span>
+              </button>
+            </div>
+          </div>
+          <div class="gallery-group gallery-cold">
+            <h3>混合绘制</h3>
+            <button type="button" class="scene-tile scene-tile-wide" data-scene="coldstart.shader-mix" aria-pressed="false">
+              <img src="./static/image/scenes/shader-mix.webp" alt="" width="160" height="96" />
+              <span><strong>Shader Mix</strong><small>首帧 · 混合绘制</small></span>
+            </button>
+          </div>
+        </div>
+      </section>
+      <section id="particle-options" class="settings hidden">
+        <h2>原版渲染选项</h2>
+        <div class="option-pair">
+          <div>
+            <label for="antialias">抗锯齿</label>
+            <select id="antialias">
+              <option value="true" selected>开启</option>
+              <option value="false">关闭</option>
+            </select>
+          </div>
+          <div>
+            <label for="stroke">绘制方式</label>
+            <select id="stroke">
+              <option value="false" selected>填充</option>
+              <option value="true">描边</option>
+            </select>
+          </div>
+        </div>
+        <p class="hint">这些设置只影响原版 TGFX 粒子场景，并会写入本次运行配置。</p>
+      </section>
+      <section class="settings">
+        <h2>测量设置</h2>
+        <div id="steady-run-mode" class="segmented" role="group" aria-label="稳态测量模式">
+          <button type="button" class="measure-mode" data-run-mode="manual" aria-pressed="false">手动</button>
+          <button type="button" class="measure-mode" data-run-mode="fixed" aria-pressed="false">固定时长</button>
+          <button type="button" class="measure-mode" data-run-mode="ramp" aria-pressed="true">爬坡</button>
+        </div>
+        <div id="cold-start-fields" class="hidden">
+          <p class="hint">记录首帧命令提交；首帧后等到下一次浏览器刷新回调，再连续采样 30 个渲染回调。</p>
+        </div>
+        <div id="ramp-fields">
+          <label for="target-fps">目标 FPS（FPS + p95）</label>
+          <input id="target-fps" type="number" min="1" max="240" step="1" value="60" />
+        </div>
+        <div id="measurement-field">
+          <label for="measurement" id="measurement-label">稳定判定时长 (ms)</label>
+          <input id="measurement" type="number" min="1" max="60000" step="100" value="5000" />
+        </div>
+        <p id="ramp-duration" class="hint"></p>
+      </section>
+      <section id="live-panel" class="settings hidden" aria-live="off">
+        <h2>实时指标</h2>
+        <dl class="status-list">
+          <div><dt>阶段</dt><dd id="live-phase">加载中</dd></div>
+          <div><dt>滚动 FPS</dt><dd id="live-fps">-</dd></div>
+          <div><dt>浏览器刷新上限</dt><dd id="live-refresh">-</dd></div>
+          <div><dt>对象数</dt><dd id="live-count">-</dd></div>
+          <div class="cold-live-only hidden"><dt>首次命令提交</dt><dd id="live-first-submit">-</dd></div>
+          <div class="cold-live-only hidden"><dt>首帧后下一次刷新回调</dt><dd id="live-first-visible">-</dd></div>
+          <div class="cold-live-only hidden"><dt>首帧后采样进度</dt><dd id="live-initial-window">-</dd></div>
+          <div class="steady-live-only"><dt>尝试峰值</dt><dd id="live-peak">-</dd></div>
+          <div class="steady-live-only"><dt>触边/稳定数</dt><dd id="live-settled">-</dd></div>
+          <div class="steady-live-only"><dt>搜索区间</dt><dd id="live-search-range">-</dd></div>
+          <div class="steady-live-only"><dt>帧预算</dt><dd id="live-budget">-</dd></div>
+          <div><dt>已用时</dt><dd id="live-elapsed">-</dd></div>
+          <div><dt>采样帧数</dt><dd id="live-samples">-</dd></div>
+          <div><dt>最近帧间隔</dt><dd id="live-interval">-</dd></div>
+          <div><dt>场景绘制</dt><dd id="live-draw">-</dd></div>
+          <div><dt>采样缓冲区</dt><dd id="live-overflow">-</dd></div>
+        </dl>
+      </section>
+      </div>
+      <div class="sidebar-actions">
+        <button id="run" type="button" class="primary">开始测量</button>
+        <button id="stop" type="button" class="primary hidden">结束并查看报告</button>
+        <button id="cancel" type="button" class="hidden">取消测量</button>
+        <p id="error" class="error hidden" role="alert"></p>
+        <div class="sidebar-footer">
+          <button id="reset" type="button" class="icon-button" aria-label="重置设置" title="重置设置" data-tooltip="重置设置">
+            <svg class="icon" aria-hidden="true"><use href="./static/icon/benchmark-tools.svg#reset" /></svg>
+          </button>
+          <span id="render-resolution">渲染分辨率：-</span>
+        </div>
+      </div>
+    </aside>
+    <section class="content">
+      <div id="scene-view" class="scene-view">
+        <div class="scene-header">
+          <div class="scene-heading"><strong id="scene-title">Multiply</strong><span id="scene-meta">AOT · WebGL · 512 个对象</span></div>
+          <span id="scene-phase" class="scene-phase">预览</span>
+        </div>
+        <div class="telemetry" aria-label="场景实时指标">
+          <div class="steady-live-only"><span>FPS</span><strong id="hud-fps">-</strong></div>
+          <div class="steady-live-only"><span>CPU 回调</span><strong id="hud-time">-</strong></div>
+          <div class="cold-live-only hidden"><span>首次命令提交</span><strong id="hud-first-submit">-</strong></div>
+          <div class="cold-live-only hidden"><span>下一次刷新回调</span><strong id="hud-first-visible">-</strong></div>
+          <div><span id="hud-count-label">对象数</span><strong id="hud-count">-</strong></div>
+          <div><span>阶段</span><strong id="hud-phase">预览</strong></div>
+        </div>
+        <div id="scene-stage" class="scene-stage">
+          <div id="scene-container" class="scene-container">
+            <iframe id="scene-frame" title="TGFX 测试场景"
+              src="./packages/aot-webgl/index.html?case=motionmark.multiply&amp;count=512&amp;fluid=1&amp;aot=1"></iframe>
+          </div>
+        </div>
+        <footer class="scene-footer">
+          <span id="scene-message" role="status">准备就绪</span>
+        </footer>
+      </div>
+      <div id="report-view" class="report-view hidden">
+        <header class="report-header">
+          <div><h2 id="report-title">测试报告</h2><p id="report-subtitle"></p></div>
+          <div class="report-actions">
+            <button id="download" type="button" disabled>
+              <svg class="icon" aria-hidden="true"><use href="./static/icon/benchmark-tools.svg#download" /></svg>下载 JSON
+            </button>
+            <label class="file-label">
+              <svg class="icon" aria-hidden="true"><use href="./static/icon/benchmark-tools.svg#upload" /></svg>导入 JSON
+              <input id="load" type="file" accept="application/json" />
+            </label>
+          </div>
+        </header>
+        <div id="report-empty" class="empty">暂无测量结果</div>
+        <div id="report-content" class="report-content hidden">
+          <div id="report-warning" class="warning hidden"></div>
+          <div id="steady-report">
+          <div class="metric-grid headline-metrics">
+            <div class="metric"><span>实测平均 FPS</span><strong id="metric-fps">-</strong></div>
+            <div class="metric"><span>帧间隔 p95</span><strong id="metric-p95">-</strong></div>
+            <div class="metric"><span>测量时长</span><strong id="metric-duration">-</strong></div>
+          </div>
+          <div class="metric-grid secondary-metrics">
+            <div class="metric"><span>帧间隔 p50</span><strong id="metric-p50">-</strong></div>
+            <div class="metric"><span>帧间隔 p99</span><strong id="metric-p99">-</strong></div>
+            <div class="metric"><span>最大帧间隔</span><strong id="metric-max">-</strong></div>
+            <div class="metric"><span>保留采样帧数</span><strong id="metric-samples">-</strong></div>
+            <div class="metric"><span>慢帧（&gt; 33.3 ms）</span><strong id="metric-slow">-</strong></div>
+            <div class="metric"><span>超过目标帧预算</span><strong id="metric-over-budget">-</strong></div>
+          </div>
+          <section id="ramp-results" class="report-section hidden">
+            <h3>自适应爬坡 · 对象数量轨迹</h3>
+            <div class="ramp-summary">
+              <div><span>初始对象</span><strong id="ramp-initial">-</strong></div>
+              <div><span>尝试峰值</span><strong id="ramp-peak">-</strong></div>
+              <div><span>结束时实际值</span><strong id="ramp-final">-</strong></div>
+              <div><span>触边/稳定对象</span><strong id="ramp-settled">-</strong></div>
+              <div><span>目标 FPS</span><strong id="ramp-target">-</strong></div>
+              <div><span>最后判定 FPS</span><strong id="ramp-last-fps">-</strong></div>
+              <div><span>最后判定 p95</span><strong id="ramp-last-p95">-</strong></div>
+              <div><span>收敛耗时</span><strong id="ramp-time">-</strong></div>
+              <div><span>稳定观察窗口</span><strong id="ramp-window">-</strong></div>
+              <div><span>回撤次数</span><strong id="ramp-retractions">-</strong></div>
+            </div>
+            <div class="chart-wrap"><canvas id="ramp-chart" aria-label="自适应爬坡对象数量轨迹" role="img"></canvas></div>
+            <p id="ramp-verdict" class="chart-note"></p>
+          </section>
+          <div class="report-detail-grid">
+          <section class="report-section">
+            <h3>帧间隔时序</h3>
+            <div class="chart-wrap"><canvas id="interval-chart" aria-label="帧间隔时序" role="img"></canvas></div>
+            <p id="interval-note" class="chart-note"></p>
+          </section>
+          <section class="report-section">
+            <h3>CPU 阶段耗时 · p50 / p95</h3>
+            <dl class="phase-list">
+              <div><dt>场景绘制</dt><dd id="phase-draw">-</dd></div>
+              <div><dt>Flush</dt><dd id="phase-flush">-</dd></div>
+              <div><dt>Submit</dt><dd id="phase-submit">-</dd></div>
+              <div><dt>回调总耗时</dt><dd id="phase-callback">-</dd></div>
+            </dl>
+          </section>
+          </div>
+          </div>
+          <div id="cold-report" class="hidden">
+            <div class="metric-grid headline-metrics">
+              <div class="metric"><span>首次命令提交</span><strong id="cold-first-submit">-</strong></div>
+              <div class="metric"><span>首帧后下一次刷新回调</span><strong id="cold-first-visible">-</strong></div>
+              <div class="metric"><span>首帧 CPU 回调</span><strong id="cold-first-callback">-</strong></div>
+            </div>
+            <div class="metric-grid secondary-metrics">
+              <div class="metric"><span id="cold-count-label">初始对象数</span><strong id="cold-count">-</strong></div>
+              <div class="metric"><span>后续 30 帧 p50（ms）</span><strong id="cold-p50">-</strong></div>
+              <div class="metric"><span>后续 30 帧 p95（ms）</span><strong id="cold-p95">-</strong></div>
+              <div class="metric"><span>后续 30 帧最大间隔（ms）</span><strong id="cold-max">-</strong></div>
+              <div class="metric"><span>首帧后采样帧数（帧）</span><strong id="cold-samples">-</strong></div>
+            </div>
+            <section class="report-section coverage-section">
+              <h3>覆盖的渲染路径</h3>
+              <p id="cold-shader-groups"></p>
+            </section>
+            <div class="report-detail-grid">
+            <section class="report-section">
+              <h3>首帧 CPU 回调耗时与后续 30 帧间隔（毫秒）</h3>
+              <div class="chart-wrap"><canvas id="cold-frame-chart"
+                aria-label="首帧耗时与后续帧间隔，纵轴单位为毫秒，横轴为帧序号"
+                role="img"></canvas></div>
+              <p id="cold-note" class="chart-note"></p>
+            </section>
+            </div>
+          </div>
+          <section class="report-section">
+            <h3 id="session-history-title">本次会话记录</h3>
+            <div class="table-wrap"><table>
+              <thead><tr id="recent-runs-head"></tr></thead>
+              <tbody id="recent-runs"></tbody>
+            </table></div>
+          </section>
+          <div class="report-detail-grid completion-details">
+            <section class="report-section"><h3>结束时画面</h3><img id="report-preview" alt="测试结束时画面" /></section>
+            <section class="report-section"><h3>测量详情</h3><p id="report-description"></p></section>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script src="./benchmark-ui.js"></script>
+</body>
+</html>

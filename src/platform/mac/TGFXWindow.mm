@@ -19,13 +19,22 @@
 #import "TGFXWindow.h"
 #import <CoreVideo/CoreVideo.h>
 #include <cmath>
+#include <cstdio>
+#include <cstdlib>
 #include <filesystem>
 #include "base/AppHost.h"
 #include "base/Bench.h"
+#include "base/NativeBenchmarkState.h"
+#include "benchmark/ParticleBench.h"
 #include "tgfx/core/Canvas.h"
 #include "tgfx/core/Clock.h"
 #include "tgfx/core/Surface.h"
+#include "tgfx/gpu/Context.h"
 #include "tgfx/gpu/Window.h"
+#if TGFX_BENCHMARK_HAS_AOT_CACHE
+#include "gpu/GlobalCache.h"
+#include "gpu/PrecompiledShaderCache.h"
+#endif
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
@@ -40,6 +49,9 @@
   int drawIndex;
   bool closing;
   CVDisplayLinkRef displayLink;
+  benchmark::NativeBenchmarkState benchmarkState;
+  benchmark::Bench* selectedBench;
+  uint64_t nextFrameId;
 }
 
 - (void)stopDisplayLink {
@@ -116,6 +128,9 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeSt
   [self updateSize];
   drawIndex = 0;
   closing = false;
+  selectedBench = nullptr;
+  nextFrameId = 1;
+  benchmarkState.configureFromEnvironment();
   displayLink = nil;
   auto result = CVDisplayLinkCreateWithActiveCGDisplays(&displayLink);
   if (result == kCVReturnSuccess && displayLink != nil) {
@@ -193,7 +208,7 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeSt
 }
 
 - (void)redraw {
-  auto currentTime = tgfx::Clock::Now();
+  const auto callbackBeginUs = tgfx::Clock::Now();
   if (appHost->width() <= 0 || appHost->height() <= 0) {
     return;
   }
@@ -221,20 +236,156 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeSt
     device->unlock();
     return;
   }
+#if TGFX_BENCHMARK_HAS_AOT_CACHE
+  static bool aotAuditInitialized = false;
+  if (!aotAuditInitialized && std::getenv("TGFX_BENCH_AOT_AUDIT") != nullptr) {
+    context->precompiledShaderCache()->setDiagnosticRecordingEnabled(true);
+    aotAuditInitialized = true;
+  }
+#endif
   auto canvas = surface->getCanvas();
   canvas->clear({0.87f, 0.87f, 0.87f, 1.0f});
-  auto numBenches = benchmark::Bench::Count();
-  auto index = (drawIndex % numBenches);
-  auto bench = benchmark::Bench::GetByIndex(index);
-  bench->draw(canvas, appHost.get());
+  if (selectedBench == nullptr) {
+    const char* sceneEnv = std::getenv("TGFX_BENCH_SCENE");
+    if (sceneEnv != nullptr) {
+      selectedBench = benchmark::Bench::Resolve(sceneEnv);
+      if (selectedBench == nullptr) {
+        std::fprintf(stderr, "Unknown TGFX_BENCH_SCENE: %s\n", sceneEnv);
+        std::exit(EXIT_FAILURE);
+      }
+    }
+    if (selectedBench == nullptr) {
+      selectedBench = benchmark::Bench::GetByIndex(drawIndex % benchmark::Bench::Count());
+    }
+    const char* countEnv = std::getenv("TGFX_BENCH_COUNT");
+    if (countEnv != nullptr && selectedBench != nullptr) {
+      selectedBench->setCount(static_cast<size_t>(std::strtoull(countEnv, nullptr, 10)));
+    }
+  }
+
+  const auto sceneDrawStartUs = tgfx::Clock::Now();
+  selectedBench->draw(canvas, appHost.get());
+  const auto sceneDrawUs = tgfx::Clock::Now() - sceneDrawStartUs;
+
+  const auto flushStartUs = tgfx::Clock::Now();
   auto recording = context->flush();
+  const auto flushUs = tgfx::Clock::Now() - flushStartUs;
   std::swap(lastRecording, recording);
+  int64_t submitUs = 0;
   if (recording != nullptr) {
+    const auto submitStartUs = tgfx::Clock::Now();
     context->submit(std::move(recording));
+    submitUs = tgfx::Clock::Now() - submitStartUs;
   }
   device->unlock();
-  auto drawTime = tgfx::Clock::Now() - currentTime;
-  appHost->recordFrame(drawTime);
+  const auto callbackEndUs = tgfx::Clock::Now();
+  appHost->recordFrame(callbackEndUs - callbackBeginUs);
+  if (benchmarkState.enabled()) {
+    if (nextFrameId == 1) {
+      benchmarkState.start(callbackBeginUs);
+    }
+    benchmarkState.recordFrame(benchmark::NativeFrameSample{
+        nextFrameId++, callbackBeginUs, callbackEndUs, sceneDrawUs, flushUs, submitUs});
+  }
+
+  // Machine-readable perf logging so automated A/B runs can capture per-sample curves
+  // (auto-scaling ramp and fixed-count steady state) without reading the on-screen overlay.
+  static int64_t startTime = 0;
+  static int64_t lastLogTime = 0;
+  static bool labelPrinted = false;
+  static bool firstFrameLogged = false;
+  auto now = tgfx::Clock::Now();
+  if (startTime == 0) {
+    startTime = now;
+  }
+  if (!labelPrinted) {
+    const char* label = std::getenv("TGFX_BENCH_LABEL");
+    printf("BENCH_LABEL %s\n", label == nullptr ? "unlabeled" : label);
+    printf("BENCH_CONTEXT width=%d height=%d density=%.2f\n", appHost->width(),
+           appHost->height(), static_cast<double>(appHost->density()));
+    const char* backendName = "unknown";
+    switch (context->backend()) {
+      case tgfx::Backend::OpenGL:
+        backendName = "opengl";
+        break;
+      case tgfx::Backend::Metal:
+        backendName = "metal";
+        break;
+      case tgfx::Backend::Vulkan:
+        backendName = "vulkan";
+        break;
+      case tgfx::Backend::WebGPU:
+        backendName = "webgpu";
+        break;
+      case tgfx::Backend::D3D12:
+        backendName = "d3d12";
+        break;
+      case tgfx::Backend::Unknown:
+        break;
+    }
+    printf("BENCH_BACKEND backend=%s\n", backendName);
+    fflush(stdout);
+    labelPrinted = true;
+  }
+  if (!firstFrameLogged) {
+    printf("BENCH_FIRSTFRAME time_ms=%.2f\n",
+           static_cast<double>(callbackEndUs - callbackBeginUs) / 1000.0);
+    fflush(stdout);
+    firstFrameLogged = true;
+  }
+  if (lastLogTime == 0) {
+    lastLogTime = now;
+  }
+  if (now - lastLogTime >= 500000) {
+    auto* particleBench = dynamic_cast<benchmark::ParticleBench*>(selectedBench);
+    if (particleBench != nullptr) {
+      const auto perf = particleBench->getPerfData();
+      printf("BENCH_SAMPLE t_s=%.3f fps=%.1f time_ms=%.2f count=%zu reached=%d\n",
+             static_cast<double>(now - startTime) / 1000000.0, perf.fps,
+             static_cast<double>(perf.drawTime), perf.drawCount,
+             particleBench->isMaxDrawCountReached() ? 1 : 0);
+    } else {
+      printf("BENCH_SAMPLE t_s=%.3f\n", static_cast<double>(now - startTime) / 1000000.0);
+    }
+    fflush(stdout);
+    lastLogTime = now;
+  }
+#if TGFX_BENCHMARK_HAS_AOT_CACHE
+  const char* aotAuditPath = std::getenv("TGFX_BENCH_AOT_AUDIT");
+  static bool aotAuditWritten = false;
+  if (aotAuditPath != nullptr && !aotAuditWritten && now - startTime >= 2000000) {
+    auto* cache = context->precompiledShaderCache();
+    const auto drawStats = cache->drawStats();
+    const auto programStats = context->globalCache()->programStats();
+    printf("BENCH_AOT_AUDIT bundleLoaded=%d bundleGeneration=%llu draws=%llu "
+           "completeAOTDraws=%llu precompiledPrograms=%llu programBuilderPrograms=%llu "
+           "droppedDraws=%llu directChainDraws=%llu offscreenPlanDraws=%llu "
+           "hits=%u misses=%u attempts=%u permutations=%u artifacts=%u pipelines=%u\n",
+           cache->isLoaded() ? 1 : 0,
+           static_cast<unsigned long long>(cache->bundleGeneration()),
+           static_cast<unsigned long long>(drawStats.draws),
+           static_cast<unsigned long long>(drawStats.completeAOTDraws),
+           static_cast<unsigned long long>(programStats.precompiledArtifactCreations),
+           static_cast<unsigned long long>(programStats.programBuilderCreations),
+           static_cast<unsigned long long>(drawStats.droppedDraws),
+           static_cast<unsigned long long>(drawStats.directChainDraws),
+           static_cast<unsigned long long>(drawStats.offscreenPlanDraws), cache->hitCount(),
+           cache->missCount(),
+           cache->aotStageCount(tgfx::PrecompiledAOTStage::Attempt),
+           cache->aotStageCount(tgfx::PrecompiledAOTStage::PermutationMatched),
+           cache->aotStageCount(tgfx::PrecompiledAOTStage::ArtifactsFound),
+           cache->aotStageCount(tgfx::PrecompiledAOTStage::PipelineCreated));
+    cache->writeDiagnosticsDump(aotAuditPath);
+    fflush(stdout);
+    aotAuditWritten = true;
+  }
+#endif
+
+  if (benchmarkState.enabled() && benchmarkState.shouldStop(callbackEndUs)) {
+    printf("BENCH_JSON %s\n", benchmarkState.summaryJson().c_str());
+    fflush(stdout);
+    [NSApp terminate:self];
+  }
 }
 @end
 

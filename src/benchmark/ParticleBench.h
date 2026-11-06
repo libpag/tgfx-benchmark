@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <random>
 #include "../base/Bench.h"
 
 namespace benchmark {
@@ -28,6 +29,8 @@ struct GraphicData {
   tgfx::Rect rect{0, 0, 1, 1};
   float speedX;
   float speedY;
+  float initialPhase = 0.0f;
+  bool initialized = false;
 };
 
 struct DrawParam {
@@ -67,12 +70,19 @@ class ParticleBench : public Bench {
   bool isMaxDrawCountReached() const;
 
   PerfData getPerfData() const;
+  size_t getDrawCount() const;
+  size_t getCount() const override;
+  void setCount(size_t count) override;
 
  protected:
   void onDraw(tgfx::Canvas* canvas, const AppHost* host) override;
 
  private:
   void Init(const AppHost* host);
+
+  void ensureGraphicCapacity(size_t count);
+
+  void resetGraphics(float density);
 
   void AnimateRects(const AppHost* host);
 
@@ -106,6 +116,11 @@ class ParticleBench : public Bench {
   GraphicType graphicType = GraphicType::Rect;
   bool maxDrawCountReached = false;
   PerfData perfData = {};
+  float density = 1.0f;
+  std::mt19937 rectRng = std::mt19937(18);
+  std::mt19937 speedRng = std::mt19937(36);
+  std::uniform_real_distribution<float> rectDistribution = std::uniform_real_distribution<float>(0, 1);
+  std::uniform_real_distribution<float> speedDistribution = std::uniform_real_distribution<float>(-1, 1);
 };
 
 }  // namespace benchmark

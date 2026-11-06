@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "tgfx-benchmark.compatibility-patches.v1",
+  "patches": [
+    {
+      "file": "aot-allow-unused-vertex-attributes.patch",
+      "integratedMarkers": [
+        {
+          "file": "src/gpu/PrecompiledProgramCreator.cpp",
+          "contains": "vertexLayout.shaderLocations = std::move(vertexLocations)"
+        },
+        {
+          "file": "src/gpu/PrecompiledProgramCreator.cpp",
+          "contains": "vertexLayout.shaderLocations.push_back(input->location)"
+        },
+        {
+          "file": "src/gpu/PrecompiledProgramCreator.cpp",
+          "contains": "vertexLayout.shaderLocations.push_back(input.location)"
+        }
+      ]
+    },
+    {
+      "file": "aot-shader-permutation-build.patch",
+      "integratedMarkers": [
+        {
+          "file": "src/gpu/shaders/ShaderPermutation.h",
+          "contains": "PermutationEnum(const char* defineName, const std::vector<const char*>& valueNames)"
+        }
+      ]
+    },
+    {
+      "file": "aot-shader-registry-inline-identity.patch",
+      "integratedMarkers": [
+        {
+          "file": "src/gpu/shaders/PrecompiledShader.cpp",
+          "contains": "existing->second.enumerator() == enumerator()"
+        }
+      ]
+    },
+    {
+      "file": "aot-program-writer-unused-parameter.patch",
+      "codegens": [
+        "aot"
+      ],
+      "integratedMarkers": [
+        {
+          "file": "src/gpu/ProgramWriter.cpp",
+          "contains": "ChainProgramWriter::writeSamplers(const ProgramInfo& info, Program* /*program*/"
+        }
+      ]
+    },
+    {
+      "file": "shared-webgpu-drawable-copy-source.patch",
+      "codegens": [
+        "aot",
+        "jit"
+      ],
+      "integratedMarkers": [
+        {
+          "file": "src/gpu/webgpu/WebGPUWindow.cpp",
+          "contains": "WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_CopySrc"
+        }
+      ]
+    }
+  ]
+}

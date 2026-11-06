@@ -34,6 +34,9 @@ get_filename_component(TGFX_DIR "${TGFX_DIR}" REALPATH BASE_DIR "${CMAKE_CURRENT
 if (HAS_CUSTOM_TGFX_DIR)
     message("TGFX_DIR: ${TGFX_DIR}")
 endif ()
+if (NOT EXISTS "${TGFX_DIR}/CMakeLists.txt" OR NOT EXISTS "${TGFX_DIR}/include/tgfx")
+    message(FATAL_ERROR "TGFX_DIR is not a valid TGFX source root: ${TGFX_DIR}")
+endif ()
 list(APPEND BENCH_INCLUDES ${TGFX_DIR}/include)
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 add_subdirectory(${TGFX_DIR} tgfx EXCLUDE_FROM_ALL)
@@ -103,6 +106,12 @@ else ()
 endif ()
 add_dependencies(Benchmark tgfx)
 target_include_directories(Benchmark PRIVATE ${BENCH_INCLUDES})
+if (TGFX_EMBED_SHADER_BUNDLES AND EXISTS
+        "${TGFX_DIR}/src/gpu/PrecompiledShaderCache.h")
+    target_include_directories(Benchmark PRIVATE ${TGFX_DIR}/src
+            ${TGFX_DIR}/third_party/concurrentqueue)
+    target_compile_definitions(Benchmark PRIVATE TGFX_BENCHMARK_HAS_AOT_CACHE=1)
+endif ()
 target_compile_options(Benchmark PUBLIC ${BENCH_COMPILE_OPTIONS})
 target_link_libraries(Benchmark tgfx ${BENCHMARK_LIBS})
 
