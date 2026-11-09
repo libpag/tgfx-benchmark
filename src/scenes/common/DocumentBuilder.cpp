@@ -25,7 +25,8 @@
 namespace benchmark {
 
 bool BuildDocument(tgfx::Layer* root, const SceneContext& sceneContext, int64_t layerCount,
-                   uint32_t seed, float documentWidth, float documentHeight) {
+                   uint32_t seed, float documentWidth, float documentHeight,
+                   std::vector<std::shared_ptr<tgfx::Layer>>* leaves) {
   if (root == nullptr || layerCount <= 0) {
     return false;
   }
@@ -57,6 +58,9 @@ bool BuildDocument(tgfx::Layer* root, const SceneContext& sceneContext, int64_t 
       shape->setFillStyle(tgfx::ShapeStyle::Make(
           tgfx::Color{random.nextFloat(), random.nextFloat(), random.nextFloat(), 0.9f}));
       group->addChild(shape);
+      if (leaves != nullptr) {
+        leaves->push_back(shape);
+      }
     }
     root->addChild(group);
   }

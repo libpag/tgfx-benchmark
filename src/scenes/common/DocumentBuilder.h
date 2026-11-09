@@ -19,6 +19,8 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
+#include <vector>
 #include "core/Scene.h"
 
 namespace tgfx {
@@ -35,6 +37,7 @@ namespace benchmark {
  * Returns false when the root is null or no layer could be added.
  */
 bool BuildDocument(tgfx::Layer* root, const SceneContext& sceneContext, int64_t layerCount,
-                   uint32_t seed, float documentWidth, float documentHeight);
+                   uint32_t seed, float documentWidth, float documentHeight,
+                   std::vector<std::shared_ptr<tgfx::Layer>>* leaves = nullptr);
 
 }  // namespace benchmark
