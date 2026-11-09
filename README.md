@@ -30,7 +30,6 @@ Two things separate this project from a naive frame rate demo:
 - [Measurement methodology](#measurement-methodology)
 - [Result format](#result-format)
 - [Comparing two builds](#comparing-two-builds)
-- [Baselines](#baselines)
 - [Adding a scene](#adding-a-scene)
 - [Known limitations](#known-limitations)
 - [Troubleshooting](#troubleshooting)
@@ -720,33 +719,6 @@ Measured on an M4 Pro with four rounds and three repeats per case:
 
 If you need tighter absolute numbers, raise `--rounds` and `--repeat`; the variance falls with the
 number of independent samples, not with the number of frames inside one repeat.
-
----
-
-## Baselines
-
-`baselines/` holds two kinds of files, with very different guarantees:
-
-| File | Portable? | Purpose |
-| --- | --- | --- |
-| `baselines/spec.json` | yes | snapshot of the whole scene catalogue, the contract behind `(scene, tier, param_hash)` |
-| `baselines/<host>-<backend>-<suite>.json` | **no** | one machine's measured result, usable only as a local regression baseline |
-
-Record your own, then compare against it:
-
-```bash
-./mac/Release-metal/Benchmark --mode=measure --suite=core --isolate --no-samples \
-    --out=baselines/$(hostname -s)-metal-core.json
-
-python3 tools/bench_compare.py baselines/$(hostname -s)-metal-core.json /tmp/today.json
-```
-
-Re-record the baseline whenever `baselines/spec.json` changes: a scene id, a tier value or a
-parameter default produces a different `param_hash`, and every older file will be reported as
-`incomparable`. See `baselines/README.md` for the full protocol, including the thermal state rule.
-
-A stored baseline cannot control for the machine having changed since it was recorded. When a
-single digit matters, build both revisions and use `tools/bench_run.py`, which interleaves them.
 
 ---
 
