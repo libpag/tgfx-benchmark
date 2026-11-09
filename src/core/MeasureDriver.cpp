@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <vector>
 #include "core/Checkpoint.h"
+#include "core/GpuTimer.h"
 #include "core/FrameTimer.h"
 #include "core/report/SystemInfo.h"
 #include "tgfx/platform/Print.h"
@@ -99,6 +100,11 @@ CaseResult MeasureDriver::Run(Scene* scene, Tier tier, const ParamSet& params,
   // Start from an empty cache once so every case begins from the same state.
   context->purgeResourcesUntilMemoryTo(0);
 
+  // Real GPU timing when the backend can provide it; otherwise the synchronised submit below is
+  // the only available upper bound.
+  auto gpuTimer = CreateGpuTimer();
+  std::vector<double> gpuSamples;
+
   // Checkpoints force a full readback, which stalls the pipeline. They run in their own pass so
   // the measured samples stay free of those stalls.
   if (!checkpointFrames.empty() && scene->setup(sceneContext, params)) {
@@ -143,8 +149,19 @@ CaseResult MeasureDriver::Run(Scene* scene, Tier tier, const ParamSet& params,
       auto recordEnd = FrameTimer::NowMs();
       auto recording = context->flush();
       auto flushEnd = FrameTimer::NowMs();
+      // Only the measured window is sampled: warmup frames would dilute the GPU statistics.
+      auto sampling = gpuTimer != nullptr && frame >= warmupFrames;
+      if (sampling) {
+        gpuTimer->Begin();
+      }
       if (recording != nullptr) {
         context->submit(std::move(recording));
+      }
+      if (sampling) {
+        gpuTimer->End();
+        if (frame % 8 == 0) {
+          gpuTimer->Collect(&gpuSamples, false);
+        }
       }
       auto submitEnd = FrameTimer::NowMs();
 
@@ -188,6 +205,9 @@ CaseResult MeasureDriver::Run(Scene* scene, Tier tier, const ParamSet& params,
     result.gpuCachePeakBytes = std::max(result.gpuCachePeakBytes, result.gpuCacheBytes);
     result.footprintPeakBytes = std::max(result.footprintPeakBytes, result.footprintBytes);
 
+    if (gpuTimer != nullptr) {
+      gpuTimer->Collect(&gpuSamples, true);
+    }
     scene->teardown();
   }
 
@@ -227,6 +247,11 @@ CaseResult MeasureDriver::Run(Scene* scene, Tier tier, const ParamSet& params,
                                      result.throughputPerRepeat[middle]) *
                                         0.5
                                   : result.throughputPerRepeat[middle];
+  }
+
+  if (gpuTimer != nullptr && !gpuSamples.empty()) {
+    result.gpuMs = SampleStats::Compute(gpuSamples);
+    result.gpuSource = gpuTimer->source();
   }
 
   result.recordMs = SampleStats::Compute(recordSamples);

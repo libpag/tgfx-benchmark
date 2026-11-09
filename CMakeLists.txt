@@ -63,7 +63,9 @@ elseif (MACOS)
             src/platform/mac/AppDelegate.mm
             src/platform/mac/main.mm
             src/platform/mac/TGFXWindow.mm)
-    list(APPEND CORE_FILES src/platform/apple/SystemInfo.mm)
+    list(APPEND CORE_FILES
+            src/platform/apple/SystemInfo.mm
+            src/platform/apple/GLTimerQuery.mm)
     if (BENCHMARK_BACKEND_RESOLVED STREQUAL "METAL")
         list(APPEND SRC_FILES src/platform/mac/MetalWindow.mm)
         list(APPEND CORE_FILES src/platform/mac/HeadlessDeviceMetal.mm)
@@ -151,6 +153,9 @@ if (CORE_FILES)
             BENCH_BENCHMARK_COMMIT="${BENCH_BENCHMARK_COMMIT}"
             BENCH_BACKEND_NAME="${BENCHMARK_BACKEND_RESOLVED}"
             BENCH_BUILD_TYPE="${BENCH_BUILD_TYPE}")
+    if (BENCHMARK_BACKEND_RESOLVED STREQUAL "OPENGL")
+        target_compile_definitions(BenchmarkCore PUBLIC BENCH_BACKEND_GL=1)
+    endif ()
     target_link_libraries(Benchmark BenchmarkCore)
 endif ()
 

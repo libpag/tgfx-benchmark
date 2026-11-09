@@ -175,6 +175,8 @@ std::string ReportWriter::BuildResult(const EnvironmentInfo& environment,
 
     writer.key("gpu_ms");
     writer.beginObject();
+    writer.key("count");
+    writer.value(result.gpuMs.count);
     writer.key("median");
     writer.value(result.gpuMs.median);
     writer.key("p90");
