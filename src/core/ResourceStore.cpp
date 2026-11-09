@@ -45,6 +45,20 @@ std::shared_ptr<tgfx::Image> ResourceStore::image(const std::string& relativePat
   return image;
 }
 
+std::shared_ptr<tgfx::Data> ResourceStore::data(const std::string& relativePath) {
+  auto it = _data.find(relativePath);
+  if (it != _data.end()) {
+    return it->second;
+  }
+  auto bytes = tgfx::Data::MakeFromFile(path(relativePath));
+  if (bytes == nullptr) {
+    tgfx::PrintError("ResourceStore: failed to read \"%s\"", relativePath.c_str());
+    return nullptr;
+  }
+  _data[relativePath] = bytes;
+  return bytes;
+}
+
 std::shared_ptr<tgfx::Typeface> ResourceStore::typeface(const std::string& relativePath) {
   auto it = _typefaces.find(relativePath);
   if (it != _typefaces.end()) {

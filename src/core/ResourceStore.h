@@ -21,6 +21,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include "tgfx/core/Data.h"
 #include "tgfx/core/Image.h"
 #include "tgfx/core/Typeface.h"
 
@@ -39,11 +40,15 @@ class ResourceStore {
 
   std::shared_ptr<tgfx::Image> image(const std::string& relativePath);
 
+  /// Raw encoded bytes, cached. Scenes that decode per frame need the bytes, not the image.
+  std::shared_ptr<tgfx::Data> data(const std::string& relativePath);
+
   std::shared_ptr<tgfx::Typeface> typeface(const std::string& relativePath);
 
  private:
   std::string _rootDir;
   std::map<std::string, std::shared_ptr<tgfx::Image>> _images = {};
+  std::map<std::string, std::shared_ptr<tgfx::Data>> _data = {};
   std::map<std::string, std::shared_ptr<tgfx::Typeface>> _typefaces = {};
 };
 
