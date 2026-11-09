@@ -137,9 +137,9 @@ std::string ReportWriter::BuildResult(const EnvironmentInfo& environment,
     writer.key("tier");
     writer.value(result.tier);
     writer.key("params");
-    writer.valueRaw(result.params.toCanonicalJSON());
+    writer.valueRaw(result.paramsJSON);
     writer.key("param_hash");
-    writer.value(result.params.hash());
+    writer.value(result.paramHash);
     writer.key("status");
     writer.value(result.status);
     writer.key("status_detail");

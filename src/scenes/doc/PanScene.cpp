@@ -23,6 +23,7 @@
 #include "core/ResourceStore.h"
 #include "core/SceneRegistry.h"
 #include "tgfx/core/Font.h"
+#include "scenes/common/DocumentBuilder.h"
 #include "tgfx/layers/DisplayList.h"
 #include "tgfx/layers/ShapeLayer.h"
 #include "tgfx/layers/TextLayer.h"
@@ -97,38 +98,12 @@ class PanScene : public Scene {
 
     // The document is slightly larger than the viewport and the leaves are spread uniformly over
     // it, so that raising the tier raises the on screen density instead of pushing content out of
-    // view. A shallow group level keeps the tree realistic for the tiled renderer.
-    Random random(0xD0C00001u);
+    // view.
     const auto documentWidth = _width * 1.5f;
     const auto documentHeight = _height * 1.5f;
-    const auto groupCount = static_cast<int64_t>(64);
-    const auto columns = static_cast<int64_t>(8);
-    const auto cellWidth = documentWidth / static_cast<float>(columns);
-    const auto cellHeight = documentHeight / static_cast<float>(columns);
-    const auto perGroup = layerCount / groupCount + 1;
-
-    for (int64_t groupIndex = 0; groupIndex < groupCount; groupIndex++) {
-      auto group = tgfx::Layer::Make();
-      auto column = groupIndex % columns;
-      auto row = groupIndex / columns;
-      group->setPosition(tgfx::Point{static_cast<float>(column) * cellWidth,
-                                     static_cast<float>(row) * cellHeight});
-      for (int64_t i = 0; i < perGroup; i++) {
-        auto shape = tgfx::ShapeLayer::Make();
-        tgfx::Path path;
-        // Everything below is in physical pixels so that group offsets and leaf offsets share
-        // the same space.
-        auto size = random.range(8.0f, 48.0f) * _density;
-        auto x = random.range(0.0f, cellWidth - size);
-        auto y = random.range(0.0f, cellHeight - size);
-        path.addRoundRect(tgfx::Rect::MakeXYWH(x, y, size, size), 4.0f * _density,
-                          4.0f * _density);
-        shape->setPath(path);
-        shape->setFillStyle(tgfx::ShapeStyle::Make(
-            tgfx::Color{random.nextFloat(), random.nextFloat(), random.nextFloat(), 0.9f}));
-        group->addChild(shape);
-      }
-      root->addChild(group);
+    if (!BuildDocument(root, sceneContext, layerCount, 0xD0C00001u, documentWidth,
+                       documentHeight)) {
+      return false;
     }
     _documentWidth = documentWidth;
     _documentHeight = documentHeight;

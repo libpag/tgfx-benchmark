@@ -57,6 +57,10 @@ struct RunConfig {
   std::string checkpointDir = {};
   std::string resourcesDir = {};
 
+  /// Internal: run exactly one scene tier. Used by the isolated mode and by external runners.
+  std::string singleCase = {};
+  std::string singleTier = {};
+
   /// Returns the frame count used by the capacity search for one probe.
   int probeFrames() const {
     return warmupFrames < 10 ? 10 : (warmupFrames > 30 ? 30 : warmupFrames);

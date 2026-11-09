@@ -67,7 +67,8 @@ CaseResult MeasureDriver::Run(Scene* scene, Tier tier, const ParamSet& params,
   result.scene = scene->info().id;
   result.category = scene->info().category;
   result.tier = TierName(tier);
-  result.params = params;
+  result.paramsJSON = params.toCanonicalJSON();
+  result.paramHash = params.hash();
 
   auto context = sceneContext.context;
   if (context == nullptr) {

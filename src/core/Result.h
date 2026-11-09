@@ -51,7 +51,8 @@ struct CaseResult {
   std::string scene = {};
   std::string category = {};
   std::string tier = {};
-  ParamSet params = {};
+  std::string paramsJSON = {};
+  std::string paramHash = {};
   std::string status = "ok";
   std::string statusDetail = {};
 

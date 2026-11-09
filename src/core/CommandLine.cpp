@@ -111,6 +111,14 @@ bool ParseCommandLine(int argc, const char* argv[], CommandLineOptions* options,
       options->dumpSpec = true;
       continue;
     }
+    if (argument == "--breakdown") {
+      options->config.breakdownPass = true;
+      continue;
+    }
+    if (argument == "--samples") {
+      options->config.keepSamples = true;
+      continue;
+    }
     if (argument == "--no-breakdown") {
       options->config.breakdownPass = false;
       continue;
@@ -179,6 +187,16 @@ bool ParseCommandLine(int argc, const char* argv[], CommandLineOptions* options,
       options->config.checkpointDir = value;
     } else if (name == "resources") {
       options->config.resourcesDir = value;
+    } else if (name == "single") {
+      auto position = value.find(':');
+      if (position == std::string::npos) {
+        *error = "invalid --single value, expected <scene>:<tier>";
+        return false;
+      }
+      options->config.singleCase = value.substr(0, position);
+      options->config.singleTier = value.substr(position + 1);
+      options->modeSpecified = true;
+      options->config.mode = RunMode::Measure;
     } else {
       *error = "unknown option: --" + name;
       return false;
