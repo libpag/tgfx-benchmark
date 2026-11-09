@@ -30,15 +30,15 @@ namespace {
 int64_t CopiesForTier(Tier tier) {
   switch (tier) {
     case Tier::S:
-      return 16;
-    case Tier::M:
       return 64;
+    case Tier::M:
+      return 600;
     case Tier::L:
-      return 256;
+      return 1500;
     case Tier::XL:
-      return 1024;
+      return 4000;
   }
-  return 64;
+  return 600;
 }
 
 class SvgZoomScene : public Scene {

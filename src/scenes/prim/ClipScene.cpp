@@ -28,15 +28,15 @@ namespace {
 int64_t DepthForTier(Tier tier) {
   switch (tier) {
     case Tier::S:
-      return 1;
+      return 32;
     case Tier::M:
-      return 4;
+      return 300;
     case Tier::L:
-      return 16;
+      return 700;
     case Tier::XL:
-      return 64;
+      return 1500;
   }
-  return 4;
+  return 64;
 }
 
 class ClipScene : public Scene {
@@ -99,7 +99,9 @@ class ClipScene : public Scene {
     canvas->save();
     for (int64_t level = 0; level < _depth; level++) {
       canvas->save();
-      auto inset = static_cast<float>(level) * 2.0f * _density;
+      // A constant inset keeps the visible area the same at every depth, so the ladder measures
+      // the cost of the clip stack rather than the shrinking fill area.
+      auto inset = 6.0f * _density;
       auto rect = tgfx::Rect::MakeXYWH(inset, inset, _width - inset * 2.0f,
                                        _height - inset * 2.0f);
       switch (level % 3) {

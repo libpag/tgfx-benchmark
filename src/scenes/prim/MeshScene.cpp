@@ -28,15 +28,15 @@ namespace {
 int64_t CopiesForTier(Tier tier) {
   switch (tier) {
     case Tier::S:
-      return 4;
-    case Tier::M:
-      return 16;
-    case Tier::L:
       return 64;
+    case Tier::M:
+      return 600;
+    case Tier::L:
+      return 2000;
     case Tier::XL:
-      return 256;
+      return 6000;
   }
-  return 16;
+  return 600;
 }
 
 class MeshScene : public Scene {

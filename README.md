@@ -439,33 +439,39 @@ comparison tool reports that instead of silently mixing the two.
 
 ## Scene catalogue
 
-Thirty cases across six categories. Every scene has exactly one scaling axis, so the intensity
+Thirty six cases across six categories. Every scene has exactly one scaling axis, so the intensity
 ladder and the capacity search have a well defined meaning.
 
 ### prim — primitives (baseline and attribution)
 
 | Scene | What it exercises | Axis | S / M / L / XL |
 | --- | --- | --- | --- |
-| `prim.rect` | solid axis aligned fills, three rotating colours | count | 2k / 20k / 80k / 300k |
+| `prim.rect` | solid axis aligned fills, three rotating colours | count | 20k / 240k / 600k / 1.2M |
 | `prim.path` | concave star paths through `drawPath` with a per draw transform | count | 100 / 1k / 4k / 16k |
 | `prim.gradient` | linear, radial, conic and diamond gradient shaders | count | 16 / 128 / 512 / 2048 |
 | `prim.image` | image draws alternating nearest, linear and mipmapped sampling | count | 100 / 1k / 5k / 20k |
 | `prim.text` | short CJK or latin text runs at four font sizes | runs | 250 / 1k / 4k / 16k |
 | `prim.blend` | full screen translucent rects with advanced blend modes | passes | 4 / 16 / 64 / 256 |
 | `prim.stroke` | polylines and curves with mixed widths, caps and joins | count | 100 / 1k / 4k / 16k |
-| `prim.clip` | nested rect, round rect and path clips | depth | 1 / 4 / 16 / 64 |
-| `prim.atlas` | `drawAtlas` sprite batch with per sprite tint | sprites | 500 / 5k / 20k / 80k |
-| `prim.mesh` | one indexed mesh drawn many times | copies | 4 / 16 / 64 / 256 |
+| `prim.clip` | nested rect, round rect and path clips | depth | 32 / 300 / 700 / 1500 |
+| `prim.atlas` | `drawAtlas` sprite batch with per sprite tint | sprites | 10k / 60k / 150k / 400k |
+| `prim.mesh` | one indexed mesh drawn many times | copies | 64 / 600 / 2000 / 6000 |
+| `prim.color_filter` | blend, matrix, luma and composed colour filters on images and shapes | count | 200 / 2k / 8k / 32k |
+| `prim.glyphs` | pre-shaped glyph ids drawn with `drawGlyphs` | glyphs | 20k / 150k / 400k / 1M |
 
 ### pag — motion graphics (libpag style workloads)
 
 | Scene | What it exercises | Axis | S / M / L / XL |
 | --- | --- | --- | --- |
 | `pag.blur` | content inside `saveLayer` with a blur image filter | layers | 1 / 2 / 4 / 8 |
-| `pag.matte` | alpha mask driven by a radial gradient shader | groups | 2 / 8 / 32 / 128 |
+| `pag.matte` | alpha mask driven by a radial gradient shader | groups | 16 / 256 / 1k / 4k |
 | `pag.shadow` | drop shadow and inner shadow image filters | layers | 4 / 16 / 32 / 96 |
 | `pag.image_sequence` | raw RGBA frames uploaded every frame through a per layer ring | layers | 1 / 4 / 16 / 64 |
 | `pag.video_yuv` | I420 planes with BT.709 conversion through a per layer ring | layers | 1 / 4 / 16 / 64 |
+| `pag.picture` | a recorded `Picture` replayed N times, the libpag playback path | replays | 1 / 4 / 16 / 64 |
+| `pag.trim` | `PathEffect::MakeTrim` re-applied to every path each frame | paths | 20 / 100 / 250 / 600 |
+| `pag.layer_alpha` | nested `saveLayerAlpha` levels, each carrying its own content | depth | 2 / 8 / 20 / 48 |
+| `pag.layer3d` | layers rotated in 3D with `Matrix3D`, per layer alpha and blend | cards | 8 / 32 / 128 / 512 |
 
 ### ui — interface
 
@@ -484,7 +490,7 @@ the retained layer path, not the content.
 | Scene | What it exercises | Axis | S / M / L / XL |
 | --- | --- | --- | --- |
 | `vec.svg` | a large SVG document rendered repeatedly | copies | 1 / 2 / 4 / 8 |
-| `vec.svg_zoom` | SVG instances scaled continuously, forcing re-rasterization | copies | 16 / 64 / 256 / 1024 |
+| `vec.svg_zoom` | SVG instances scaled continuously, forcing re-rasterization | copies | 64 / 600 / 1500 / 4000 |
 | `vec.stroke_heavy` | dense dashed and solid outlines with thick strokes | paths | 100 / 1k / 4k / 16k |
 
 ### doc — infinite canvas (Figma style)

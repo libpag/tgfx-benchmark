@@ -30,15 +30,15 @@ namespace {
 int64_t GroupsForTier(Tier tier) {
   switch (tier) {
     case Tier::S:
-      return 2;
+      return 16;
     case Tier::M:
-      return 8;
+      return 256;
     case Tier::L:
-      return 32;
+      return 1024;
     case Tier::XL:
-      return 128;
+      return 4096;
   }
-  return 8;
+  return 256;
 }
 
 class MatteScene : public Scene {

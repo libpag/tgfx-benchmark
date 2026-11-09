@@ -29,15 +29,15 @@ namespace {
 int64_t SpritesForTier(Tier tier) {
   switch (tier) {
     case Tier::S:
-      return 500;
+      return 10000;
     case Tier::M:
-      return 5000;
+      return 60000;
     case Tier::L:
-      return 20000;
+      return 150000;
     case Tier::XL:
-      return 80000;
+      return 400000;
   }
-  return 5000;
+  return 60000;
 }
 
 class AtlasScene : public Scene {

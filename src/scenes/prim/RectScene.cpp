@@ -34,15 +34,15 @@ struct Particle {
 int64_t CountForTier(Tier tier) {
   switch (tier) {
     case Tier::S:
-      return 2000;
-    case Tier::M:
       return 20000;
+    case Tier::M:
+      return 240000;
     case Tier::L:
-      return 80000;
+      return 600000;
     case Tier::XL:
-      return 300000;
+      return 1200000;
   }
-  return 20000;
+  return 240000;
 }
 
 class RectScene : public Scene {

@@ -18,6 +18,7 @@
 
 #include "core/SceneRegistry.h"
 #include <algorithm>
+#include "tgfx/platform/Print.h"
 
 namespace benchmark {
 
@@ -73,6 +74,8 @@ bool SceneRegistry::Register(Factory factory) {
   }
   auto id = scene->info().id;
   if (id.empty()) {
+    // Silent drops made a scene with a broken info() invisible, so say it out loud.
+    tgfx::PrintError("SceneRegistry: a scene registered an empty id and was ignored");
     return false;
   }
   Factories()[id] = std::move(factory);
