@@ -102,6 +102,10 @@ elseif (WIN32)
     list(APPEND SRC_FILES
             src/platform/win/main.cpp
             src/platform/win/TGFXWindow.cpp)
+    list(APPEND CORE_FILES
+            src/platform/win/SystemInfo.cpp
+            src/platform/win/GpuTimer.cpp
+            src/platform/win/HeadlessDevice.cpp)
     if (BENCHMARK_BACKEND_RESOLVED STREQUAL "ANGLE")
         list(APPEND SRC_FILES src/platform/win/EGLWindow.cpp)
     elseif (BENCHMARK_BACKEND_RESOLVED STREQUAL "VULKAN")
