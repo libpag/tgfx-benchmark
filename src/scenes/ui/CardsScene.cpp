@@ -126,10 +126,9 @@ class CardsScene : public Scene {
       card.rect = tgfx::Rect::MakeXYWH(x, y, cardWidth, cardHeight);
       card.accent = {random.nextFloat(), random.nextFloat(), random.nextFloat(), 1.0f};
       card.titleIndex = static_cast<size_t>(random.rangeInt(0, 3));
+      // Cards that fall outside the viewport are still submitted: the scene measures drawing
+      // throughput, so the parameter has to keep increasing the work.
       _cards.push_back(card);
-      if (y > _height) {
-        break;
-      }
     }
     return true;
   }

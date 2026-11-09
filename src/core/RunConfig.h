@@ -61,6 +61,9 @@ struct RunConfig {
   std::string singleCase = {};
   std::string singleTier = {};
 
+  /// raw "name=value" pairs applied on top of the tier defaults, in order.
+  std::vector<std::string> paramOverrides = {};
+
   /// Returns the frame count used by the capacity search for one probe.
   int probeFrames() const {
     return warmupFrames < 10 ? 10 : (warmupFrames > 30 ? 30 : warmupFrames);

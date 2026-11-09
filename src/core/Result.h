@@ -47,6 +47,17 @@ struct CheckpointResult {
   std::string fileName = {};
 };
 
+struct CapacityResult {
+  std::string axis = {};
+  double budgetMs = 0.0;
+  std::string metric = {};
+  double maxValue = 0.0;
+  double lowerBound = 0.0;
+  double upperBound = 0.0;
+  int probes = 0;
+  bool saturated = false;
+};
+
 struct CaseResult {
   std::string scene = {};
   std::string category = {};
@@ -74,18 +85,10 @@ struct CaseResult {
   uint64_t footprintBytes = 0;
   uint64_t footprintPeakBytes = 0;
 
+  CapacityResult capacity = {};
+
   std::vector<CheckpointResult> checkpoints = {};
   std::vector<double> samples = {};
-};
-
-struct CapacityResult {
-  std::string axis = {};
-  double budgetMs = 0.0;
-  std::string metric = {};
-  double maxValue = 0.0;
-  double lowerBound = 0.0;
-  double upperBound = 0.0;
-  int probes = 0;
 };
 
 }  // namespace benchmark

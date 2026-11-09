@@ -118,10 +118,9 @@ class CardsLayersScene : public Scene {
       auto row = static_cast<int>(i / columns);
       auto x = gap + static_cast<float>(column) * (cardWidth + gap);
       auto y = gap + static_cast<float>(row) * (cardHeight + gap);
-      if (y > _height) {
-        break;
-      }
 
+      // Cards below the viewport are still added: the layer tree is what the tiled renderer has
+      // to walk, and clipping them here would make the card count stop mattering.
       auto container = tgfx::Layer::Make();
       container->setPosition(tgfx::Point{x, y});
 

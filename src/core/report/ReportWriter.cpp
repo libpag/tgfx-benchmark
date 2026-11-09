@@ -137,7 +137,7 @@ std::string ReportWriter::BuildResult(const EnvironmentInfo& environment,
     writer.key("tier");
     writer.value(result.tier);
     writer.key("params");
-    writer.valueRaw(result.paramsJSON);
+    writer.valueRaw(result.paramsJSON.empty() ? "{}" : result.paramsJSON);
     writer.key("param_hash");
     writer.value(result.paramHash);
     writer.key("status");
@@ -184,6 +184,28 @@ std::string ReportWriter::BuildResult(const EnvironmentInfo& environment,
     writer.endObject();
 
     WriteStats(&writer, "first_frame_ms", result.firstFrameMs);
+
+    if (!result.capacity.axis.empty()) {
+      writer.key("capacity");
+      writer.beginObject();
+      writer.key("axis");
+      writer.value(result.capacity.axis);
+      writer.key("budget_ms");
+      writer.value(result.capacity.budgetMs);
+      writer.key("metric");
+      writer.value(result.capacity.metric);
+      writer.key("max_value");
+      writer.value(result.capacity.maxValue);
+      writer.key("lower_bound");
+      writer.value(result.capacity.lowerBound);
+      writer.key("upper_bound");
+      writer.value(result.capacity.upperBound);
+      writer.key("probes");
+      writer.value(result.capacity.probes);
+      writer.key("saturated");
+      writer.value(result.capacity.saturated);
+      writer.endObject();
+    }
 
     writer.key("memory");
     writer.beginObject();

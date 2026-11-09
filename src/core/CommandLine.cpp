@@ -157,6 +157,7 @@ bool ParseCommandLine(int argc, const char* argv[], CommandLineOptions* options,
     } else if (name == "filter") {
       options->config.filters = SplitList(value);
     } else if (name == "tier") {
+      options->tiersSpecified = true;
       options->config.tiers.clear();
       for (const auto& item : SplitList(value)) {
         Tier tier = Tier::M;
@@ -174,10 +175,13 @@ bool ParseCommandLine(int argc, const char* argv[], CommandLineOptions* options,
     } else if (name == "density") {
       options->config.density = static_cast<float>(std::atof(value.c_str()));
     } else if (name == "warmup") {
+      options->warmupSpecified = true;
       options->config.warmupFrames = std::atoi(value.c_str());
     } else if (name == "frames") {
+      options->framesSpecified = true;
       options->config.measureFrames = std::atoi(value.c_str());
     } else if (name == "repeat") {
+      options->repeatSpecified = true;
       options->config.repeats = std::atoi(value.c_str());
     } else if (name == "budget") {
       options->config.budgetMs = std::atof(value.c_str());
@@ -187,6 +191,12 @@ bool ParseCommandLine(int argc, const char* argv[], CommandLineOptions* options,
       options->config.checkpointDir = value;
     } else if (name == "resources") {
       options->config.resourcesDir = value;
+    } else if (name == "param") {
+      if (value.find('=') == std::string::npos) {
+        *error = "invalid --param value, expected name=value";
+        return false;
+      }
+      options->config.paramOverrides.push_back(value);
     } else if (name == "single") {
       auto position = value.find(':');
       if (position == std::string::npos) {
@@ -198,6 +208,52 @@ bool ParseCommandLine(int argc, const char* argv[], CommandLineOptions* options,
       options->modeSpecified = true;
     } else {
       *error = "unknown option: --" + name;
+      return false;
+    }
+  }
+
+  if (!options->config.suite.empty()) {
+    if (options->config.suite == "smoke") {
+      if (!options->tiersSpecified) {
+        options->config.tiers = {Tier::S};
+      }
+      if (!options->warmupSpecified) {
+        options->config.warmupFrames = 15;
+      }
+      if (!options->framesSpecified) {
+        options->config.measureFrames = 60;
+      }
+      if (!options->repeatSpecified) {
+        options->config.repeats = 2;
+      }
+    } else if (options->config.suite == "core") {
+      if (!options->tiersSpecified) {
+        options->config.tiers = {Tier::M, Tier::L};
+      }
+      if (!options->warmupSpecified) {
+        options->config.warmupFrames = 60;
+      }
+      if (!options->framesSpecified) {
+        options->config.measureFrames = 300;
+      }
+      if (!options->repeatSpecified) {
+        options->config.repeats = 5;
+      }
+    } else if (options->config.suite == "full") {
+      if (!options->tiersSpecified) {
+        options->config.tiers = {Tier::S, Tier::M, Tier::L, Tier::XL};
+      }
+      if (!options->warmupSpecified) {
+        options->config.warmupFrames = 60;
+      }
+      if (!options->framesSpecified) {
+        options->config.measureFrames = 300;
+      }
+      if (!options->repeatSpecified) {
+        options->config.repeats = 5;
+      }
+    } else {
+      *error = "unknown suite: " + options->config.suite;
       return false;
     }
   }
@@ -223,11 +279,13 @@ void PrintUsage() {
       "\n"
       "  --list                      list scenes and their parameters\n"
       "  --dump-spec                 write the scene specification as JSON\n"
-      "  --mode=<mode>               measure | first-frame\n"
+      "  --mode=<mode>               measure | first-frame | capacity\n"
+      "                              capacity searches the largest value of the scene scaling\n"
+      "                              axis whose sustained frame time stays within --budget.\n"
       "                              first-frame runs one case per child process and reports the\n"
       "                              cost of the very first frame, including pipeline creation.\n"
       "                              Compare it only against runs launched the same way.\n"
-      "  --suite=<name>              label recorded in the result file\n"
+      "  --suite=<name>              smoke | core | full, presets tiers and sampling\n"
       "  --filter=<glob,...>         scene ids, supports a trailing '*' (default: all)\n"
       "  --tier=<S,M,L,XL>           intensity tiers to run (default: M)\n"
       "  --resolution=<WxH>          offscreen size in pixels (default: 1920x1080)\n"
@@ -239,6 +297,8 @@ void PrintUsage() {
       "  --out=<file>                result JSON path\n"
       "  --checkpoint-dir=<dir>      writes checkpoint thumbnails as raw RGBA\n"
       "  --resources=<dir>           overrides the compiled in resource directory\n"
+      "  --param=<name>=<value>      overrides one scene parameter, repeatable\n"
+      "  --single=<scene>:<tier>     internal, runs exactly one case\n"
       "  --no-breakdown              skips the second, CPU synchronized pass\n"
       "  --no-samples                omits raw per-frame samples from the result\n";
 }

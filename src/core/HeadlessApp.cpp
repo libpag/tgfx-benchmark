@@ -18,7 +18,9 @@
 
 #include "core/HeadlessApp.h"
 #include <algorithm>
+#include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <filesystem>
 #include <iostream>
 #include <sstream>
@@ -41,6 +43,43 @@ namespace benchmark {
 namespace {
 
 using CaseId = std::pair<std::string, Tier>;
+
+void ApplyParamOverrides(ParamSet* params, const std::vector<std::string>& overrides) {
+  for (const auto& item : overrides) {
+    auto position = item.find('=');
+    if (position == std::string::npos) {
+      continue;
+    }
+    auto name = item.substr(0, position);
+    auto value = item.substr(position + 1);
+    if (value == "true" || value == "false") {
+      params->setBool(name, value == "true");
+      continue;
+    }
+    char* end = nullptr;
+    auto integer = std::strtoll(value.c_str(), &end, 10);
+    if (end != nullptr && *end == '\0' && !value.empty()) {
+      params->setInt(name, integer);
+      continue;
+    }
+    auto real = std::strtod(value.c_str(), &end);
+    if (end != nullptr && *end == '\0' && !value.empty()) {
+      params->setDouble(name, real);
+      continue;
+    }
+    params->setString(name, value);
+  }
+}
+
+/// Returns the parameter the capacity search varies, or an empty string when the scene has none.
+std::string ScalingAxis(const SceneInfo& info) {
+  for (const auto& param : info.params) {
+    if (param.isScalingAxis) {
+      return param.name;
+    }
+  }
+  return {};
+}
 
 Tier ParseTierOrDefault(const std::string& text) {
   Tier tier = Tier::M;
@@ -184,6 +223,9 @@ int RunFirstFrameIsolated(const CommandLineOptions& options) {
       if (!config.resourcesDir.empty()) {
         arguments.push_back("--resources=" + config.resourcesDir);
       }
+      for (const auto& param : config.paramOverrides) {
+        arguments.push_back("--param=" + param);
+      }
       auto exitCode = RunProcess(arguments);
       CaseResult child = {};
       if (exitCode >= 0 && CaseResultIO::Read(tempPath, &child)) {
@@ -212,6 +254,202 @@ int RunFirstFrameIsolated(const CommandLineOptions& options) {
 
   // The device is created only now: keeping one alive while the children run slows their first
   // frame down by an order of magnitude on Metal.
+  auto device = CreateHeadlessDevice();
+  auto context = device == nullptr ? nullptr : device->lockContext();
+  auto environment = CollectEnvironment(context, config);
+  environment.thermalEnd = ThermalStateName();
+  auto json =
+      ReportWriter::BuildResult(environment, config, ReportWriter::CurrentRunId(), results);
+  if (device != nullptr) {
+    device->unlock();
+  }
+  if (config.outPath.empty()) {
+    std::printf("\n%s\n", json.c_str());
+  } else if (!ReportWriter::Write(config.outPath, json)) {
+    return 4;
+  }
+  for (const auto& result : results) {
+    if (result.status == "failed") {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+int RunCapacity(const CommandLineOptions& options) {
+  const auto& config = options.config;
+  auto executable = ExecutablePath();
+  if (executable.empty()) {
+    std::cerr << "capacity mode needs the executable path, which is unavailable here\n";
+    return 3;
+  }
+
+  const auto budget = config.budgetMs;
+  const auto frames = std::min(std::max(config.measureFrames, 30), 60);
+  const auto warmup = std::min(std::max(config.warmupFrames, 5), 15);
+
+  std::vector<CaseResult> results;
+  std::printf("%-24s %-4s %-10s %12s %8s %10s  %s\n", "scene", "tier", "axis", "max_value",
+              "probes", "budget_ms", "status");
+  auto index = 0;
+
+  for (const auto& item : ResolveCases(config)) {
+    auto scene = SceneRegistry::Create(item.first);
+    if (scene == nullptr) {
+      continue;
+    }
+    const auto& info = scene->info();
+    CaseResult result = {};
+    result.scene = info.id;
+    result.category = info.category;
+    result.tier = TierName(item.second);
+
+    auto axis = ScalingAxis(info);
+    if (axis.empty()) {
+      result.status = "skipped";
+      result.statusDetail = "scene has no scaling axis";
+      std::printf("%-24s %-4s %-10s %12s %8d %10.2f  %s\n", info.id.c_str(),
+                  result.tier.c_str(), "-", "-", 0, budget, result.status.c_str());
+      results.push_back(std::move(result));
+      continue;
+    }
+
+    auto baseParams = scene->paramsForTier(item.second);
+    ApplyParamOverrides(&baseParams, config.paramOverrides);
+    result.paramsJSON = baseParams.toCanonicalJSON();
+    result.paramHash = baseParams.hash();
+    auto startValue = baseParams.getDouble(axis);
+    if (startValue <= 0.0) {
+      startValue = 1.0;
+    }
+
+    auto probes = 0;
+    auto probe = [&](double value) -> double {
+      probes++;
+      auto tempPath = TempResultPath(config.outPath, index++);
+      std::vector<std::string> arguments = {
+          executable,
+          "--mode=measure",
+          "--single=" + info.id + ":" + result.tier,
+          "--out=" + tempPath,
+          "--warmup=" + std::to_string(warmup),
+          "--frames=" + std::to_string(frames),
+          "--repeat=1",
+          "--no-breakdown",
+          "--no-samples",
+          "--resolution=" + std::to_string(config.width) + "x" + std::to_string(config.height),
+          "--density=" + Number(static_cast<double>(config.density)),
+      };
+      if (!config.resourcesDir.empty()) {
+        arguments.push_back("--resources=" + config.resourcesDir);
+      }
+      for (const auto& param : config.paramOverrides) {
+        if (param.rfind(axis + "=", 0) == 0) {
+          continue;
+        }
+        arguments.push_back("--param=" + param);
+      }
+      arguments.push_back("--param=" + axis + "=" + Number(value));
+
+      auto exitCode = RunProcess(arguments);
+      CaseResult child = {};
+      auto ok = exitCode >= 0 && CaseResultIO::Read(tempPath, &child);
+      std::error_code error = {};
+      std::filesystem::remove(tempPath, error);
+      if (!ok || child.status != "ok") {
+        return -1.0;
+      }
+      // The sustained cost per frame, not the median of individual frames: when the GPU is the
+      // bottleneck the CPU races ahead and single frame times understate the load.
+      return child.throughputMedian > 0.0 ? child.throughputMedian : child.frameMs.p90;
+    };
+
+    auto startLatency = probe(startValue);
+    if (startLatency < 0.0) {
+      result.status = "failed";
+      result.statusDetail = "probe failed at the tier default";
+      results.push_back(std::move(result));
+      continue;
+    }
+
+    double low = 0.0;
+    double high = 0.0;
+    if (startLatency > budget) {
+      // Even the tier default is over budget: search downwards.
+      high = startValue;
+      low = startValue * 0.5;
+      while (low > 1.0 && probes < 8) {
+        auto latency = probe(low);
+        if (latency < 0.0) {
+          low = 0.0;
+          break;
+        }
+        if (latency <= budget) {
+          break;
+        }
+        high = low;
+        low *= 0.5;
+      }
+    } else {
+      low = startValue;
+      high = startValue * 2.0;
+      auto previous = startLatency;
+      auto saturated = false;
+      while (probes < 8 && high < 1e8) {
+        auto latency = probe(high);
+        if (latency < 0.0 || latency > budget) {
+          break;
+        }
+        // Doubling the load must at least nudge the frame time. Otherwise the scene has hit a
+        // ceiling (content clipped, culled or saturated) and a larger value means nothing.
+        if (latency < previous * 1.02) {
+          saturated = true;
+          break;
+        }
+        previous = latency;
+        low = high;
+        high *= 2.0;
+      }
+      if (saturated) {
+        high = low * 2.0;
+        result.capacity.saturated = true;
+      }
+    }
+
+    if (low <= 0.0 || high <= low) {
+      result.status = "failed";
+      result.statusDetail = "capacity search did not bracket the budget";
+      results.push_back(std::move(result));
+      continue;
+    }
+
+    while (high / low > 1.05 && probes < 12) {
+      auto middle = std::sqrt(low * high);
+      auto latency = probe(middle);
+      if (latency < 0.0) {
+        break;
+      }
+      if (latency <= budget) {
+        low = middle;
+      } else {
+        high = middle;
+      }
+    }
+
+    result.status = "ok";
+    result.capacity.axis = axis;
+    result.capacity.budgetMs = budget;
+    result.capacity.metric = "throughput_ms";
+    result.capacity.maxValue = low;
+    result.capacity.lowerBound = low;
+    result.capacity.upperBound = high;
+    result.capacity.probes = probes;
+    std::printf("%-24s %-4s %-10s %12.0f %8d %10.2f  %s\n", info.id.c_str(),
+                result.tier.c_str(), axis.c_str(), low, probes, budget, "ok");
+    std::fflush(stdout);
+    results.push_back(std::move(result));
+  }
+
   auto device = CreateHeadlessDevice();
   auto context = device == nullptr ? nullptr : device->lockContext();
   auto environment = CollectEnvironment(context, config);
@@ -268,6 +506,9 @@ int RunIsolated(const CommandLineOptions& options, const char* fallbackResources
     }
     if (!config.resourcesDir.empty()) {
       arguments.push_back("--resources=" + config.resourcesDir);
+    }
+    for (const auto& param : config.paramOverrides) {
+      arguments.push_back("--param=" + param);
     }
 
     auto exitCode = RunProcess(arguments);
@@ -334,8 +575,7 @@ void PrintSceneList() {
 int RunHeadless(const CommandLineOptions& options, const char* fallbackResourcesDir) {
   const auto& config = options.config;
   if (config.mode == RunMode::Capacity) {
-    std::cerr << "capacity mode is not implemented yet\n";
-    return 2;
+    return RunCapacity(options);
   }
   if (config.mode == RunMode::FirstFrame && config.singleCase.empty()) {
     return RunFirstFrameIsolated(options);
@@ -376,6 +616,7 @@ int RunHeadless(const CommandLineOptions& options, const char* fallbackResources
       return 1;
     }
     auto params = scene->paramsForTier(ParseTierOrDefault(config.singleTier));
+    ApplyParamOverrides(&params, config.paramOverrides);
     auto result = MeasureFirstFrame(scene.get(), ParseTierOrDefault(config.singleTier), params,
                                     sceneContext, config, config.checkpointDir);
     device->unlock();
@@ -391,6 +632,7 @@ int RunHeadless(const CommandLineOptions& options, const char* fallbackResources
       continue;
     }
     auto params = scene->paramsForTier(item.second);
+    ApplyParamOverrides(&params, config.paramOverrides);
     auto result = MeasureDriver::Run(scene.get(), item.second, params, sceneContext, config,
                                      config.checkpointDir);
     if (!single) {

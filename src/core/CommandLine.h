@@ -29,6 +29,10 @@ struct CommandLineOptions {
   bool dumpSpec = false;
   bool showHelp = false;
   bool modeSpecified = false;
+  bool tiersSpecified = false;
+  bool warmupSpecified = false;
+  bool framesSpecified = false;
+  bool repeatSpecified = false;
 };
 
 bool ParseCommandLine(int argc, const char* argv[], CommandLineOptions* options,
