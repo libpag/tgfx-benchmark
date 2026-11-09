@@ -53,11 +53,31 @@ file(GLOB_RECURSE CORE_FILES
         src/scenes/*.cpp)
 
 if (IOS)
-    file(GLOB_RECURSE PLATFORM_FILES src/platform/ios/*.mm)
-    list(APPEND SRC_FILES ${PLATFORM_FILES})
+    list(APPEND SRC_FILES
+            src/platform/ios/AppDelegate.mm
+            src/platform/ios/main.mm
+            src/platform/ios/TGFXWindow.mm)
+    list(APPEND CORE_FILES
+            src/platform/apple/SystemInfo.mm
+            src/platform/apple/GLTimerQuery.mm)
+    if (BENCHMARK_BACKEND_RESOLVED STREQUAL "METAL")
+        list(APPEND SRC_FILES src/platform/ios/MetalWindow.mm)
+        list(APPEND CORE_FILES src/platform/ios/HeadlessDeviceMetal.mm)
+    endif ()
 elseif (ANDROID)
-    file(GLOB_RECURSE PLATFORM_FILES src/platform/android/*.cpp)
-    list(APPEND SRC_FILES ${PLATFORM_FILES})
+    list(APPEND SRC_FILES
+            src/platform/android/main.cpp
+            src/platform/android/TGFXWindow.cpp)
+    list(APPEND CORE_FILES
+            src/platform/android/SystemInfo.cpp
+            src/platform/android/HeadlessDeviceEGL.cpp
+            src/platform/android/GpuTimer.cpp)
+    add_library(native_app_glue STATIC
+            ${ANDROID_NDK}/sources/android/native_app_glue/android_native_app_glue.c)
+    target_include_directories(native_app_glue PUBLIC
+            ${ANDROID_NDK}/sources/android/native_app_glue)
+    list(APPEND BENCHMARK_LIBS native_app_glue android log EGL GLESv3)
+    set(BENCH_LINK_OPTIONS -u ANativeActivity_onCreate)
 elseif (MACOS)
     list(APPEND SRC_FILES
             src/platform/mac/AppDelegate.mm
@@ -130,7 +150,15 @@ else ()
 endif ()
 
 list(APPEND BENCHMARK_LIBS ${TGFX_SHARED_LIBS})
-if (WIN32)
+if (ANDROID)
+    add_library(Benchmark SHARED ${SRC_FILES})
+elseif (IOS)
+    add_executable(Benchmark MACOSX_BUNDLE ${SRC_FILES})
+    set_target_properties(Benchmark PROPERTIES
+            MACOSX_BUNDLE_BUNDLE_NAME "TGFXBenchmark"
+            MACOSX_BUNDLE_GUI_IDENTIFIER "org.tgfx.benchmark"
+            MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/cmake/ios/Info.plist")
+elseif (WIN32)
     add_executable(Benchmark WIN32 ${SRC_FILES})
 else ()
     add_executable(Benchmark ${SRC_FILES})
@@ -139,6 +167,9 @@ add_dependencies(Benchmark tgfx)
 target_include_directories(Benchmark PRIVATE ${BENCH_INCLUDES})
 target_compile_options(Benchmark PUBLIC ${BENCH_COMPILE_OPTIONS})
 target_link_libraries(Benchmark tgfx ${BENCHMARK_LIBS})
+if (BENCH_LINK_OPTIONS)
+    target_link_options(Benchmark PRIVATE ${BENCH_LINK_OPTIONS})
+endif ()
 
 # The platform independent benchmark runtime and the scene catalogue. Linking an OBJECT library
 # keeps every scene translation unit, and therefore every static registration, in the executable.

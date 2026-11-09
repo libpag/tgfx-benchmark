@@ -149,7 +149,7 @@ void ParticleBench::AnimateRects(const AppHost* host) {
     if (idleTime > 0) {
       auto factor = static_cast<double>(idleTime > halfDrawInterval ? drawTime : idleTime) /
                     static_cast<double>(halfDrawInterval);
-      auto step = static_cast<int64_t>(IncreaseStep * factor);
+      auto step = static_cast<int64_t>(static_cast<double>(IncreaseStep) * factor);
       if (step < 1) {
         step = 1;
       }
