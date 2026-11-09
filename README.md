@@ -439,7 +439,7 @@ comparison tool reports that instead of silently mixing the two.
 
 ## Scene catalogue
 
-Thirty six cases across six categories. Every scene has exactly one scaling axis, so the intensity
+Thirty eight cases across six categories. Every scene has exactly one scaling axis, so the intensity
 ladder and the capacity search have a well defined meaning.
 
 ### prim — primitives (baseline and attribution)
@@ -472,6 +472,7 @@ ladder and the capacity search have a well defined meaning.
 | `pag.trim` | `PathEffect::MakeTrim` re-applied to every path each frame | paths | 20 / 100 / 250 / 600 |
 | `pag.layer_alpha` | nested `saveLayerAlpha` levels, each carrying its own content | depth | 2 / 8 / 20 / 48 |
 | `pag.layer3d` | layers rotated in 3D with `Matrix3D`, per layer alpha and blend | cards | 8 / 32 / 128 / 512 |
+| `pag.effect_stack` | image and blended shaders, composed and blended filters, corner path effect, alpha threshold | elements | 6 / 24 / 72 / 200 |
 
 ### ui — interface
 
@@ -481,6 +482,7 @@ ladder and the capacity search have a well defined meaning.
 | `ui.cards.layers` | the same cards built from `ShapeLayer`, `TextLayer`, `ImageLayer` | cards | 20 / 100 / 500 / 2000 |
 | `ui.list_scroll` | a long list scrolled through a partially updated `DisplayList` | rows | 50 / 500 / 5k / 20k |
 | `ui.glass` | frosted panels using `BackgroundBlurStyle` over moving content | panels | 1 / 4 / 16 / 64 |
+| `ui.dashboard` | round rects, circles, ovals, lines, thumbnails, text blobs and vector shapes | cards | 24 / 360 / 1k / 3k |
 
 `ui.cards.canvas` and `ui.cards.layers` are deliberately isomorphic: the difference between them is
 the retained layer path, not the content.
