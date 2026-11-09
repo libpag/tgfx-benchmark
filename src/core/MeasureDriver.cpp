@@ -35,7 +35,7 @@ constexpr int BreakdownFrameLimit = 60;
 /// than one value per repeat.
 constexpr int ThroughputBlockFrames = 30;
 
-const tgfx::Color BackgroundColor = {0.87f, 0.87f, 0.87f, 1.0f};
+const tgfx::Color BackgroundColor = BenchmarkBackgroundColor();
 
 bool IsCheckpointFrame(const std::vector<int64_t>& frames, int64_t frame) {
   for (auto value : frames) {

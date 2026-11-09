@@ -196,7 +196,6 @@ bool ParseCommandLine(int argc, const char* argv[], CommandLineOptions* options,
       options->config.singleCase = value.substr(0, position);
       options->config.singleTier = value.substr(position + 1);
       options->modeSpecified = true;
-      options->config.mode = RunMode::Measure;
     } else {
       *error = "unknown option: --" + name;
       return false;
@@ -224,7 +223,10 @@ void PrintUsage() {
       "\n"
       "  --list                      list scenes and their parameters\n"
       "  --dump-spec                 write the scene specification as JSON\n"
-      "  --mode=<mode>               measure | capacity | first-frame\n"
+      "  --mode=<mode>               measure | first-frame\n"
+      "                              first-frame runs one case per child process and reports the\n"
+      "                              cost of the very first frame, including pipeline creation.\n"
+      "                              Compare it only against runs launched the same way.\n"
       "  --suite=<name>              label recorded in the result file\n"
       "  --filter=<glob,...>         scene ids, supports a trailing '*' (default: all)\n"
       "  --tier=<S,M,L,XL>           intensity tiers to run (default: M)\n"

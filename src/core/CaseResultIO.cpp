@@ -91,6 +91,7 @@ bool CaseResultIO::Write(const std::string& path, const CaseResult& result) {
   stream << "flush_ms " << JoinStats(result.flushMs) << '\n';
   stream << "submit_ms " << JoinStats(result.submitMs) << '\n';
   stream << "gpu_ms " << JoinStats(result.gpuMs) << '\n';
+  stream << "first_frame_ms " << JoinStats(result.firstFrameMs) << '\n';
   stream << "gpu_source " << result.gpuSource << '\n';
   stream << "gpu_cache " << result.gpuCacheBytes << ' ' << result.gpuCachePeakBytes << '\n';
   stream << "footprint " << result.footprintBytes << ' ' << result.footprintPeakBytes << '\n';
@@ -156,6 +157,8 @@ bool CaseResultIO::Read(const std::string& path, CaseResult* result) {
       parsed.flushMs = ParseStats(value);
     } else if (key == "submit_ms") {
       parsed.submitMs = ParseStats(value);
+    } else if (key == "first_frame_ms") {
+      parsed.firstFrameMs = ParseStats(value);
     } else if (key == "gpu_ms") {
       parsed.gpuMs = ParseStats(value);
     } else if (key == "gpu_source") {

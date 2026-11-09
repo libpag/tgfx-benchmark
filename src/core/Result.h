@@ -66,6 +66,7 @@ struct CaseResult {
   SampleStats flushMs = {};
   SampleStats submitMs = {};
   SampleStats gpuMs = {};
+  SampleStats firstFrameMs = {};
   std::string gpuSource = "none";
 
   uint64_t gpuCacheBytes = 0;

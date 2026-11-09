@@ -17,6 +17,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "core/HeadlessApp.h"
+#include <algorithm>
 #include <cstdio>
 #include <filesystem>
 #include <iostream>
@@ -24,6 +25,8 @@
 #include <utility>
 #include <vector>
 #include "core/CaseResultIO.h"
+#include "core/Checkpoint.h"
+#include "core/FrameTimer.h"
 #include "core/HeadlessDevice.h"
 #include "core/MeasureDriver.h"
 #include "core/Process.h"
@@ -39,6 +42,12 @@ namespace {
 
 using CaseId = std::pair<std::string, Tier>;
 
+Tier ParseTierOrDefault(const std::string& text) {
+  Tier tier = Tier::M;
+  ParseTier(text, &tier);
+  return tier;
+}
+
 void PrintHeader() {
   std::printf("%-24s %-4s %10s %10s %10s %12s  %s\n", "scene", "tier", "median_ms", "p90_ms",
               "gpu_ms", "count", "status");
@@ -48,6 +57,65 @@ void PrintRow(const CaseResult& result) {
   std::printf("%-24s %-4s %10.3f %10.3f %10.3f %12lld  %s\n", result.scene.c_str(),
               result.tier.c_str(), result.throughputMedian, result.frameMs.p90,
               result.gpuMs.median, static_cast<long long>(result.frameMs.count),
+              result.status.c_str());
+  std::fflush(stdout);
+}
+
+CaseResult MeasureFirstFrame(Scene* scene, Tier tier, const ParamSet& params,
+                             const SceneContext& sceneContext, const RunConfig& config,
+                             const std::string& checkpointDir) {
+  CaseResult result = {};
+  result.scene = scene->info().id;
+  result.category = scene->info().category;
+  result.tier = TierName(tier);
+  result.paramsJSON = params.toCanonicalJSON();
+  result.paramHash = params.hash();
+
+  auto context = sceneContext.context;
+  auto surface = tgfx::Surface::Make(context, config.width, config.height);
+  if (surface == nullptr) {
+    result.status = "failed";
+    result.statusDetail = "failed to create offscreen surface";
+    return result;
+  }
+
+  auto setupStart = FrameTimer::NowMs();
+  if (!scene->setup(sceneContext, params)) {
+    result.status = "failed";
+    result.statusDetail = "scene setup failed";
+    return result;
+  }
+  result.setupMs = FrameTimer::NowMs() - setupStart;
+
+  // A cold first frame includes shader compilation, pipeline creation and the first upload, so the
+  // GPU is waited on instead of being allowed to lag behind.
+  auto frameStart = FrameTimer::NowMs();
+  scene->update(0);
+  surface->getCanvas()->clear(BenchmarkBackgroundColor());
+  scene->render(surface.get());
+  auto recording = context->flush();
+  if (recording != nullptr) {
+    context->submit(std::move(recording), true);
+  }
+  auto frameEnd = FrameTimer::NowMs();
+  result.firstFrameMs = SampleStats::Compute({frameEnd - frameStart});
+
+  auto checkpoint = Checkpoint::Capture(surface.get(), checkpointDir,
+                                        result.scene + "-" + result.tier + "-first", 0,
+                                        BenchmarkBackgroundColor());
+  result.checkpoints.push_back(checkpoint);
+  if (checkpoint.blank) {
+    result.status = "blank";
+    result.statusDetail = "first frame contains no content";
+  }
+  scene->teardown();
+  return result;
+}
+
+void PrintFirstFrameRow(const CaseResult& result) {
+  std::printf("%-24s %-4s %10.3f %10.3f %10.3f %12lld  %s\n", result.scene.c_str(),
+              result.tier.c_str(), result.firstFrameMs.median, result.firstFrameMs.p90,
+              result.setupMs, static_cast<long long>(result.firstFrameMs.count),
               result.status.c_str());
   std::fflush(stdout);
 }
@@ -83,6 +151,89 @@ std::string Number(double value) {
   return stream.str();
 }
 
+int RunFirstFrameIsolated(const CommandLineOptions& options) {
+  const auto& config = options.config;
+  auto executable = ExecutablePath();
+  if (executable.empty()) {
+    std::cerr << "isolated mode needs the executable path, which is unavailable here\n";
+    return 3;
+  }
+  std::vector<CaseResult> results;
+  std::printf("%-24s %-4s %10s %10s %10s %12s  %s\n", "scene", "tier", "cold_ms", "p90_ms",
+              "setup_ms", "samples", "status");
+  auto index = 0;
+  for (const auto& item : ResolveCases(config)) {
+    CaseResult combined = {};
+    combined.scene = item.first;
+    combined.tier = TierName(item.second);
+    combined.category = "";
+    std::vector<double> samples;
+    for (auto repeat = 0; repeat < config.repeats; repeat++) {
+      auto tempPath = TempResultPath(config.outPath, index++);
+      std::vector<std::string> arguments = {
+          executable,
+          "--mode=first-frame",
+          "--single=" + item.first + ":" + TierName(item.second),
+          "--out=" + tempPath,
+          "--resolution=" + std::to_string(config.width) + "x" + std::to_string(config.height),
+          "--density=" + Number(static_cast<double>(config.density)),
+      };
+      if (!config.checkpointDir.empty() && repeat == 0) {
+        arguments.push_back("--checkpoint-dir=" + config.checkpointDir);
+      }
+      if (!config.resourcesDir.empty()) {
+        arguments.push_back("--resources=" + config.resourcesDir);
+      }
+      auto exitCode = RunProcess(arguments);
+      CaseResult child = {};
+      if (exitCode >= 0 && CaseResultIO::Read(tempPath, &child)) {
+        samples.push_back(child.firstFrameMs.median);
+        combined.setupMs = std::max(combined.setupMs, child.setupMs);
+        combined.category = child.category;
+        combined.paramsJSON = child.paramsJSON;
+        combined.paramHash = child.paramHash;
+        combined.status = child.status;
+        combined.statusDetail = child.statusDetail;
+        if (repeat == 0) {
+          combined.checkpoints = child.checkpoints;
+        }
+      } else {
+        combined.status = "failed";
+        combined.statusDetail = "isolated child exited with " + std::to_string(exitCode);
+        break;
+      }
+      std::error_code error = {};
+      std::filesystem::remove(tempPath, error);
+    }
+    combined.firstFrameMs = SampleStats::Compute(samples);
+    PrintFirstFrameRow(combined);
+    results.push_back(std::move(combined));
+  }
+
+  // The device is created only now: keeping one alive while the children run slows their first
+  // frame down by an order of magnitude on Metal.
+  auto device = CreateHeadlessDevice();
+  auto context = device == nullptr ? nullptr : device->lockContext();
+  auto environment = CollectEnvironment(context, config);
+  environment.thermalEnd = ThermalStateName();
+  auto json =
+      ReportWriter::BuildResult(environment, config, ReportWriter::CurrentRunId(), results);
+  if (device != nullptr) {
+    device->unlock();
+  }
+  if (config.outPath.empty()) {
+    std::printf("\n%s\n", json.c_str());
+  } else if (!ReportWriter::Write(config.outPath, json)) {
+    return 4;
+  }
+  for (const auto& result : results) {
+    if (result.status == "failed") {
+      return 1;
+    }
+  }
+  return 0;
+}
+
 /// Runs every case in its own process. The GPU caches of one scene never get a chance to inflate
 /// the memory readings of the next one, and a crash only loses a single case.
 int RunIsolated(const CommandLineOptions& options, const char* fallbackResourcesDir) {
@@ -93,10 +244,6 @@ int RunIsolated(const CommandLineOptions& options, const char* fallbackResources
     std::cerr << "isolated mode needs the executable path, which is unavailable here\n";
     return 3;
   }
-
-  // A device is still created here so the report carries the GPU identity.
-  auto device = CreateHeadlessDevice();
-  auto context = device == nullptr ? nullptr : device->lockContext();
 
   std::vector<CaseResult> results;
   PrintHeader();
@@ -141,6 +288,9 @@ int RunIsolated(const CommandLineOptions& options, const char* fallbackResources
     std::filesystem::remove(tempPath, error);
   }
 
+  // Created after the children finish so it never competes with them for the GPU.
+  auto device = CreateHeadlessDevice();
+  auto context = device == nullptr ? nullptr : device->lockContext();
   auto environment = CollectEnvironment(context, config);
   environment.thermalEnd = ThermalStateName();
   auto json =
@@ -187,6 +337,9 @@ int RunHeadless(const CommandLineOptions& options, const char* fallbackResources
     std::cerr << "capacity mode is not implemented yet\n";
     return 2;
   }
+  if (config.mode == RunMode::FirstFrame && config.singleCase.empty()) {
+    return RunFirstFrameIsolated(options);
+  }
   if (config.isolate && config.singleCase.empty()) {
     return RunIsolated(options, fallbackResourcesDir);
   }
@@ -214,6 +367,20 @@ int RunHeadless(const CommandLineOptions& options, const char* fallbackResources
   sceneContext.density = config.density;
 
   const auto single = !config.singleCase.empty();
+
+  if (config.mode == RunMode::FirstFrame) {
+    // Only reachable with --single; the parent drives one child per repeat.
+    auto scene = SceneRegistry::Create(config.singleCase);
+    if (scene == nullptr) {
+      device->unlock();
+      return 1;
+    }
+    auto params = scene->paramsForTier(ParseTierOrDefault(config.singleTier));
+    auto result = MeasureFirstFrame(scene.get(), ParseTierOrDefault(config.singleTier), params,
+                                    sceneContext, config, config.checkpointDir);
+    device->unlock();
+    return CaseResultIO::Write(config.outPath, result) ? 0 : 4;
+  }
   std::vector<CaseResult> results;
   if (!single) {
     PrintHeader();

@@ -183,6 +183,8 @@ std::string ReportWriter::BuildResult(const EnvironmentInfo& environment,
     writer.value(result.gpuSource);
     writer.endObject();
 
+    WriteStats(&writer, "first_frame_ms", result.firstFrameMs);
+
     writer.key("memory");
     writer.beginObject();
     writer.key("gpu_cache_bytes");

@@ -30,6 +30,12 @@ namespace benchmark {
 
 class ResourceStore;
 
+/// The color the driver clears every frame with. Checkpoints treat a frame that only contains this
+/// color as blank, which catches scenes that silently draw nothing.
+inline tgfx::Color BenchmarkBackgroundColor() {
+  return tgfx::Color{0.87f, 0.87f, 0.87f, 1.0f};
+}
+
 enum class Tier { S, M, L, XL };
 
 const char* TierName(Tier tier);
